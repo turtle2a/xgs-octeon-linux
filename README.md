@@ -7,8 +7,10 @@ installer for every OCTEON or XGS appliance.
 
 The current boot-verified configuration is Fedora 44 with kernel
 `7.3.3-200.fc44` on the tested appliance. Debian/Linux Mint and other
-appliances or kernel versions need separate testing. XGS 136 uses a different
-Armada platform; SFP cage operation and hardware acceleration are not verified.
+appliances or kernel versions need separate testing. Debian, openSUSE, and
+Arch Linux have booted on the appliance, but full NPU functionality remains a
+work in progress. XGS 136 uses a different Armada platform; SFP cage operation
+and hardware acceleration are not verified.
 
 The optional NAT helper is under `scripts/nat/`. It is not invoked or installed
 by `install.sh`; it adds NAT rules only when explicitly run and confirmed.
