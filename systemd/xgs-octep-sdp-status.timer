@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=Check OCTEP SDP bring-up until it succeeds
+
+[Timer]
+OnActiveSec=30s
+OnUnitInactiveSec=30s
+AccuracySec=1s
+Unit=xgs-octep-sdp-status.service
+
+[Install]
+WantedBy=timers.target

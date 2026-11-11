@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=Load OCTEP and bring up SDP packet rings
+After=dkms.service systemd-modules-load.service systemd-udev-settle.service
+Before=network-pre.target
+Wants=network-pre.target systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/sbin/modprobe octep
+ExecStart=/usr/local/xgs/linux/scripts/octep/sdp-bringup.sh
+ExecStartPost=/usr/local/xgs/linux/scripts/octep/rpc-port-setup.sh
+TimeoutStartSec=20min
+Restart=on-failure
+RestartSec=30s
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

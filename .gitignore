@@ -1,0 +1,9 @@
+# Generated external kernel-module build files
+*.o
+*.ko
+*.ko.*
+*.mod
+*.mod.c
+*.cmd
+Module.symvers
+modules.order

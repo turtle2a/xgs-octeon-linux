@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=Collect OCTEON TX NPU health every five minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=xgs-npu-health.service
+
+[Install]
+WantedBy=timers.target
