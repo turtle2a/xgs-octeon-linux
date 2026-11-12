@@ -54,6 +54,91 @@ development reference. Build the module against the target system's running
 kernel using its matching development files; other kernel versions still
 require testing.
 
+**Note:** This XGS appliance was built with kernel 7.3.3, a stable release from
+kernel.org. A new configuration was created with all Marvell, Cavium, and other
+modules selected, along with debugging modules.
+
+Please contact me via GitHub if you need the configuration added to the Git
+tree. It was not required for installation, but was used during development.
+
+
+
+## Post Donor Disk Installation - XGS Pre-Installation
+
+For easier access and management of the XGS while its disk is connected to the
+donor machine, install and configure the SSH server, or leave it as is. Check
+that it is running with `systemctl status sshd.server`.
+
+If UFW is installed, allow access from your LAN to the appliance's LAN subnet.
+If DHCP is not running on your LAN, configure the adapter address manually
+later from the console, along with the required UFW rules.
+
+
+
+## Appliance BIOS Setting Requirements
+
+Before booting the XGS appliance with the connected disk:
+
+Open PuTTY (preferred) or a serial terminal on your PC. Set the baud rate and
+stop bits according to the GRUB information provided for accessing the XGS BIOS
+(press DEL during boot). For this system, the BIOS baud rate must be 38400.
+
+Do not open the connection until the machine is booting.
+
+Hold the DEL key on your PC until the XGS BIOS screen opens.
+
+Enter the XGS BIOS and ensure Secure Boot is off and VT-d/IOMMU is on.
+
+You can select the boot drive in the BIOS or press ESC during boot to select
+it in the serial console (38400 baud). Note that you will need to reconnect the
+console at 115200 baud to view the Linux OS boot on the XGS.
+
+
+## Serial Console Access After BIOS Settings - Booting the XGS
+
+Open the serial console on a machine connected to the XGS appliance via USB
+serial. Once the XGS is booted from the donor disk installation, set the baud
+rate to 115200 and keep the other settings the same as the GRUB settings.
+
+
+
+## Network Setup from the Serial Console on the XGS Appliance
+
+After connecting the disk to the XGS appliance, boot the appliance.
+
+Open the serial console on a machine connected to the XGS appliance via USB
+serial, which is now booted from the donor disk installation.
+
+Note: The initial XGS boot screen is available only at 38400 baud for BIOS
+access and boot-drive selection. Change the baud rate to 115200 to view the OS
+boot and access the login prompt.
+
+A serial console window should open on your machine, displaying the XGS
+appliance console.
+
+Log in as the user you set up, then configure the interface.
+
+Connect an Ethernet cable to the port labelled MGMT on the XGS appliance, to
+the right-hand side (RHS) of the front USB ports. This is the management port
+for setting up the appliance until SSH and XRDP are installed and running. On
+Fedora, it should appear as `enp2s0`.
+
+If the LAN to which the cable is connected has a DHCP server, the MGMT adapter
+may obtain an address.
+
+Run `ifconfig` to check which adapter (LAN) has an address.
+
+Run `lsof` to check whether the SSH ports are open.
+
+Connect to your SSH server on the XGS appliance.
+
+`ssh -l <yourusername> -p <theportforssh> <xgs-hostname-or-IP>`
+
+If successful, you will be logged in as the user you selected, hopefully with
+sudo privileges.
+
+
+
 ## Optional Fedora Kernel-Source Build Environment
 
 These steps are for rebuilding Fedora's kernel from source, not for the normal
@@ -78,7 +163,15 @@ For the optional `make xconfig` interface, the additional packages used were:
 sudo dnf install qt3-devel libXi-devel gcc-c++
 ```
 
+
+This machine was built with kernel 7.3.3, a stable release from kernel.org.
+
+`make menuconfig` was run with all Marvell and Cavium modules selected, along
+with debugging modules.
+
 Package names and availability can vary between Fedora releases.
+
+
 
 ## Fedora, RHEL, Rocky Linux, and AlmaLinux
 
