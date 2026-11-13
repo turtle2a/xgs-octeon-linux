@@ -4,5 +4,6 @@ Description=Check and retry OCTEP SDP bring-up until successful
 
 [Service]
 Type=oneshot
+User=root
 ExecStart=/usr/local/xgs/linux/scripts/octep/sdp-status-check.sh
 TimeoutStartSec=21min

@@ -12,6 +12,7 @@ PLATFORM_SCRIPT="$SCRIPT_DIR/scripts/octep/npu-platform.sh"
 OCTEP_PORT_SETUP_SCRIPT="$SCRIPT_DIR/scripts/octep/rpc-port-setup.sh"
 OCTEP_RING_TEST_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-ring-test.sh"
 OCTEP_SDP_BRINGUP_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-bringup.sh"
+OCTEP_SDP_RECOVERY_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-recover-npu.sh"
 MGMT_LINK_SCRIPT="$SCRIPT_DIR/scripts/npuctl/mgmt-link.sh"
 HEALTH_SERVICE="$SCRIPT_DIR/systemd/xgs-npu-health.service"
 HEALTH_TIMER="$SCRIPT_DIR/systemd/xgs-npu-health.timer"
@@ -135,6 +136,8 @@ done
 [ -f "$OCTEP_SDP_STATUS_SERVICE" ] ||
 	fail "missing OCTEP SDP status-check systemd unit"
 [ -f "$OCTEP_SDP_STATUS_TIMER" ] ||
+[ -f "$OCTEP_SDP_RECOVERY_SCRIPT" ] ||
+	fail "missing OCTEP blocked-NPU recovery script"
 	fail "missing OCTEP SDP status-check timer"
 [ -f "$UNINSTALL_SCRIPT" ] || fail "missing Linux uninstall script"
 
@@ -229,6 +232,7 @@ install_data "$SOURCE_DIR/dkms.conf" "$XGS_ROOT/octep/dkms.conf"
 install_script "$HEALTH_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-health.sh"
 install_script "$RUN_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-run.sh"
 install_script "$PLATFORM_SCRIPT" "$XGS_ROOT/scripts/octep/npu-platform.sh"
+install_script "$OCTEP_SDP_RECOVERY_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-recover-npu.sh"
 install_script "$OCTEP_PORT_SETUP_SCRIPT" "$XGS_ROOT/scripts/octep/rpc-port-setup.sh"
 install_script "$OCTEP_RING_TEST_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-ring-test.sh"
 install_script "$OCTEP_SDP_BRINGUP_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-bringup.sh"
