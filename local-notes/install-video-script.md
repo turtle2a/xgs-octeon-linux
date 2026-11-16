@@ -17,13 +17,14 @@ with the placeholders in this script, or blur them in the edit.
 
 **Title:** Install Linux (Fedora, Debian, Linux Mint) on a Sophos XGS 2300 with the OCTEP NPU driver and default NAT
 
-**Description:**
-Step-by-step install of the OCTEP Linux driver, DKMS module, services and default NAT
-on a Sophos XGS 2300 (OCTEON TX) with Fedora, Debian or Linux Mint. Source and docs:
-https://github.com/turtle2a/xgs-octeon-linux
+**Description:** Step-by-step install of the OCTEP Linux driver, DKMS module,
+services and default NAT on a Sophos XGS 2300 (OCTEON TX) with Fedora, Debian or
+Linux Mint. Source and docs: https://github.com/turtle2a/xgs-octeon-linux
 
-The install is validated on the XGS 2300 with Fedora, Debian and Linux Mint. The XGS 3300 is not yet verified (expected to work, untested). Other appliances are unverified. You do this at your own
-risk: check the Hardware Compatibility table in the README first.
+The install is validated on the XGS 2300 with Fedora, Debian and Linux Mint. The
+XGS 3300 is not yet verified (expected to work, untested). Other appliances are
+unverified. You do this at your own risk: check the Hardware Compatibility table
+in the README first.
 
 **Chapters:**
 
@@ -43,11 +44,12 @@ risk: check the Hardware Compatibility table in the README first.
 
 **Show:** The repository page, then the README hardware table.
 
-**Say:** This video installs Linux with the OCTEP driver on a Sophos XGS 2300 so its
-NPU ports work under Linux. It covers the boot settings and the installer. NAT is fixed
-by the install: all LAN ports go out faceplate Port 2 (`octep1`), the WAN port. The
-options are Port 4 as the WAN instead, or no NAT at all. The install is validated on the XGS 2300 with Fedora,
-Debian and Linux Mint. The XGS 3300 is not yet verified. Check the table before you start.
+**Say:** This video installs Linux with the OCTEP driver on a Sophos XGS 2300 so
+its NPU ports work under Linux. It covers the boot settings and the installer.
+NAT is fixed by the install: all LAN ports go out faceplate Port 2 (`octep1`),
+the WAN port. The options are Port 4 as the WAN instead, or no NAT at all. The
+install is validated on the XGS 2300 with Fedora, Debian and Linux Mint. The XGS
+3300 is not yet verified. Check the table before you start.
 
 ## Scene 2: Requirements (about 1.5 min)
 

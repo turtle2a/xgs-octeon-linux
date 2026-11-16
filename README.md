@@ -7,11 +7,10 @@ installer for every OCTEON or XGS appliance.
 
 The primary appliance is the XGS 2300: the install is validated on it with
 Fedora, Debian and Linux Mint. The XGS 3300 is not yet verified with Linux (it
-is expected to work, but that is untested). Other
-appliances or kernel versions need separate testing. openSUSE and Arch Linux
-have booted on the appliance, but full NPU functionality remains a work in
-progress. XGS 136 uses a different Armada platform; SFP cage operation
-and hardware acceleration are not verified.
+is expected to work, but that is untested). Other appliances or kernel versions
+need separate testing. openSUSE and Arch Linux have booted on the appliance, but
+full NPU functionality remains a work in progress. XGS 136 uses a different
+Armada platform; SFP cage operation and hardware acceleration are not verified.
 
 By default all LAN ports are NATed out faceplate Port 2 (`octep1`); see
 [NAT](#nat-default-all-lan-ports-out-port-2).
@@ -248,7 +247,8 @@ sudo journalctl -k -b --no-pager > "$HOME/kernel-log.txt"
 ```
 
 Record the distribution and `uname -r` with the results. The install is
-validated on the XGS 2300 with Fedora, Debian and Linux Mint (XGS 3300 not yet verified); other distribution and kernel combinations require their own
+validated on the XGS 2300 with Fedora, Debian and Linux Mint (XGS 3300 not yet
+verified); other distribution and kernel combinations require their own
 clean-install test.
 
 ## License
