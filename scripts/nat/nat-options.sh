@@ -9,6 +9,8 @@ SYSCTL_CONFIG=/etc/sysctl.d/99-xgs-nat-options.conf
 SDP_BRINGUP_SCRIPT="$SCRIPT_DIR/../octep/sdp-bringup.sh"
 PORT_SETUP_SCRIPT="$SCRIPT_DIR/../octep/rpc-port-setup.sh"
 CHAIN=XGS_NAT
+PBR_TABLE=100
+PBR_PRIO=100
 
 fail() {
 	echo "xgs-nat: $*" >&2
@@ -43,6 +45,42 @@ chain_install() {
 		iptables -t nat -A "$CHAIN" -s "$cidr" -o "$wan_if" -j MASQUERADE || return 1
 	done
 	iptables -t nat -I POSTROUTING 1 -j "$CHAIN"
+}
+
+# Send the LAN subnets out the WAN without touching the LAN's own default route
+# (e.g. a holding gateway that carries this host's own traffic).
+# Subnets on a device that holds a non-WAN default route match by input interface only,
+# so this host's own traffic keeps using that default; other subnets match by source.
+# Usage: policy_install wan "keep devices" cidr...
+policy_install() {
+	wan_if=$1
+	keep=$2
+	shift 2
+	gw=
+	n=0
+	while [ "$n" -lt 20 ]; do
+		gw=$(ip -4 route show default dev "$wan_if" | awk '{ for (i = 1; i < NF; i++) if ($i == "via") { print $(i + 1); exit } }')
+		[ -n "$gw" ] && break
+		n=$((n + 1))
+		sleep 1
+	done
+	[ -n "$gw" ] || { echo "xgs-nat: no default gateway on $wan_if (DHCP not up)" >&2; return 1; }
+	ip route replace default via "$gw" dev "$wan_if" table "$PBR_TABLE" || return 1
+	prio=$PBR_PRIO
+	for cidr do
+		dev=$(ip -4 -o route show "$cidr" scope link | awk '{ for (i = 1; i < NF; i++) if ($i == "dev") { print $(i + 1); exit } }')
+		iif=
+		for k in $keep; do
+			[ "$k" = "$dev" ] && iif="iif $dev"
+		done
+		ip rule add from "$cidr" $iif lookup "$PBR_TABLE" priority "$prio" || return 1
+		prio=$((prio + 1))
+	done
+}
+
+policy_remove() {
+	while ip rule del lookup "$PBR_TABLE" 2>/dev/null; do :; done
+	ip route flush table "$PBR_TABLE" 2>/dev/null || true
 }
 
 manager_state() {
@@ -351,53 +389,16 @@ prepare_lan_route_change() {
 	nm_uuid=
 	nm_device=
 	nm_original_never_default=
-
-	default_routes=$(ip -4 route show default) ||
-		fail "could not inspect the IPv4 default routes"
-	non_wan_devices=$(printf '%s\n' "$default_routes" | awk -v wan="$wan" '
+	keep_devs=$(ip -4 route show default | awk -v wan="$wan" '
 		{
-			for (i = 1; i < NF; i++) {
+			for (i = 1; i < NF; i++)
 				if ($i == "dev") {
-					device = $(i + 1)
-					if (device != wan && !seen[device]++)
-						print device
+					if ($(i + 1) != wan && !seen[$(i + 1)]++)
+						printf "%s ", $(i + 1)
 					break
 				}
-			}
 		}
 	')
-	set -- $non_wan_devices
-	if [ "$#" -eq 0 ]; then
-		return
-	fi
-	[ "$#" -eq 1 ] ||
-		fail "multiple non-WAN default routes are configured; remove the LAN gateway manually before applying NAT"
-
-	nm_device=$1
-	[ -d "/sys/class/net/$nm_device" ] ||
-		fail "default route uses $nm_device, which is not an available interface"
-	command -v nmcli >/dev/null 2>&1 ||
-		fail "default route uses $nm_device, but nmcli is unavailable to remove it persistently"
-	nm_uuid=$(nmcli -g GENERAL.CON-UUID device show "$nm_device" 2>/dev/null) ||
-		fail "could not identify the active NetworkManager profile for $nm_device"
-	case $nm_uuid in
-		''|*[!A-Fa-f0-9-]*)
-			fail "$nm_device has no active NetworkManager profile; refusing to remove its route"
-			;;
-	esac
-	nm_original_never_default=$(nmcli -g ipv4.never-default connection show "$nm_uuid" 2>/dev/null) ||
-		fail "could not read ipv4.never-default for the LAN profile on $nm_device"
-	case $nm_original_never_default in
-		no)
-			nm_route_change=1
-			;;
-		yes)
-			fail "the profile on $nm_device already forbids default routes, but is still the active default route"
-			;;
-		*)
-			fail "unexpected ipv4.never-default value for the profile on $nm_device"
-			;;
-	esac
 }
 
 valid_ipv4_cidr() {
@@ -513,12 +514,8 @@ apply_options() {
 	printf '  LAN source subnet(s): %s\n  WAN: %s (physical port %s, link %s)\n' \
 		"$lan_cidrs" "$wan" "$wan_port" "$(port_carrier "$wan")"
 	printf '  WAN IPv4: configure DHCP on %s\n' "$wan"
-	if [ "$nm_route_change" -eq 1 ]; then
-		printf '  LAN default route: set ipv4.never-default=yes on the profile for %s (persistent)\n' \
-			"$nm_device"
-	else
-		printf '%s\n' '  LAN default route: no non-WAN default route found'
-	fi
+	printf '  LAN routing: policy table %s sends the LAN subnets out %s; existing default routes are not changed%s\n' \
+		"$PBR_TABLE" "$wan" "${keep_devs:+ (host traffic keeps using the default on: $keep_devs)}"
 	if [ "$forward_config" = created ]; then
 		printf '%s\n' '  IPv4 forwarding: enable now and persist in sysctl configuration'
 	else
@@ -584,22 +581,14 @@ apply_options() {
 			fail "could not enable IPv4 forwarding; run 'undo' to restore managed settings"
 	fi
 
-	if [ "$nm_route_change" -eq 1 ] &&
-	   ! nm_set_never_default "$nm_uuid" "$nm_device" yes; then
-		fail "NAT state was saved, but the LAN default route could not be removed; run 'undo' to restore/clear managed settings"
-	fi
-
 	old_ifs=$IFS
 	IFS=,
 	set -- $lan_cidrs
 	IFS=$old_ifs
-	if ! chain_install "$wan" "$@"; then
+	if ! { chain_install "$wan" "$@" && policy_install "$wan" "$keep_devs" "$@"; }; then
+		policy_remove
 		chain_present && chain_remove 2>/dev/null || true
 		rollback_ok=1
-		if [ "$nm_route_change" -eq 1 ]; then
-			nm_set_never_default "$nm_uuid" "$nm_device" "$nm_original_never_default" ||
-				rollback_ok=0
-		fi
 		restore_wan_profile "$wan_nm_uuid" "$wan_nm_created" "$wan_profile_name" \
 			"$wan" "$wan_old_method" "$wan_old_never_default" \
 			"$wan_old_ignore_auto_routes" "$wan_old_autoconnect" ||
@@ -635,7 +624,7 @@ undo_options() {
 	state_is_managed ||
 		fail "state record is not recognized; refusing to change firewall rules"
 
-	printf '%s\n' 'This undo removes only this script’s XGS_NAT chain and restores its saved LAN route setting.'
+	printf '%s\n' 'This undo removes only this script’s XGS_NAT chain and removes its policy routes and restores its saved WAN and forwarding settings.'
 	read_input 'Type UNDO to continue: '
 	[ "$REPLY" = UNDO ] || fail "cancelled; no rules were changed"
 
@@ -645,6 +634,7 @@ undo_options() {
 	else
 		printf '%s\n' 'The managed NAT table is already absent.'
 	fi
+	policy_remove
 	wan_nm_uuid=$(state_value wan_nm_uuid)
 	wan_nm_created=$(state_value wan_nm_created)
 	wan_profile_name=$(state_value wan_profile_name)
