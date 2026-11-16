@@ -25,6 +25,9 @@ cleanup() {
 	# that silently stomps the already-running instance's NAT/flag settings (ft_offload_nat
 	# back to N mid-test, invalidating a live NAT retest without any visible error).
 	[ "$GATE_OPENED" = 1 ] || return 0
+	# xgs-npu-health.timer's sensor read shares the firmware RPC port with flow control
+	# (libsbsp.so.1: xgs_mdio_load_ies_rpc_port) and was stopped for the test; restart it.
+	systemctl start xgs-npu-health.timer 2>/dev/null
 	nft delete table inet "$TABLE" 2>/dev/null
 	nft delete table ip xgsdnat 2>/dev/null
 	{ echo N > /sys/module/octep/parameters/flow_offload; } 2>/dev/null
@@ -54,6 +57,10 @@ fi
 "$ROOT/scripts/octep/rpc-port-setup.sh" || { echo "FAIL: rpc-port-setup" >&2; exit 1; }
 echo 1 > "$DEV/rpc_allow_write" && echo on > "$DEV/offload" || { echo "FAIL: gate" >&2; exit 1; }
 GATE_OPENED=1
+# xgs-npu-health.timer's periodic sensor read shares the firmware RPC port with flow
+# control; it is the likely source of periodic stalls seen mid-test (item 7). Stop it
+# for the test window; cleanup() restarts it on exit.
+systemctl stop xgs-npu-health.timer 2>/dev/null
 echo "gate: $(cat "$DEV/offload")"
 
 nft add table inet "$TABLE"
