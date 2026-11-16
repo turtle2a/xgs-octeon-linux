@@ -69,9 +69,20 @@ For easier access and management of the XGS while its disk is connected to the
 donor machine, install and configure the SSH server, or leave it as is. Check
 that it is running with `systemctl status sshd.server`.
 
-If UFW is installed, allow access from your LAN to the appliance's LAN subnet.
-If DHCP is not running on your LAN, configure the adapter address manually
-later from the console, along with the required UFW rules.
+If SSH and XRDP are installed and you plan to use them after moving the disk,
+add UFW rules for trusted management hosts before moving it:
+
+```sh
+sudo ufw allow from 10.1.1.0/28 to any port 22 proto tcp
+sudo ufw allow from 10.1.1.0/28 to any port 3389 proto tcp
+sudo ufw status
+```
+
+These examples restrict access to the `10.1.1.0/28` management LAN. Replace
+that CIDR with the correct subnet for your network. Port 22 assumes the default
+SSH port; change it if SSH is configured to use another port. These firewall
+rules do not install or enable either service. If DHCP is not running on your
+LAN, configure the adapter address manually from the console.
 
 
 
