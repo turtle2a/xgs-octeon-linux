@@ -432,15 +432,32 @@ validate_lan_cidrs() {
 	done
 }
 
-# Every connected IPv4 subnet except the WAN, lo and link-local, including the management port.
-all_lan_cidrs() {
+# Connected IPv4 subnets except the WAN, lo and link-local.
+# mode: lans (octep LAN ports), mgmt (device that keeps a non-WAN default route, e.g. 10.1.1.0/28),
+# all (lans first, then mgmt, so the standard LAN rules sit above the optional mgmt rule).
+lan_cidrs_for() {
 	ip -4 -o route show scope link proto kernel |
-		awk -v wan="$wan" '
+		awk -v wan="$wan" -v mode="$1" -v keep="$keep_devs" '
+			BEGIN { n = split(keep, k, " "); for (j = 1; j <= n; j++) kd[k[j]] = 1 }
 			$1 ~ /^[0-9.]+\/[0-9]+$/ && $1 !~ /^169\.254\./ {
 				for (i = 1; i <= NF; i++)
-					if ($i == "dev" && $(i + 1) != wan && $(i + 1) != "lo" && !seen[$1]++)
-						printf "%s%s", (n++ ? "," : ""), $1
+					if ($i == "dev" && $(i + 1) != wan && $(i + 1) != "lo" && !seen[$1]++) {
+						dev = $(i + 1)
+						if (mode == "lans" && (dev in kd)) continue
+						if (mode == "mgmt" && !(dev in kd)) continue
+						printf "%s%s", (c++ ? "," : ""), $1
+					}
 			}'
+}
+
+all_lan_cidrs() {
+	if [ "$1" = all ]; then
+		l=$(lan_cidrs_for lans)
+		m=$(lan_cidrs_for mgmt)
+		printf '%s' "$l${l:+${m:+,}}$m"
+	else
+		lan_cidrs_for "$1"
+	fi
 }
 
 read_input() {
@@ -499,10 +516,15 @@ apply_options() {
 	prepare_wan_profile
 	prepare_lan_route_change
 
-	if [ "${2:-}" = --all-lans ]; then
-		lan_cidrs=$(all_lan_cidrs)
-		[ -n "$lan_cidrs" ] || fail "no connected LAN subnets found besides the WAN"
-		printf 'All connected LAN subnets (including management): %s\n' "$lan_cidrs"
+	if [ -n "${2:-}" ]; then
+		case $2 in
+			--all-lans) lan_mode=all ;;
+			--lans) lan_mode=lans ;;
+			--mgmt) lan_mode=mgmt ;;
+		esac
+		lan_cidrs=$(all_lan_cidrs "$lan_mode")
+		[ -n "$lan_cidrs" ] || fail "no connected LAN subnets found for $2"
+		printf 'LAN subnets (%s): %s\n' "$2" "$lan_cidrs"
 	else
 		read_input 'LAN source IPv4 subnet(s), comma-separated CIDR: '
 		lan_cidrs=$REPLY
@@ -667,11 +689,12 @@ undo_options() {
 }
 
 usage() {
-	printf 'Usage: %s [status|apply [2|4] [--all-lans]|undo|--help]\n' "$0"
+	printf 'Usage: %s [status|apply [2|4] [--lans|--mgmt|--all-lans]|undo|--help]\n' "$0"
 	printf '%s\n' \
 		'  status  Detect components and report this script’s managed table (read-only).' \
 			'  apply   Select one WAN and configure IPv4 NAT after confirmation;' \
-			'          --all-lans NATs every connected LAN subnet, management included.' \
+			'          --lans NATs the octep LAN ports, --mgmt only the management/holding-gateway subnet,' \
+			'          --all-lans both (LAN rules first).' \
 			'  undo    Remove this script’s NAT and restore its saved network settings.'
 }
 
@@ -683,7 +706,7 @@ case ${1:-status} in
 	apply)
 		[ "$#" -le 3 ] || { usage >&2; exit 64; }
 		[ "$#" -eq 1 ] || case $2 in 2|4) ;; *) usage >&2; exit 64 ;; esac
-		[ "$#" -le 2 ] || [ "$3" = --all-lans ] || { usage >&2; exit 64; }
+		[ "$#" -le 2 ] || case $3 in --lans|--mgmt|--all-lans) true ;; *) false ;; esac || { usage >&2; exit 64; }
 		apply_options "${2:-}" "${3:-}"
 		;;
 	undo)
