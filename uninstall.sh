@@ -55,14 +55,18 @@ for command in cmp dkms grep rm rmdir systemctl; do
 done
 for file in \
 	install.sh uninstall.sh \
-	modules-load.d/xgs-vfio.conf modprobe.d/xgs-octep.conf \
+	modules-load.d/xgs-vfio.conf modules-load.d/xgs-bridge-stack.conf \
+	modprobe.d/xgs-octep.conf sysctl.d/90-xgs-octep-forwarding.conf \
 	octep/Makefile octep/octep.c octep/dkms.conf \
-	scripts/xgs/npu-health.sh scripts/xgs/npu-run.sh \
+	scripts/xgs/npu-health.sh scripts/xgs/accel-status.sh \
+	scripts/xgs/npu-run.sh \
 	scripts/octep/npu-platform.sh scripts/octep/rpc-port-setup.sh \
 	scripts/octep/sdp-ring-test.sh scripts/octep/sdp-bringup.sh \
-	scripts/octep/sdp-status-check.sh scripts/npuctl/mgmt-link.sh \
+	scripts/octep/sdp-status-check.sh scripts/octep/sdp-recover-npu.sh \
+	scripts/npuctl/mgmt-link.sh \
 	systemd/xgs-npu-health.service systemd/xgs-npu-health.timer \
-	systemd/xgs-octep-sdp-bringup.service \
+	systemd/xgs-npu-health.default \
+	systemd/xgs-octep-sdp-bringup.service systemd/xgs-nat.service \
 	systemd/xgs-octep-sdp-status.service \
 	systemd/xgs-octep-sdp-status.timer; do
 	[ -f "$SCRIPT_DIR/$file" ] ||
@@ -75,6 +79,7 @@ stop_and_disable_unit xgs-octep-sdp-status.service
 stop_and_disable_unit xgs-npu-health.timer
 stop_and_disable_unit xgs-npu-health.service
 stop_and_disable_unit xgs-octep-sdp-bringup.service
+stop_and_disable_unit xgs-nat.service
 
 DKMS_STATUS=$(dkms status) || fail "could not query DKMS registrations"
 if printf '%s\n' "$DKMS_STATUS" |
@@ -87,16 +92,24 @@ remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-npu-health.service" \
 	/usr/lib/systemd/system/xgs-npu-health.service
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-npu-health.timer" \
 	/usr/lib/systemd/system/xgs-npu-health.timer
+remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-npu-health.default" \
+	/etc/default/xgs-npu-health
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-octep-sdp-bringup.service" \
 	/usr/lib/systemd/system/xgs-octep-sdp-bringup.service
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-octep-sdp-status.service" \
 	/usr/lib/systemd/system/xgs-octep-sdp-status.service
+remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-nat.service" \
+	/usr/lib/systemd/system/xgs-nat.service
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-octep-sdp-status.timer" \
 	/usr/lib/systemd/system/xgs-octep-sdp-status.timer
 remove_if_unchanged "$SCRIPT_DIR/modules-load.d/xgs-vfio.conf" \
 	/etc/modules-load.d/xgs-vfio.conf
+remove_if_unchanged "$SCRIPT_DIR/modules-load.d/xgs-bridge-stack.conf" \
+	/etc/modules-load.d/xgs-bridge-stack.conf
 remove_if_unchanged "$SCRIPT_DIR/modprobe.d/xgs-octep.conf" \
 	/etc/modprobe.d/xgs-octep.conf
+remove_if_unchanged "$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf" \
+	/etc/sysctl.d/90-xgs-octep-forwarding.conf
 
 remove_if_unchanged "$SCRIPT_DIR/octep/Makefile" \
 	"/usr/src/$DKMS_NAME-$DKMS_VERSION/Makefile"
@@ -110,13 +123,19 @@ remove_if_unchanged "$SCRIPT_DIR/install.sh" "$XGS_ROOT/install.sh"
 remove_if_unchanged "$SCRIPT_DIR/uninstall.sh" "$XGS_ROOT/uninstall.sh"
 remove_if_unchanged "$SCRIPT_DIR/modules-load.d/xgs-vfio.conf" \
 	"$XGS_ROOT/modules-load.d/xgs-vfio.conf"
+remove_if_unchanged "$SCRIPT_DIR/modules-load.d/xgs-bridge-stack.conf" \
+	"$XGS_ROOT/modules-load.d/xgs-bridge-stack.conf"
 remove_if_unchanged "$SCRIPT_DIR/modprobe.d/xgs-octep.conf" \
 	"$XGS_ROOT/modprobe.d/xgs-octep.conf"
+remove_if_unchanged "$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf" \
+	"$XGS_ROOT/sysctl.d/90-xgs-octep-forwarding.conf"
 remove_if_unchanged "$SCRIPT_DIR/octep/Makefile" "$XGS_ROOT/octep/Makefile"
 remove_if_unchanged "$SCRIPT_DIR/octep/octep.c" "$XGS_ROOT/octep/octep.c"
 remove_if_unchanged "$SCRIPT_DIR/octep/dkms.conf" "$XGS_ROOT/octep/dkms.conf"
 remove_if_unchanged "$SCRIPT_DIR/scripts/xgs/npu-health.sh" \
 	"$XGS_ROOT/scripts/xgs/npu-health.sh"
+remove_if_unchanged "$SCRIPT_DIR/scripts/xgs/accel-status.sh" \
+	"$XGS_ROOT/scripts/xgs/accel-status.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/xgs/npu-run.sh" \
 	"$XGS_ROOT/scripts/xgs/npu-run.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/octep/npu-platform.sh" \
@@ -129,6 +148,8 @@ remove_if_unchanged "$SCRIPT_DIR/scripts/octep/sdp-bringup.sh" \
 	"$XGS_ROOT/scripts/octep/sdp-bringup.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/octep/sdp-status-check.sh" \
 	"$XGS_ROOT/scripts/octep/sdp-status-check.sh"
+remove_if_unchanged "$SCRIPT_DIR/scripts/octep/sdp-recover-npu.sh" \
+	"$XGS_ROOT/scripts/octep/sdp-recover-npu.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/npuctl/mgmt-link.sh" \
 	"$XGS_ROOT/scripts/npuctl/mgmt-link.sh"
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-npu-health.service" \

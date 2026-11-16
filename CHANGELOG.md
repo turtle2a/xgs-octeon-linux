@@ -1,5 +1,9 @@
 # Daily Changelog
 
+## 2026-11-17
+- **NAT simplified to three plain iptables scripts** (`scripts/nat/xgs-nat.sh`, `nat-port4.sh`, `nat-off.sh`, `systemd/xgs-nat.service`): replaces `nat-options.sh`, `nat-wan2.sh`, `nat-wan4.sh` and the `xgs-test-masq*` test-rig files. Install default is fixed: all LAN ports NATed out faceplate Port 2 (`octep1`), enabled at boot by `xgs-nat.service` (opt out: `/etc/xgs-nat-off`). `nat-port4.sh` = Port 4 (`octep3`), `nat-off.sh` = no NAT, `xgs-nat.sh mgmt` = also route 10.1.1.0/28 from `enp2s0` out Port 2 (table 100). No NetworkManager changes. `install.sh`/`uninstall.sh`/README updated.
+  - **Test spec:** 🟩 `sudo sh scripts/nat/xgs-nat.sh start` prints "All LAN ports now routed via Port 2 (octep1) WAN"; `sudo iptables -t nat -S POSTROUTING` has exactly one `-o octep1 -j MASQUERADE` (also after running `start` twice); a LAN client pings 8.8.8.8 with source rewritten. 🟩 `nat-port4.sh`: rule is `-o octep3` only. 🟩 `nat-off.sh`: neither rule remains. 🟩 `xgs-nat.sh mgmt` then `stop`: `ip rule` shows then drops `from 10.1.1.0/28 iif enp2s0 lookup 100`. After reboot `systemctl status xgs-nat` is active (exited) unless `/etc/xgs-nat-off` exists. Fail: duplicate or leftover rules, `enp2s0` route or NM profile changed.
+
 ## 2026-11-16
 - **NAT scripts moved from nft to iptables** (`scripts/nat/nat-options.sh`, `nat-wan2.sh`, `nat-wan4.sh`, `scripts/tests/xgs-test-masq.sh`): MASQUERADE rules now live in dedicated nat chains `XGS_NAT` and `XGS_MASQ`, jumped from POSTROUTING, and `undo`/`stop` remove only those. Fixes the installed masq service failing at boot.
   - `nat-options.sh` no longer edits the LAN (e.g. enp2s0) NetworkManager profile. It routes the LAN subnets out the WAN with policy table 100 (`ip rule from <cidr> lookup 100`, `iif <dev>` for a device that holds a non-WAN default route so host traffic keeps that default); `undo` removes the rules and flushes the table.

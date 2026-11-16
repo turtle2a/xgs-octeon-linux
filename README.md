@@ -5,42 +5,59 @@ installer, service scripts, and clean-install instructions for the tested
 OCTEON TX NPU appliance. It is not a complete Linux image or a general-purpose
 installer for every OCTEON or XGS appliance.
 
-The current boot-verified configuration is Fedora 44 with kernel
-`7.3.3-200.fc44` on the tested appliance. Debian/Linux Mint and other
-appliances or kernel versions need separate testing. Debian, openSUSE, and
-Arch Linux have booted on the appliance, but full NPU functionality remains a
-work in progress. XGS 136 uses a different Armada platform; SFP cage operation
+The primary appliance is the XGS 2300: the install is validated on it with
+Fedora, Debian and Linux Mint. The XGS 3300 is not yet verified with Linux (it
+is expected to work, but that is untested). Other
+appliances or kernel versions need separate testing. openSUSE and Arch Linux
+have booted on the appliance, but full NPU functionality remains a work in
+progress. XGS 136 uses a different Armada platform; SFP cage operation
 and hardware acceleration are not verified.
 
-The optional NAT helper is under `scripts/nat/`. It is not invoked or installed
-by `install.sh`; it adds NAT rules only when explicitly run and confirmed.
+By default all LAN ports are NATed out faceplate Port 2 (`octep1`); see
+[NAT](#nat-default-all-lan-ports-out-port-2).
 
-Keywords: OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 3300, Fedora, Debian,
+Keywords: OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 2300, XGS 3300, Fedora, Debian,
 Linux Mint, network appliance.
 
 ## Hardware Compatibility
 
 | Appliance or family | Status | Notes |
 | --- | --- | --- |
-| XGS 3300 | Tested for OCTEP startup | Fedora 44, kernel `7.3.3-200.fc44`; ten front-port interfaces were observed. This does not verify SFP cages or hardware acceleration. |
-| XGS 2300 | Unverified candidate | Do not assume compatibility from the model name. Confirm the OCTEON TX PCI ID, firmware/NWA interface, and port mapping, then test on the appliance. |
+| XGS 2300 | Install validated | Fedora, Debian and Linux Mint install verified by the maintainer. SFP cages and hardware acceleration are not verified. |
+| XGS 3300 | Not yet verified | Expected to work but untested with Linux by the maintainer. Earlier development boots on Fedora 44 (`7.3.3-200.fc44`) are not a validated install. |
 | Other OCTEON TX appliances | Unverified candidates | The installer expects PCI vendor/device `177d:a300`; matching that ID alone does not establish firmware, port-map, or full hardware compatibility. |
-| XGS 136 | Not supported by this installer | It uses an Armada platform and needs a separate Linux implementation. |
+| XGS 136 | Not supported yet by this installer | Armada support requires a separate Linux implementation and hardware validation before it can be supported. |
 
-The optional NAT helper is currently specific to the tested port layout: WAN
-choices are physical ports 2 and 4. Check the target appliance's port mapping
-before using it; it does not configure other models automatically.
 
 ## Boot Loader Configuration
 
 See [Boot Loader Requirements](docs/boot-loader-requirements.md) for the GRUB
-PCI-bus and serial-console settings, distro-specific regeneration commands,
-and the BSD `bootloader.conf` note.
+PCI-bus and serial-console settings and distro-specific regeneration commands.
 
 ## Installation and Clean-Install Test
 
+For a GitHub install, clone the project:
+
+```sh
+git clone https://github.com/turtle2a/xgs-octeon-linux.git
+cd xgs-octeon-linux
+```
+
+Review the install requirements below, then run `sudo sh ./install.sh` from
+the project root.
+
+For router use, NAT out faceplate Port 2 is on by default. See
+[NAT](#nat-default-all-lan-ports-out-port-2).
+
 See [Install Requirements](docs/install-requirements.md) for supported system
 prerequisites, matching kernel headers/build files, and package setup.
+See [OCTEP Diagnostics and Debugging](docs/debugging.md) for optional kernel
+log capture and dynamic-debug instructions.
+
+### Remote access before attaching the donor disk
+
+Before attaching the donor disk, configure SSH and XRDP access as described in
+[Before Attaching the Donor Disk to the Appliance](docs/install-requirements.md#before-attaching-the-donor-disk-to-the-appliance).
 
 ## Prepare a Clean-Install Test Bundle
 
@@ -84,6 +101,73 @@ Expected results are a bring-up service state of `active (exited)` and ten
 `octep(N-1)`. Test copper links separately. SFP cage operation and hardware
 acceleration are not verified by this startup test.
 
+For a read-only check of driver and SDP packet-path readiness, run:
+
+```sh
+sudo /usr/local/xgs/linux/scripts/xgs/accel-status.sh
+```
+
+The optional script also supports explicit runtime gate requests:
+
+```sh
+sudo /usr/local/xgs/linux/scripts/xgs/accel-status.sh on
+sudo /usr/local/xgs/linux/scripts/xgs/accel-status.sh off
+```
+
+`on` and `off` write the firmware offload gate through the OCTEP RPC interface;
+they are not run by the installer and are not persisted across a coprocessor
+reset. The Linux driver writes the documented TCP sequence-check setting with
+the offload bit (`0x0003` for on, `0x0002` for off). The firmware has no
+read-back for this word, so the status reports the last request acknowledged
+by the coprocessor, or `unknown` until this driver has received an
+acknowledgement. Gate-on only permits offload; it does not install routes or
+flow entries and does not prove any traffic is being accelerated. Use from a
+local console with a recovery path, since changing the gate can affect packet
+handling.
+
+When run with `sudo`, each report line is also written to the kernel log; view
+it with `sudo dmesg | grep xgs-accel-status`.
+
+## Optional Transit Throughput Test
+
+`scripts/tests/iperf-transit-test.sh` is a standalone test-host utility; the
+installer does not install or run it. Set up an `iperf3` server on a test host
+on the far side of the appliance, and run the script from another test host
+so traffic traverses the OCTEON ports. First set the gate off on the appliance,
+then run the baseline from the test client:
+
+```sh
+sudo /usr/local/xgs/linux/scripts/xgs/accel-status.sh off
+./scripts/tests/iperf-transit-test.sh <iperf3-server> off
+```
+
+Set the gate on from the appliance, then repeat the same test from the client:
+
+```sh
+sudo /usr/local/xgs/linux/scripts/xgs/accel-status.sh on
+./scripts/tests/iperf-transit-test.sh <iperf3-server> on
+```
+
+The second argument labels the gate state; the test script does not change it.
+Keep the test client and server on separate networks with the appliance between
+them; traffic to or from the appliance itself is not a transit-flow test. Use a
+test network and keep a local recovery path. The script runs one TCP stream in
+each direction for 10 seconds by default (up to 60 seconds can be specified).
+Throughput comparison alone does not prove hardware offload; the current Linux
+driver reports NPU per-flow byte counters through `flow_stats`. The
+`scripts/tests/octep-accel-telemetry-test.sh` checks that those counters advance
+during traffic, but cannot yet correlate a reported counter to the iperf
+five-tuple. Boot-time setup enables host IPv4/IPv6 forwarding, creates OCTEP
+front-port netdevs, and requests NPU all-multicast admission on each configured
+port. `install.sh` installs `smcroute` and bring-up restarts `smcroute.service`
+once the netdevs exist, so the kernel reports `mc_forwarding=1` on every port
+(the boot warning appears only if that daemon is missing or fails). These are transport-readiness steps only: Linux multicast-routing state
+(`mc_forwarding`) and NPU all-multicast admission do not synchronize multicast
+groups/routes or return paths into NPU flow state. Automatic Linux flow
+programming, persistent per-flow latching, and route/group-change reconciliation
+are not implemented; enabling the global offload gate does not install them.
+Multicast and automatic flow offload therefore remain unverified and not ready.
+
 ## Uninstall
 
 From a local console, run:
@@ -102,39 +186,30 @@ This uninstaller is scoped to the OCTEON TX `xgs-octep` installation described
 here. It does not remove or manage XGS 136 (Armada) software or other NPU
 families. Those need their own validated installation and removal paths.
 
-## Optional NAT Helper
+## NAT (default: all LAN ports out Port 2)
 
-`scripts/nat/nat-options.sh` is an optional, manually run helper. It is not
-installed, enabled at boot, or invoked by `install.sh`; no installer or
-`rc.local` changes are made.
+The install default is fixed: every LAN port is NATed out **Port 2 (WAN)**,
+the second port on the faceplate, which is `octep1`. Plug the WAN cable into
+faceplate **Port 2**. The `xgs-nat.service` unit applies this at every boot.
 
-Run it from this source directory:
+Port numbering: faceplate Port N is interface `octep(N-1)`, so Port 2 is
+`octep1` and Port 4 is `octep3`.
 
-```sh
-sudo sh scripts/nat/nat-options.sh status
-sudo sh scripts/nat/nat-options.sh apply
-sudo sh scripts/nat/nat-options.sh undo
-```
+Optional scripts in `/usr/local/xgs/linux/scripts/nat/` (run with `sudo`;
+each prints one line):
 
-`status` is read-only. `apply` offers only physical port 2 (`octep1`) or
-physical port 4 (`octep3`) as WAN, with port 2 as the default, and prompts for
-one or more LAN IPv4 CIDRs. Other OCTEP ports remain LAN and are not matched by
-the NAT rules. The helper previews the rules and requires the user to type
-`APPLY` before adding a dedicated `ip xgs_nat` nftables table. It adds IPv4
-source-NAT rules only; it does not add firewall/filter rules, configure
-NetworkManager, enable IP forwarding, or create port forwards.
+| Script | Result |
+| --- | --- |
+| `xgs-nat.sh start` | Default: LAN out Port 2 (`octep1`) |
+| `nat-port4.sh` | LAN out Port 4 (`octep3`) instead |
+| `nat-off.sh` | No NAT |
+| `xgs-nat.sh mgmt` | Also route `10.1.1.0/28` from `enp2s0` out Port 2 |
+| `xgs-nat.sh stop` | Remove NAT and the `mgmt` route |
 
-Only one WAN is selected per apply. To switch WANs, run `undo` and then `apply`
-again with the other physical port. This helper does not implement automatic
-failover; NetworkManager routing must be configured separately if desired.
-IPv4 forwarding must already be enabled. Rules are runtime-only and are not
-restored automatically after reboot.
-
-`undo` requires the user to type `UNDO` and removes only the dedicated table
-recorded as created by this helper. It refuses to delete an unrecognized table
-and leaves all other nftables tables and NetworkManager settings untouched.
-Do not run `apply` on a working appliance until the WAN ports, LAN subnets,
-routing, and rollback procedure have been reviewed.
+These are plain iptables rules and are not persistent; `xgs-nat.service`
+re-applies the default at boot. To keep NAT off across reboots run
+`sudo touch /etc/xgs-nat-off`. For `mgmt`, set `GW=` at the top of
+`xgs-nat.sh` to the WAN gateway. NetworkManager is never modified.
 
 ## Pre-Upload Test Record
 
@@ -172,9 +247,8 @@ sudo journalctl -b -u xgs-octep-sdp-bringup.service \
 sudo journalctl -k -b --no-pager > "$HOME/kernel-log.txt"
 ```
 
-Record the distribution and `uname -r` with the results. The currently
-boot-verified combination is Fedora 44 with kernel
-`7.3.3-200.fc44`; other distribution and kernel combinations require their own
+Record the distribution and `uname -r` with the results. The install is
+validated on the XGS 2300 with Fedora, Debian and Linux Mint (XGS 3300 not yet verified); other distribution and kernel combinations require their own
 clean-install test.
 
 ## License

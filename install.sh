@@ -5,13 +5,19 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 SOURCE_DIR="$SCRIPT_DIR/octep"
 VFIO_CONFIG="$SCRIPT_DIR/modules-load.d/xgs-vfio.conf"
+BRIDGE_STACK_CONFIG="$SCRIPT_DIR/modules-load.d/xgs-bridge-stack.conf"
+OCTEP_SYSCTL_CONFIG="$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf"
 BLACKLIST_CONFIG="$SCRIPT_DIR/modprobe.d/xgs-octep.conf"
 HEALTH_SCRIPT="$SCRIPT_DIR/scripts/xgs/npu-health.sh"
+HEALTH_DEFAULT="$SCRIPT_DIR/systemd/xgs-npu-health.default"
+ACCEL_STATUS_SCRIPT="$SCRIPT_DIR/scripts/xgs/accel-status.sh"
+NAT_HELPER_SCRIPT="$SCRIPT_DIR/scripts/nat/xgs-nat.sh"
 RUN_SCRIPT="$SCRIPT_DIR/scripts/xgs/npu-run.sh"
 PLATFORM_SCRIPT="$SCRIPT_DIR/scripts/octep/npu-platform.sh"
 OCTEP_PORT_SETUP_SCRIPT="$SCRIPT_DIR/scripts/octep/rpc-port-setup.sh"
 OCTEP_RING_TEST_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-ring-test.sh"
 OCTEP_SDP_BRINGUP_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-bringup.sh"
+OCTEP_SDP_RECOVERY_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-recover-npu.sh"
 MGMT_LINK_SCRIPT="$SCRIPT_DIR/scripts/npuctl/mgmt-link.sh"
 HEALTH_SERVICE="$SCRIPT_DIR/systemd/xgs-npu-health.service"
 HEALTH_TIMER="$SCRIPT_DIR/systemd/xgs-npu-health.timer"
@@ -19,6 +25,8 @@ OCTEP_SDP_BRINGUP_SERVICE="$SCRIPT_DIR/systemd/xgs-octep-sdp-bringup.service"
 OCTEP_SDP_STATUS_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-status-check.sh"
 OCTEP_SDP_STATUS_SERVICE="$SCRIPT_DIR/systemd/xgs-octep-sdp-status.service"
 OCTEP_SDP_STATUS_TIMER="$SCRIPT_DIR/systemd/xgs-octep-sdp-status.timer"
+OCTEP_MAILBOX_COMPAT_SCRIPT="$SCRIPT_DIR/scripts/tests/octep-tx2-mailbox-compat-test.sh"
+OCTEP_MAILBOX_COMPAT_SERVICE="$SCRIPT_DIR/systemd/xgs-octep-mailbox-compat.service"
 UNINSTALL_SCRIPT="$SCRIPT_DIR/uninstall.sh"
 DKMS_NAME=xgs-octep
 DKMS_VERSION=0.1.2
@@ -27,6 +35,7 @@ REPLACE_MANAGED=0
 
 DESTDIR=${DESTDIR:-}
 XGS_ROOT="$DESTDIR/usr/local/xgs/linux"
+NPU_SENSOR_SOURCE_DIR=${XGS_NPU_SENSOR_SOURCE_DIR:-}
 KVER=${KVER:-$(uname -r)}
 KDIR=${KDIR:-/lib/modules/$KVER/build}
 
@@ -49,6 +58,10 @@ install_config() {
 	source=$1
 	target=$2
 
+	if [ "$REPLACE_MANAGED" -eq 1 ]; then
+		install -D -m 0644 "$source" "$target"
+		return
+	fi
 	if [ -e "$target" ]; then
 		if cmp -s "$source" "$target"; then
 			return
@@ -118,8 +131,12 @@ done
 [ -f "$SOURCE_DIR/octep.c" ] || fail "missing OCTEP source"
 [ -f "$SOURCE_DIR/dkms.conf" ] || fail "missing DKMS configuration"
 [ -f "$VFIO_CONFIG" ] || fail "missing VFIO modules-load configuration"
+[ -f "$BRIDGE_STACK_CONFIG" ] || fail "missing bridge protocol modules-load configuration"
 [ -f "$BLACKLIST_CONFIG" ] || fail "missing OCTEP modprobe configuration"
 [ -f "$HEALTH_SCRIPT" ] || fail "missing NPU health-check script"
+[ -f "$HEALTH_DEFAULT" ] || fail "missing NPU health sensor configuration"
+[ -f "$ACCEL_STATUS_SCRIPT" ] || fail "missing NPU/SDP status script"
+[ -f "$NAT_HELPER_SCRIPT" ] || fail "missing NAT script"
 [ -f "$RUN_SCRIPT" ] || fail "missing NPU console runner"
 [ -f "$PLATFORM_SCRIPT" ] || fail "missing NPU platform script"
 [ -f "$OCTEP_PORT_SETUP_SCRIPT" ] || fail "missing OCTEP port-setup script"
@@ -136,7 +153,24 @@ done
 	fail "missing OCTEP SDP status-check systemd unit"
 [ -f "$OCTEP_SDP_STATUS_TIMER" ] ||
 	fail "missing OCTEP SDP status-check timer"
+[ -f "$OCTEP_SDP_RECOVERY_SCRIPT" ] ||
+	fail "missing OCTEP blocked-NPU recovery script"
+[ -f "$OCTEP_MAILBOX_COMPAT_SCRIPT" ] ||
+	fail "missing OCTEP mailbox compatibility test"
+[ -f "$OCTEP_MAILBOX_COMPAT_SERVICE" ] ||
+	fail "missing OCTEP mailbox compatibility systemd unit"
 [ -f "$UNINSTALL_SCRIPT" ] || fail "missing Linux uninstall script"
+
+if [ -n "$NPU_SENSOR_SOURCE_DIR" ]; then
+	for sensor_file in \
+		bin/xgs-1us-sensors \
+		lib/libsbsp.so.1 \
+		lib/libgpiod.so.2
+	do
+		[ -r "$NPU_SENSOR_SOURCE_DIR/$sensor_file" ] ||
+			fail "missing or unreadable NPU sensor file: $NPU_SENSOR_SOURCE_DIR/$sensor_file"
+	done
+fi
 
 if [ -z "$DESTDIR" ]; then
 	[ "$(id -u)" -eq 0 ] || fail "run as root, or set DESTDIR for a staged install"
@@ -161,6 +195,7 @@ if [ -z "$DESTDIR" ]; then
 	set --
 	if [ "$PACKAGE_MANAGER_KIND" = apt ]; then
 		command -v dkms >/dev/null 2>&1 || set -- "$@" dkms
+		command -v smcrouted >/dev/null 2>&1 || set -- "$@" smcroute
 		if ! command -v make >/dev/null 2>&1 || ! command -v gcc >/dev/null 2>&1 ||
 		   ! command -v ld >/dev/null 2>&1; then
 			set -- "$@" build-essential
@@ -171,6 +206,7 @@ if [ -z "$DESTDIR" ]; then
 		fi
 	else
 		command -v dkms >/dev/null 2>&1 || set -- "$@" dkms
+		command -v smcrouted >/dev/null 2>&1 || set -- "$@" smcroute
 		command -v make >/dev/null 2>&1 || set -- "$@" make
 		command -v gcc >/dev/null 2>&1 || set -- "$@" gcc
 		command -v ld >/dev/null 2>&1 || set -- "$@" binutils
@@ -218,23 +254,51 @@ MODULE="$BUILD_DIR/octep.ko"
 verify_module "$MODULE"
 
 install_config "$VFIO_CONFIG" "$DESTDIR/etc/modules-load.d/xgs-vfio.conf"
+install_data "$BRIDGE_STACK_CONFIG" \
+	"$DESTDIR/etc/modules-load.d/xgs-bridge-stack.conf"
 install_config "$BLACKLIST_CONFIG" "$DESTDIR/etc/modprobe.d/xgs-octep.conf"
+install_config "$OCTEP_SYSCTL_CONFIG" \
+	"$DESTDIR/etc/sysctl.d/90-xgs-octep-forwarding.conf"
 install_config "$VFIO_CONFIG" "$XGS_ROOT/modules-load.d/xgs-vfio.conf"
+install_data "$BRIDGE_STACK_CONFIG" \
+	"$XGS_ROOT/modules-load.d/xgs-bridge-stack.conf"
 install_config "$BLACKLIST_CONFIG" "$XGS_ROOT/modprobe.d/xgs-octep.conf"
+install_data "$OCTEP_SYSCTL_CONFIG" \
+	"$XGS_ROOT/sysctl.d/90-xgs-octep-forwarding.conf"
 install_script "$SCRIPT_DIR/install.sh" "$XGS_ROOT/install.sh"
 install_script "$UNINSTALL_SCRIPT" "$XGS_ROOT/uninstall.sh"
 install_data "$SOURCE_DIR/Makefile" "$XGS_ROOT/octep/Makefile"
 install_data "$SOURCE_DIR/octep.c" "$XGS_ROOT/octep/octep.c"
 install_data "$SOURCE_DIR/dkms.conf" "$XGS_ROOT/octep/dkms.conf"
 install_script "$HEALTH_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-health.sh"
+install_script "$ACCEL_STATUS_SCRIPT" "$XGS_ROOT/scripts/xgs/accel-status.sh"
+install_script "$NAT_HELPER_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-nat.sh"
+install_script "$SCRIPT_DIR/scripts/nat/nat-port4.sh" "$XGS_ROOT/scripts/nat/nat-port4.sh"
+install_script "$SCRIPT_DIR/scripts/nat/nat-off.sh" "$XGS_ROOT/scripts/nat/nat-off.sh"
+install_unit "$SCRIPT_DIR/systemd/xgs-nat.service" "$DESTDIR/usr/lib/systemd/system/xgs-nat.service"
 install_script "$RUN_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-run.sh"
 install_script "$PLATFORM_SCRIPT" "$XGS_ROOT/scripts/octep/npu-platform.sh"
 install_script "$OCTEP_PORT_SETUP_SCRIPT" "$XGS_ROOT/scripts/octep/rpc-port-setup.sh"
 install_script "$OCTEP_RING_TEST_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-ring-test.sh"
 install_script "$OCTEP_SDP_BRINGUP_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-bringup.sh"
+install_script "$OCTEP_SDP_RECOVERY_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-recover-npu.sh"
 install_script "$MGMT_LINK_SCRIPT" "$XGS_ROOT/scripts/npuctl/mgmt-link.sh"
 install_unit "$HEALTH_SERVICE" "$XGS_ROOT/systemd/xgs-npu-health.service"
 install_unit "$HEALTH_TIMER" "$XGS_ROOT/systemd/xgs-npu-health.timer"
+if [ -n "$NPU_SENSOR_SOURCE_DIR" ]; then
+	install_file "$NPU_SENSOR_SOURCE_DIR/bin/xgs-1us-sensors" \
+		"$XGS_ROOT/npu-sensor/bin/xgs-1us-sensors" 0644
+	install_file "$NPU_SENSOR_SOURCE_DIR/lib/libsbsp.so.1" \
+		"$XGS_ROOT/npu-sensor/lib/libsbsp.so.1" 0644
+	install_file "$NPU_SENSOR_SOURCE_DIR/lib/libgpiod.so.2" \
+		"$XGS_ROOT/npu-sensor/lib/libgpiod.so.2" 0644
+	sensor_config="$DESTDIR/etc/default/xgs-npu-health"
+	if [ -e "$sensor_config" ]; then
+		echo "xgs-linux-install: preserving existing sensor config $sensor_config"
+	else
+		install -D -m 0644 "$HEALTH_DEFAULT" "$sensor_config"
+	fi
+fi
 install_unit "$OCTEP_SDP_BRINGUP_SERVICE" \
 	"$XGS_ROOT/systemd/xgs-octep-sdp-bringup.service"
 install_script "$OCTEP_SDP_STATUS_SCRIPT" \
@@ -243,6 +307,10 @@ install_unit "$OCTEP_SDP_STATUS_SERVICE" \
 	"$XGS_ROOT/systemd/xgs-octep-sdp-status.service"
 install_unit "$OCTEP_SDP_STATUS_TIMER" \
 	"$XGS_ROOT/systemd/xgs-octep-sdp-status.timer"
+install_script "$OCTEP_MAILBOX_COMPAT_SCRIPT" \
+	"$XGS_ROOT/scripts/tests/octep-tx2-mailbox-compat-test.sh"
+install_unit "$OCTEP_MAILBOX_COMPAT_SERVICE" \
+	"$XGS_ROOT/systemd/xgs-octep-mailbox-compat.service"
 install_unit "$HEALTH_SERVICE" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.service"
 install_unit "$HEALTH_TIMER" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.timer"
 install_unit "$OCTEP_SDP_BRINGUP_SERVICE" \
@@ -251,6 +319,8 @@ install_unit "$OCTEP_SDP_STATUS_SERVICE" \
 	"$DESTDIR/usr/lib/systemd/system/xgs-octep-sdp-status.service"
 install_unit "$OCTEP_SDP_STATUS_TIMER" \
 	"$DESTDIR/usr/lib/systemd/system/xgs-octep-sdp-status.timer"
+install_unit "$OCTEP_MAILBOX_COMPAT_SERVICE" \
+	"$DESTDIR/usr/lib/systemd/system/xgs-octep-mailbox-compat.service"
 
 DKMS_SOURCE="$DESTDIR/usr/src/$DKMS_NAME-$DKMS_VERSION"
 DKMS_SOURCE_CHANGED=0
@@ -298,6 +368,12 @@ INSTALLED_VERMAGIC=$(modinfo -k "$KVER" -F vermagic octep) ||
 	fail "cannot read installed octep vermagic"
 [ "${INSTALLED_VERMAGIC%% *}" = "$KVER" ] ||
 	fail "installed octep module does not match kernel $KVER"
+# A hand-copied unsigned or stripped module fails to load with a bare EINVAL.
+[ -n "$(modinfo -k "$KVER" -F signer octep)" ] ||
+	fail "resolved octep module is unsigned; reinstall through DKMS (--replace-managed)"
+if grep -q '^octep ' /proc/modules 2>/dev/null; then
+	echo "xgs-linux-install: a running octep is the previous build; run 'sudo rmmod octep' and the status timer reloads the new one within about 30 seconds"
+fi
 
 for module in vfio vfio_iommu_type1 vfio-pci; do
 	modprobe "$module"
@@ -306,8 +382,15 @@ done
 require_command systemctl
 systemctl daemon-reload
 systemctl enable --quiet xgs-octep-sdp-bringup.service
+if systemctl cat smcroute.service >/dev/null 2>&1; then
+	systemctl enable --quiet smcroute.service
+	# Start only; a restart toggles allmulticast on every port and can disturb live traffic. Boot and reload refresh it in rpc-port-setup.sh.
+	systemctl start smcroute.service || echo "xgs-linux-install: smcroute.service failed to start" >&2
+fi
+systemctl enable --quiet xgs-octep-mailbox-compat.service
 systemctl enable --quiet xgs-npu-health.service
 systemctl enable --quiet xgs-npu-health.timer
+systemctl enable --quiet xgs-nat.service
 systemctl start --quiet xgs-npu-health.timer
 systemctl enable --quiet xgs-octep-sdp-status.timer
 systemctl start --quiet xgs-octep-sdp-status.timer
@@ -315,9 +398,16 @@ systemctl start --quiet xgs-octep-sdp-status.timer
 echo "xgs-linux-install: installed OCTEP for $KVER and enabled DKMS kernel-update builds"
 echo "xgs-linux-install: loaded VFIO modules only; octep was not loaded or bound"
 echo "xgs-linux-install: enabled boot-time OCTEP load, SDP ring bring-up, and front-port setup"
+echo "xgs-linux-install: enabled a read-only mailbox compatibility probe at boot"
 echo "xgs-linux-install: enabled 30-second status checks and retries until OCTEP bring-up succeeds"
-echo "xgs-linux-install: enabled read-only PCI and serial-console health collection at boot and every five minutes"
+echo "xgs-linux-install: enabled guarded automatic recovery for the known blocked SDP handshake state"
+echo "xgs-linux-install: enabled read-only NPU health reports every 5 seconds"
+if [ -n "$NPU_SENSOR_SOURCE_DIR" ]; then
+	echo "xgs-linux-install: installed NPU temperature sensor files outside the source tree"
+fi
 echo "xgs-linux-install: scripts and controls installed under /usr/local/xgs/linux"
 echo "xgs-linux-install: use sudo /usr/local/xgs/linux/scripts/octep/sdp-bringup.sh to manually arm rings"
 echo "xgs-linux-install: use sudo /usr/local/xgs/linux/scripts/octep/sdp-ring-test.sh for a guarded ring reload test"
 echo "xgs-linux-install: DKMS initramfs behavior follows system configuration; bootloader settings were not changed"
+
+echo "xgs-linux-install: default NAT: all LAN ports routed via Port 2 (octep1) WAN; optional: $XGS_ROOT/scripts/nat/nat-port4.sh or nat-off.sh"

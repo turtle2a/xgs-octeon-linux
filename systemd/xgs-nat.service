@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=XGS default NAT: octep LAN ports masqueraded out faceplate port 2 (octep1); opt out with: touch /etc/xgs-nat-off
+ConditionPathExists=!/etc/xgs-nat-off
+After=network-online.target xgs-octep-sdp-bringup.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/xgs/linux/scripts/nat/xgs-nat.sh start
+ExecStop=/usr/local/xgs/linux/scripts/nat/xgs-nat.sh stop
+
+
+
+[Install]
+WantedBy=multi-user.target
