@@ -275,7 +275,10 @@ install_data "$SOURCE_DIR/dkms.conf" "$XGS_ROOT/octep/dkms.conf"
 install_script "$HEALTH_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-health.sh"
 install_script "$ACCEL_STATUS_SCRIPT" "$XGS_ROOT/scripts/xgs/accel-status.sh"
 install_script "$NAT_HELPER_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-nat.sh"
-install_config "$SCRIPT_DIR/dnsmasq.d/xgs-lan.conf" "$DESTDIR/etc/dnsmasq.d/xgs-lan.conf"
+install_config "$SCRIPT_DIR/kea/kea-dhcp4.conf" "$DESTDIR/etc/kea/kea-dhcp4.conf"
+# Operator-owned static leases for 10.4.4.0/28; never overwritten once it exists
+[ -e "$DESTDIR/etc/kea/xgs-reservations.json" ] ||
+	printf '[]\n' | install -D -m 0644 /dev/stdin "$DESTDIR/etc/kea/xgs-reservations.json"
 install_script "$SCRIPT_DIR/scripts/nat/nat-port4.sh" "$XGS_ROOT/scripts/nat/nat-port4.sh"
 install_script "$SCRIPT_DIR/scripts/nat/nat-off.sh" "$XGS_ROOT/scripts/nat/nat-off.sh"
 install_unit "$SCRIPT_DIR/systemd/xgs-nat.service" "$DESTDIR/usr/lib/systemd/system/xgs-nat.service"
@@ -395,19 +398,31 @@ systemctl enable --quiet xgs-octep-mailbox-compat.service
 systemctl enable --quiet xgs-npu-health.service
 systemctl enable --quiet xgs-npu-health.timer
 systemctl enable --quiet xgs-nat.service
-# DHCP for the LAN ports (config: /etc/dnsmasq.d/xgs-lan.conf); needs the dnsmasq package
-if systemctl cat dnsmasq.service >/dev/null 2>&1; then
-	systemctl enable --quiet dnsmasq.service
-	systemctl restart dnsmasq.service ||
-		echo "xgs-linux-install: dnsmasq.service failed to start; check /etc/dnsmasq.d/xgs-lan.conf" >&2
-	# ufw drops inbound DHCP requests unless UDP 67 is allowed on the LAN ports
+# DHCP for the LAN ports (config: /etc/kea/kea-dhcp4.conf); needs the Kea DHCPv4 server
+# (Fedora: kea; Debian: kea-dhcp4-server)
+# Replace the earlier dnsmasq-based DHCP, which would otherwise hold UDP 67
+if [ -e "$DESTDIR/etc/dnsmasq.d/xgs-lan.conf" ]; then
+	rm -f "$DESTDIR/etc/dnsmasq.d/xgs-lan.conf"
+	systemctl try-restart dnsmasq.service >/dev/null 2>&1
+fi
+kea_unit=
+for u in kea-dhcp4.service kea-dhcp4-server.service; do
+	if systemctl cat "$u" >/dev/null 2>&1; then kea_unit=$u; break; fi
+done
+if [ -n "$kea_unit" ]; then
+	systemctl enable --quiet "$kea_unit"
+	systemctl restart "$kea_unit" ||
+		echo "xgs-linux-install: $kea_unit failed to start; check /etc/kea/kea-dhcp4.conf" >&2
+	# ufw: accept inbound from the LAN octeps (DHCP, DNS, ping, ...) and the
+	# management port; the WAN (octep1) keeps ufw's default policy
 	if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'; then
 		for i in 0 2 3 4 5 6 7 8 9; do
-			ufw allow in on octep$i to any port 67 proto udp >/dev/null
+			ufw allow in on octep$i >/dev/null
 		done
+		ufw allow in on enp2s0 >/dev/null
 	fi
 else
-	echo "xgs-linux-install: dnsmasq is not installed; LAN ports will not serve DHCP until it is" >&2
+	echo "xgs-linux-install: Kea DHCPv4 is not installed (kea / kea-dhcp4-server); LAN ports will not serve DHCP until it is" >&2
 fi
 systemctl start --quiet xgs-npu-health.timer
 systemctl enable --quiet xgs-octep-sdp-status.timer

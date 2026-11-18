@@ -42,7 +42,7 @@ state_value() {
 
 configure_octep_dhcp() {
 	iface=$1
-	# Optional: "manual <addr/prefix>" makes a LAN port static (it serves DHCP via dnsmasq)
+	# Optional: "manual <addr/prefix>" makes a LAN port static (it serves DHCP via Kea)
 	method=${2:-auto}
 	lan_addr=${3:-}
 	profile_name=xgs-$iface-dhcp
@@ -204,7 +204,7 @@ EOF
 
 configure_all_octep_dhcp() {
 	# LAN ports only: octep0 is 10.4.4.0/28 and octepN (N >= 2) is
-	# 10.4.(10+N).0/28, router at .10; dnsmasq (dnsmasq.d/xgs-lan.conf) hands
+	# 10.4.(10+N).0/28, router at .10; Kea (kea/kea-dhcp4.conf) hands
 	# out .2-.9 on each. octep1 (WAN) and enp2s0 (management) are left to the
 	# operator and are never modified here.
 	configure_octep_dhcp octep0 manual 10.4.4.10/28
@@ -213,6 +213,15 @@ configure_all_octep_dhcp() {
 		configure_octep_dhcp "octep$port" manual "10.4.$((10 + port)).10/28"
 		port=$((port + 1))
 	done
+	# Kea only binds interfaces that already have an address, so restart it once
+	# per boot after the LAN addresses are in place.
+	if [ ! -e /run/xgs-kea-rebound ] && ip -4 -o addr show dev octep0 2>/dev/null | grep -q inet; then
+		for u in kea-dhcp4.service kea-dhcp4-server.service; do
+			systemctl try-restart "$u" >/dev/null 2>&1
+		done
+		: >/run/xgs-kea-rebound
+		log "restarted Kea DHCP after the LAN addresses were applied"
+	fi
 }
 
 FORCE=0

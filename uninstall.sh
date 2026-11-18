@@ -67,7 +67,7 @@ for file in \
 	systemd/xgs-npu-health.service systemd/xgs-npu-health.timer \
 	systemd/xgs-npu-health.default \
 	systemd/xgs-octep-sdp-bringup.service systemd/xgs-nat.service \
-	dnsmasq.d/xgs-lan.conf \
+	kea/kea-dhcp4.conf \
 	systemd/xgs-octep-sdp-status.service \
 	systemd/xgs-octep-sdp-status.timer; do
 	[ -f "$SCRIPT_DIR/$file" ] ||
@@ -101,8 +101,8 @@ remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-octep-sdp-status.service" \
 	/usr/lib/systemd/system/xgs-octep-sdp-status.service
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-nat.service" \
 	/usr/lib/systemd/system/xgs-nat.service
-remove_if_unchanged "$SCRIPT_DIR/dnsmasq.d/xgs-lan.conf" \
-	/etc/dnsmasq.d/xgs-lan.conf
+remove_if_unchanged "$SCRIPT_DIR/kea/kea-dhcp4.conf" \
+	/etc/kea/kea-dhcp4.conf
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-octep-sdp-status.timer" \
 	/usr/lib/systemd/system/xgs-octep-sdp-status.timer
 remove_if_unchanged "$SCRIPT_DIR/modules-load.d/xgs-vfio.conf" \

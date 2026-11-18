@@ -230,8 +230,9 @@ fallback). To change the WAN port, gateway or LAN subnet, set `WAN=`, `GW=` or
 
 ### DHCP on the LAN ports
 
-The LAN ports serve DHCP through `dnsmasq` (install the `dnsmasq` package;
-`install.sh` enables it with `/etc/dnsmasq.d/xgs-lan.conf`). Each LAN port has
+The LAN ports serve DHCP through the Kea DHCPv4 server (install `kea` on
+Fedora or `kea-dhcp4-server` on Debian; `install.sh` enables it with
+`/etc/kea/kea-dhcp4.conf`). Each LAN port has
 its own `/28`, the router is `.10` and clients get `.2`-`.9`:
 
 | Port | Subnet |
