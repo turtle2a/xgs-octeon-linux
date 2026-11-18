@@ -275,6 +275,7 @@ install_data "$SOURCE_DIR/dkms.conf" "$XGS_ROOT/octep/dkms.conf"
 install_script "$HEALTH_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-health.sh"
 install_script "$ACCEL_STATUS_SCRIPT" "$XGS_ROOT/scripts/xgs/accel-status.sh"
 install_script "$NAT_HELPER_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-nat.sh"
+install_config "$SCRIPT_DIR/dnsmasq.d/xgs-lan.conf" "$DESTDIR/etc/dnsmasq.d/xgs-lan.conf"
 install_script "$SCRIPT_DIR/scripts/nat/nat-port4.sh" "$XGS_ROOT/scripts/nat/nat-port4.sh"
 install_script "$SCRIPT_DIR/scripts/nat/nat-off.sh" "$XGS_ROOT/scripts/nat/nat-off.sh"
 install_unit "$SCRIPT_DIR/systemd/xgs-nat.service" "$DESTDIR/usr/lib/systemd/system/xgs-nat.service"
@@ -394,6 +395,14 @@ systemctl enable --quiet xgs-octep-mailbox-compat.service
 systemctl enable --quiet xgs-npu-health.service
 systemctl enable --quiet xgs-npu-health.timer
 systemctl enable --quiet xgs-nat.service
+# DHCP for the LAN ports (config: /etc/dnsmasq.d/xgs-lan.conf); needs the dnsmasq package
+if systemctl cat dnsmasq.service >/dev/null 2>&1; then
+	systemctl enable --quiet dnsmasq.service
+	systemctl restart dnsmasq.service ||
+		echo "xgs-linux-install: dnsmasq.service failed to start; check /etc/dnsmasq.d/xgs-lan.conf" >&2
+else
+	echo "xgs-linux-install: dnsmasq is not installed; LAN ports will not serve DHCP until it is" >&2
+fi
 systemctl start --quiet xgs-npu-health.timer
 systemctl enable --quiet xgs-octep-sdp-status.timer
 systemctl start --quiet xgs-octep-sdp-status.timer

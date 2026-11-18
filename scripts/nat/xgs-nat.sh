@@ -3,12 +3,15 @@
 # Blind, simple NAT. Default: everything leaving faceplate port 2 (octep1) is masqueraded.
 # Faceplate port N = interface octep(N-1).
 #   sudo xgs-nat.sh start    default NAT out octep1
-#   sudo xgs-nat.sh mgmt     optional: also send 10.1.1.0/28 (from enp2s0) out octep1
+#   sudo xgs-nat.sh start    default NAT out octep1 for all LAN ports and the management subnet
+#   sudo xgs-nat.sh mgmt     re-apply only the management route (already part of start)
 #   sudo xgs-nat.sh stop     undo both
 WAN=${WAN:-octep1}
 GW=192.168.1.1   # fallback WAN gateway; the DHCP default route on $WAN is preferred
-LAN_NET=10.4.4.0/28   # OCTEP LAN client subnet (octep0) forced out the WAN
-# Optional overrides: WAN=, GW=, LAN_NET= in /etc/xgs-nat.conf
+LAN_NETS="10.4.4.0/28 10.4.12.0/28 10.4.13.0/28 10.4.14.0/28 10.4.15.0/28 10.4.16.0/28 10.4.17.0/28 10.4.18.0/28 10.4.19.0/28"   # OCTEP LAN subnets (octep0, octep2-9) forced out the WAN
+MGMT_NET=10.1.1.0/28   # management subnet (enp2s0), also NATed out the WAN; enp2s0 itself is never reconfigured
+MGMT_IF=enp2s0
+# Optional overrides: WAN=, GW=, LAN_NETS=, MGMT_NET=, MGMT_IF= in /etc/xgs-nat.conf
 [ -r /etc/xgs-nat.conf ] && . /etc/xgs-nat.conf
 
 nat_rules() { # $1 = -A|-D
@@ -16,8 +19,10 @@ nat_rules() { # $1 = -A|-D
 }
 
 fwd_rules() { # $1 = -I|-D; accept LAN->WAN and replies even under a default-drop FORWARD policy
-	iptables $1 FORWARD -s $LAN_NET -o $WAN -j ACCEPT
-	iptables $1 FORWARD -d $LAN_NET -i $WAN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	for net in $LAN_NETS $MGMT_NET; do
+		iptables $1 FORWARD -s $net -o $WAN -j ACCEPT
+		iptables $1 FORWARD -d $net -i $WAN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	done
 }
 
 case $1 in
@@ -35,22 +40,28 @@ start)
 	done
 	DHCP_GW=$(ip -4 route show default dev $WAN 2>/dev/null | awk '{print $3; exit}')
 	ip route replace default via "${DHCP_GW:-$GW}" dev $WAN table 100
-	ip rule del from $LAN_NET lookup 100 2>/dev/null
-	ip rule add from $LAN_NET lookup 100 priority 100
-	echo "All LAN ports now routed via $WAN WAN"
+	for net in $LAN_NETS; do
+		ip rule del from $net lookup 100 2>/dev/null
+		ip rule add from $net lookup 100 priority 100
+	done
+	ip rule del from $MGMT_NET iif $MGMT_IF lookup 100 2>/dev/null
+	ip rule add from $MGMT_NET iif $MGMT_IF lookup 100 priority 101
+	echo "All LAN and management ports now routed via $WAN WAN"
 	;;
 mgmt)
 	DHCP_GW=$(ip -4 route show default dev $WAN 2>/dev/null | awk '{print $3; exit}')
 	ip route replace default via "${DHCP_GW:-$GW}" dev $WAN table 100
-	ip rule del from 10.1.1.0/28 iif enp2s0 lookup 100 2>/dev/null
-	ip rule add from 10.1.1.0/28 iif enp2s0 lookup 100 priority 101
-	echo "10.1.1.0/28 now routed via Port 2 (octep1) WAN"
+	ip rule del from $MGMT_NET iif $MGMT_IF lookup 100 2>/dev/null
+	ip rule add from $MGMT_NET iif $MGMT_IF lookup 100 priority 101
+	echo "$MGMT_NET now routed via $WAN WAN"
 	;;
 stop)
 	nat_rules -D 2>/dev/null
 	fwd_rules -D 2>/dev/null
-	ip rule del from $LAN_NET lookup 100 2>/dev/null
-	ip rule del from 10.1.1.0/28 iif enp2s0 lookup 100 2>/dev/null
+	for net in $LAN_NETS; do
+		ip rule del from $net lookup 100 2>/dev/null
+	done
+	ip rule del from $MGMT_NET iif $MGMT_IF lookup 100 2>/dev/null
 	ip route flush table 100 2>/dev/null
 	echo "NAT removed"
 	;;

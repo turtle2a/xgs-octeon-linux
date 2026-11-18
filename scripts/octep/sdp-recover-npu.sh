@@ -42,6 +42,9 @@ state_value() {
 
 configure_octep_dhcp() {
 	iface=$1
+	# Optional: "manual <addr/prefix>" makes a LAN port static (it serves DHCP via dnsmasq)
+	method=${2:-auto}
+	lan_addr=${3:-}
 	profile_name=xgs-$iface-dhcp
 	if ! command -v nmcli >/dev/null 2>&1; then
 		log "WARNING: nmcli is unavailable; cannot configure DHCP on $iface"
@@ -109,7 +112,8 @@ EOF
 
 	if [ -z "$profile_uuid" ]; then
 		nmcli connection add type ethernet ifname "$iface" \
-			con-name "$profile_name" ipv4.method auto \
+			con-name "$profile_name" ipv4.method "$method" \
+			${lan_addr:+ipv4.addresses "$lan_addr"} \
 			ipv6.method link-local \
 			ipv4.never-default yes ipv4.ignore-auto-routes no \
 			connection.autoconnect yes connection.autoconnect-retries 0 || {
@@ -122,7 +126,8 @@ EOF
 		}
 	fi
 
-	nmcli connection modify "$profile_uuid" ipv4.method auto \
+	nmcli connection modify "$profile_uuid" ipv4.method "$method" \
+		${lan_addr:+ipv4.addresses "$lan_addr" ipv4.never-default yes} \
 		ipv6.method link-local \
 		connection.autoconnect yes connection.autoconnect-retries 0 || {
 		log "WARNING: could not configure DHCP on $iface"
@@ -198,9 +203,14 @@ EOF
 }
 
 configure_all_octep_dhcp() {
-	port=0
+	# LAN ports only: octep0 is 10.4.4.0/28 and octepN (N >= 2) is
+	# 10.4.(10+N).0/28, router at .10; dnsmasq (dnsmasq.d/xgs-lan.conf) hands
+	# out .2-.9 on each. octep1 (WAN) and enp2s0 (management) are left to the
+	# operator and are never modified here.
+	configure_octep_dhcp octep0 manual 10.4.4.10/28
+	port=2
 	while [ "$port" -lt 10 ]; do
-		configure_octep_dhcp "octep$port"
+		configure_octep_dhcp "octep$port" manual "10.4.$((10 + port)).10/28"
 		port=$((port + 1))
 	done
 }

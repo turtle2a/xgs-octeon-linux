@@ -211,11 +211,11 @@ each prints one line):
 
 | Script | Result |
 | --- | --- |
-| `xgs-nat.sh start` | Default: LAN out Port 2 (`octep1`) |
-| `nat-port4.sh` | LAN out Port 4 (`octep3`) instead |
+| `xgs-nat.sh start` | Default: all LAN ports and the management subnet out Port 2 (`octep1`) |
+| `nat-port4.sh` | Same, but out Port 4 (`octep3`) instead |
 | `nat-off.sh` | No NAT |
-| `xgs-nat.sh mgmt` | Also route `10.1.1.0/28` from `enp2s0` out Port 2 |
-| `xgs-nat.sh stop` | Remove NAT and the `mgmt` route |
+| `xgs-nat.sh mgmt` | Re-apply only the management route (already part of `start`) |
+| `xgs-nat.sh stop` | Remove NAT and the policy routes |
 
 These are plain iptables rules and are not persistent; `xgs-nat.service`
 re-applies the default at boot. To keep NAT off across reboots run
@@ -226,7 +226,23 @@ WAN with a policy route (`ip rule ... lookup 100`), so internet traffic is not
 sent out another uplink that has a lower-metric default route. The gateway is
 read from the DHCP default route on the WAN port (`192.168.1.1` is only a
 fallback). To change the WAN port, gateway or LAN subnet, set `WAN=`, `GW=` or
-`LAN_NET=` in `/etc/xgs-nat.conf`.
+`LAN_NETS=`, `MGMT_NET=` or `MGMT_IF=` in `/etc/xgs-nat.conf`.
+
+### DHCP on the LAN ports
+
+The LAN ports serve DHCP through `dnsmasq` (install the `dnsmasq` package;
+`install.sh` enables it with `/etc/dnsmasq.d/xgs-lan.conf`). Each LAN port has
+its own `/28`, the router is `.10` and clients get `.2`-`.9`:
+
+| Port | Subnet |
+| --- | --- |
+| `octep0` | `10.4.4.0/28` |
+| `octepN` (N = 2 to 9) | `10.4.(10+N).0/28`, for example `octep2` = `10.4.12.0/28` |
+
+`octep1` (WAN) and the management port `enp2s0` are never served or modified;
+configure them yourself. The LAN addresses are applied by the status timer
+(`sdp-recover-npu.sh`) as NetworkManager profiles, and every LAN subnet is
+NATed out the WAN by `xgs-nat.service`.
 
 ## Pre-Upload Test Record
 
