@@ -147,7 +147,34 @@
 #define OCTEP_DP_OQ_GRANT		(OCTEP_DP_OQ_DESCS + \
 					 OCTEP_DP_OQ_WMARK - \
 					 OCTEP_DP_OQ_FETCH)
-#define OCTEP_DP_TXBUF_SIZE		(OCTEP_MGMT_MTU + ETH_HLEN + VLAN_HLEN + \
+/* Test-only: raise the front-port MTU ceiling above 1500 (TX slots are sized from it). */
+static unsigned int octep_dp_max_mtu = 1500;
+module_param_named(dp_max_mtu, octep_dp_max_mtu, uint, 0444);
+MODULE_PARM_DESC(dp_max_mtu,
+		 "Maximum MTU for octepN front ports, 1500..9000 (load-time, default 1500)");
+
+/* Debug: log every host-side front-port drop with its reason (rate-limited). Runtime-writable. */
+static bool octep_dp_debug;
+module_param_named(dp_debug, octep_dp_debug, bool, 0644);
+
+/*
+ * Load-time debug bitmask (default 0, no behaviour change):
+ * 1 log SDP ring state on port open (enable check)
+ * 2 on port stop, wait for the rings to drain and log the result
+ * 4 log SDP ring state when the stall guard releases a flow (traffic stop)
+ * 8 log TX skbs that are scatter-gather (frags, frag list or GSO)
+ */
+static bool octep_dp_sg;
+module_param_named(dp_sg, octep_dp_sg, bool, 0444);
+MODULE_PARM_DESC(dp_sg, "advertise scatter-gather and TX checksum offload on octepN (default N)");
+
+static unsigned int octep_dp_dbg;
+module_param_named(dp_dbg, octep_dp_dbg, uint, 0444);
+MODULE_PARM_DESC(dp_dbg, "debug bitmask: 1=ring state on open, 2=drain on stop, 4=ring state at flow release, 8=log scatter-gather TX skbs");
+MODULE_PARM_DESC(dp_debug,
+		 "Log each host-side front-port drop with its reason and log every NPU counter that moved (default N)");
+
+#define OCTEP_DP_TXBUF_SIZE		(octep_dp_max_mtu + ETH_HLEN + VLAN_HLEN + \
 					 OCTEP_DP_TAG_LEN)
 #define OCTEP_DP_TXBUF_STRIDE		ALIGN(OCTEP_DP_TXBUF_SIZE, \
 					      OCTEP_DP_BUF_ALIGN)
@@ -168,6 +195,12 @@ static unsigned int octep_ft_nhop_mtu = 1500;
 module_param_named(ft_nhop_mtu, octep_ft_nhop_mtu, uint, 0644);
 MODULE_PARM_DESC(ft_nhop_mtu,
 		 "Next-hop MTU programmed for offloaded flows (temporary, default 1500)");
+
+/* Item 7: a flow offloaded in its first second freezes after ~0.5 MB. Hold new flows on the host path this long first. */
+static unsigned int octep_ft_delay_ms = 3500;
+module_param_named(ft_delay_ms, octep_ft_delay_ms, uint, 0644);
+MODULE_PARM_DESC(ft_delay_ms,
+		 "Keep a new flow on the host path this many ms before offloading it (default 3500, 0 = offload as soon as the firmware tracks it)");
 
 /* Spare-slot pairing blackholes in practice (run 14: 3s of zero throughput), so it is opt-in. */
 static bool octep_ft_allow_spare;
@@ -219,10 +252,58 @@ MODULE_PARM_DESC(ft_mflow_timeout,
  * inside the timeout window, coding around the firmware-side bug rather than relying on an
  * automatic in-firmware refresh that isn't happening for us.
  */
-static int octep_ft_mflow_rearm = 20;
+static int octep_ft_mflow_rearm = 45;
 module_param_named(ft_mflow_rearm, octep_ft_mflow_rearm, int, 0644);
 MODULE_PARM_DESC(ft_mflow_rearm,
-		 "Seconds between proactive MFLOW_PROGRAM re-arms per connection (0 disables, default 20)");
+		 "Seconds between proactive MFLOW_PROGRAM re-arms per connection (0 disables, default 45, must stay below ft_mflow_timeout)");
+
+/*
+ * Connection verdict (flags bits 22:21): 0 send to IPS, 1 drop, 2 cut-through forward, per the
+ * vendor module's conn printer as read by the os-xgs-npu BSD driver. This driver used to send 1,
+ * which that source names DROP; the BSD driver makes plain connections with 2. Runtime-tunable.
+ */
+static unsigned int octep_ft_verdict = 2;
+module_param_named(ft_verdict, octep_ft_verdict, uint, 0644);
+MODULE_PARM_DESC(ft_verdict,
+		 "Connection verdict sent on flow create: 0 IPS, 1 drop, 2 cut-through forward (default 2, as the BSD driver)");
+
+/*
+ * Make-before-break cut-in: flow-create programs the microflows with ft_cutin_action while the
+ * host keeps forwarding, and ft_cutin_ms later (next 1 s work tick) MFLOW_PROGRAM flips them to
+ * ft_mflow_action. 0 disables the staging (create forwards at once). The staging action's
+ * meaning is unconfirmed, so it is tunable; 0 is DROP and would blackhole the flow.
+ */
+static unsigned int octep_ft_cutin;
+module_param_named(ft_cutin, octep_ft_cutin, uint, 0644);
+MODULE_PARM_DESC(ft_cutin,
+		 "Cut-in mode: 0 = create straight to forward (default; the staged mode stalled live flows, see testlogs/offload-runs.tsv), 1 = staged create, checked flip to forward (also off when ft_cutin_ms is 0)");
+static unsigned int octep_ft_cutin_ms = 500;
+module_param_named(ft_cutin_ms, octep_ft_cutin_ms, uint, 0644);
+MODULE_PARM_DESC(ft_cutin_ms,
+		 "Milliseconds between staged flow-create and the flip to forward (0 = no staging, default 500)");
+static unsigned int octep_ft_cutin_inflight = 65536;
+module_param_named(ft_cutin_inflight, octep_ft_cutin_inflight, uint, 0644);
+MODULE_PARM_DESC(ft_cutin_inflight,
+		 "Largest unacked byte count at which the cut-in flip may happen (default 65536)");
+static unsigned int octep_ft_cutin_wait_ms = 3000;
+module_param_named(ft_cutin_wait_ms, octep_ft_cutin_wait_ms, uint, 0644);
+MODULE_PARM_DESC(ft_cutin_wait_ms,
+		 "How long the flip waits for the flow checks to pass before flipping anyway (default 3000)");
+static int octep_ft_cutin_action = 2;
+module_param_named(ft_cutin_action, octep_ft_cutin_action, int, 0644);
+MODULE_PARM_DESC(ft_cutin_action,
+		 "Microflow action used at flow-create while staging (default 2, unconfirmed; 0 is DROP)");
+
+static inline u32 octep_ft_first_action(void)
+{
+	return octep_ft_cutin && octep_ft_cutin_ms ? (u32)octep_ft_cutin_action : (u32)octep_ft_mflow_action;
+}
+
+/* Runtime-tunable (0644): a firmware-active TCP flow whose reply microflow timestamp is frozen this long is released. */
+static unsigned int octep_ft_reply_frozen_s = 2;
+module_param_named(ft_reply_frozen, octep_ft_reply_frozen_s, uint, 0644);
+MODULE_PARM_DESC(ft_reply_frozen,
+		 "Seconds a firmware-active TCP flow's reply microflow may stay unhit before the flow is released to the slow path (default 2)");
 
 /* Experiment: the reply direction of an SNAT flow needs a destination rewrite, so try setting both NAT flag bits. */
 static bool octep_ft_nat_both;
@@ -254,7 +335,23 @@ module_param_named(rpc_raw_cmd, octep_rpc_raw_cmd, int, 0644);
 MODULE_PARM_DESC(rpc_raw_cmd,
 		 "Opcode (0-35) that rpc_raw_write may send; -1 disables (experimental, default -1)");
 
-/* Experiment: extra bits ORed into each microflow operation word (bits 24-27 are undocumented). */
+/* BSD os-xgs-npu sends next hops with the L3 flag set (byte 26) and pport_tag 0; the Linux builder never did. */
+static bool octep_ft_nhop_l3 = true;
+module_param_named(ft_nhop_l3, octep_ft_nhop_l3, bool, 0644);
+MODULE_PARM_DESC(ft_nhop_l3,
+		 "Program next hops with the L3 flag and a zero pport tag, as the FreeBSD driver does (default Y)");
+
+/*
+ * Bridge-control nibble (operation bits 24-27): what the fast path rewrites. The FreeBSD driver
+ * (os-xgs-npu, npuflow.c) sets 0xe on every routed microflow; 0 means "rewrite nothing, a bridge
+ * carries it" and left NAT'd TCP stalling after the first burst.
+ */
+static unsigned int octep_ft_brctl = 0xe;
+module_param_named(ft_brctl, octep_ft_brctl, uint, 0644);
+MODULE_PARM_DESC(ft_brctl,
+		 "Microflow bridge-control nibble, 0xe = routed (default), 0 = nothing rewritten");
+
+/* Experiment: extra bits ORed into each microflow operation word. */
 static unsigned int octep_ft_mflow_extra;
 module_param_named(ft_mflow_extra, octep_ft_mflow_extra, uint, 0644);
 MODULE_PARM_DESC(ft_mflow_extra,
@@ -625,6 +722,7 @@ static_assert(sizeof(struct octep_rpc_mflow_payload) == OCTEP_RPC_MFLOW_REQ_LEN)
 static_assert(sizeof(struct octep_rpc_flow_create_payload) ==
 	      OCTEP_RPC_FLOW_REQ_LEN);
 
+#define OCTEP_RPC_NHOP_FLAG_L3		0x01
 #define OCTEP_RPC_FLOW_ACTION_FWD	1
 #define OCTEP_RPC_FLOW_STATE_ACTIVE	2
 #define OCTEP_RPC_FLOW_CONN_VALID	1
@@ -653,22 +751,24 @@ static inline void octep_ft_fill_nhop(struct octep_rpc_nhop_payload *p,
 	memcpy(p->destination_mac, dst, ETH_ALEN);
 	memcpy(p->source_mac, src, ETH_ALEN);
 	p->ethertype = htons(ETH_P_IP);
-	p->tag = cpu_to_le16(tag);
+	p->tag = cpu_to_le16(octep_ft_nhop_l3 ? 0 : tag);
+	p->flags = octep_ft_nhop_l3 ? OCTEP_RPC_NHOP_FLAG_L3 : 0;
 	p->interface = iface;
 	p->mtu = cpu_to_le16(mtu);
 }
 
 /* Same bytes as flow-build.py mflow(); id and revision come from a live firmware candidate. */
 static inline void octep_ft_fill_mflow(struct octep_rpc_mflow_payload *p,
-				       u32 id, u32 id_rev, u32 direction,
+				       u32 id, u32 id_rev, u32 direction, u32 action,
 				       u32 conn, u32 conn_rev, u32 fw_rev,
 				       u32 l3_rev, u32 nhop, u32 nhop_rev,
 				       u32 timeout)
 {
 	memset(p, 0, sizeof(*p));
 	p->identity_revision_valid = cpu_to_le32(id | id_rev << 25 | BIT(31));
-	p->operation = cpu_to_le32((u32)octep_ft_mflow_action << 16 |
+	p->operation = cpu_to_le32(action << 16 |
 				   direction << 23 |
+				   (octep_ft_brctl & 0xf) << 24 |
 				   OCTEP_RPC_FLOW_STATE_ACTIVE << 28 |
 				   octep_ft_mflow_extra);
 	p->behavior = cpu_to_le32(l3_rev);
@@ -685,11 +785,13 @@ static inline void octep_ft_fill_flow(struct octep_rpc_flow_create_payload *p,
 				      const struct octep_rpc_mflow_payload *reply,
 				      const struct octep_ft_nat *nat)
 {
-	u32 flags = conn_rev | BIT(OCTEP_RPC_FLOW_VERDICT_BIT) |
+	u32 flags = conn_rev | (octep_ft_verdict & 3) << OCTEP_RPC_FLOW_VERDICT_BIT |
 		    OCTEP_RPC_FLOW_CONN_VALID << 30;
 
 	memset(p, 0, sizeof(*p));
 	p->connection = cpu_to_le32(conn);
+	if (octep_ft_nhop_l3)
+		p->session = cpu_to_le32(conn);
 	if (nat) {
 		u8 *block = p->nat;
 		bool both = octep_ft_nat_both && (nat->snat || nat->dnat);
@@ -754,13 +856,26 @@ struct octep_ft_ent {
 	bool blackhole;
 	u32 bad_spare;
 	unsigned long retry_at;
+	unsigned long born;
 };
 
 struct octep_ft_conn {
 	bool used;
+	bool blackhole_checked;
+	bool hw_active;
+	u32 reply_ts;
+	unsigned long reply_ts_moved;
+	unsigned long reply_ts_poll;
 	unsigned long since;
 	unsigned long rearm;
 	u32 id[2], rev[2];
+	u32 alloc_ts[2];
+	unsigned long alloc_next;
+	u8 revives;
+	bool cutin_pending;
+	unsigned long cutin_at;
+	struct octep_ft_ent tup;
+	struct octep_rpc_flow_create_payload fc;
 };
 
 struct octep_flow_counter {
@@ -918,6 +1033,8 @@ struct octep {
 	bool rpc_fw_cfg_known;
 	u16 rpc_fw_rev;
 	u64 rpc_fw_rev_bumps;
+	u64 alloc_cnt[7];
+	u64 alloc_cnt_all[OCTEP_RPC_SYS_COUNTER_COUNT];
 	u32 rpc_last_cmd;
 	u16 rpc_last_rc;
 	u16 rpc_last_len;
@@ -2217,7 +2334,7 @@ static void octep_dp_poll_ring(struct octep *octep,
 				}
 			}
 		} else if (port && frame_len >= ETH_HLEN &&
-		    frame_len <= OCTEP_MGMT_MTU + ETH_HLEN + VLAN_HLEN) {
+		    frame_len <= port->netdev->mtu + ETH_HLEN + VLAN_HLEN) {
 			skb = netdev_alloc_skb_ip_align(port->netdev, frame_len);
 			if (skb) {
 				dst = skb_put(skb, frame_len);
@@ -2234,12 +2351,25 @@ static void octep_dp_poll_ring(struct octep *octep,
 						octep_dp_count_rx(octep, port,
 								  frame_len, false);
 				} else {
+					if (octep_dp_debug)
+						dev_info_ratelimited(&octep->pdev->dev,
+								     "dp-debug: rx drop: frame copy failed (len %u tag 0x%04x)\n",
+								     frame_len, tag);
 					dev_kfree_skb_any(skb);
 					octep_dp_count_rx(octep, port, 0, true);
 				}
 			} else {
+				if (octep_dp_debug)
+					dev_info_ratelimited(&octep->pdev->dev,
+							     "dp-debug: rx drop: skb alloc failed (len %u tag 0x%04x)\n",
+							     frame_len, tag);
 				octep_dp_count_rx(octep, port, 0, true);
 			}
+		} else if (octep_dp_debug) {
+			dev_info_ratelimited(&octep->pdev->dev,
+					     "dp-debug: rx ignored: %s (len %u tag 0x%04x)\n",
+					     port ? "longer than port MTU" : "no port for tag",
+					     frame_len, tag);
 		}
 
 		for (j = 0; j < span; j++) {
@@ -2301,13 +2431,41 @@ static void octep_dp_poll_work(struct work_struct *work)
 				      msecs_to_jiffies(OCTEP_DP_POLL_MS));
 }
 
+static void octep_dp_dbg_rings(struct octep *octep, const char *why)
+{
+	u32 i, n = min_t(u32, octep->dp_ring_count, 4);
+
+	for (i = 0; i < n; i++) {
+		struct octep_dp_ring *r = &octep->dp_ring[i];
+
+		if (!r->in_configured && !r->out_configured)
+			continue;
+		dev_info(&octep->pdev->dev,
+			 "dp-dbg: %s ring %u in_ctl=%#llx out_ctl=%#llx in_en=%#llx out_cnt=%#llx oq_rd=%u\n",
+			 why, r->ring,
+			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_IN_CONTROL),
+			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_OUT_CONTROL),
+			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_IN_ENABLE),
+			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_OUT_CNTS),
+			 r->oq_rd);
+	}
+}
+
 static int octep_dp_open(struct net_device *netdev)
 {
 	struct octep_netdev_priv *priv = netdev_priv(netdev);
 	struct octep *octep = priv->octep;
 
-	if (!READ_ONCE(octep->dp_io_enabled) || !READ_ONCE(octep->hs_done))
+	if (!READ_ONCE(octep->dp_io_enabled) || !READ_ONCE(octep->hs_done)) {
+		if (octep_dp_dbg & 1)
+			dev_info(&octep->pdev->dev,
+				 "dp-dbg: %s open refused io_enabled=%d hs_done=%d\n",
+				 netdev->name, READ_ONCE(octep->dp_io_enabled),
+				 READ_ONCE(octep->hs_done));
 		return -ENETDOWN;
+	}
+	if (octep_dp_dbg & 1)
+		octep_dp_dbg_rings(octep, netdev->name);
 	netif_carrier_on(netdev);
 	netif_start_queue(netdev);
 	return 0;
@@ -2315,8 +2473,33 @@ static int octep_dp_open(struct net_device *netdev)
 
 static int octep_dp_stop(struct net_device *netdev)
 {
+	struct octep_netdev_priv *priv = netdev_priv(netdev);
+	struct octep *octep = priv->octep;
+
 	netif_stop_queue(netdev);
 	netif_carrier_off(netdev);
+	if (octep_dp_dbg & 2) {
+		unsigned int i;
+		u32 r;
+		bool busy = true;
+
+		for (i = 0; i < 20 && busy; i++) {
+			busy = false;
+			for (r = 0; r < min_t(u32, octep->dp_ring_count, 4); r++) {
+				struct octep_dp_ring *ring = &octep->dp_ring[r];
+
+				if (ring->in_configured &&
+				    !(octep_ring_readq(octep, ring->ring, OCTEP_SDP_R_IN_CONTROL) &
+				      OCTEP_R_IN_CTL_IDLE))
+					busy = true;
+			}
+			if (busy)
+				usleep_range(1000, 1500);
+		}
+		dev_info(&octep->pdev->dev, "dp-dbg: %s stop drain %s after %u polls\n",
+			 netdev->name, busy ? "TIMED OUT" : "ok", i);
+		octep_dp_dbg_rings(octep, "stop");
+	}
 	return 0;
 }
 
@@ -2332,10 +2515,27 @@ static netdev_tx_t octep_dp_xmit(struct sk_buff *skb,
 	u32 slot, len, wire_len, pending;
 	int err;
 
+	if (skb->ip_summed == CHECKSUM_PARTIAL && skb_checksum_help(skb)) {
+		dev_kfree_skb_any(skb);
+		spin_lock_irqsave(&octep->dp_stats_lock, stats_flags);
+		port->stats.tx_dropped++;
+		spin_unlock_irqrestore(&octep->dp_stats_lock, stats_flags);
+		return NETDEV_TX_OK;
+	}
 	len = skb->len;
+	if ((octep_dp_dbg & 8) && (skb_is_nonlinear(skb) || skb_shinfo(skb)->gso_size))
+		net_ratelimited_function(dev_info, &octep->pdev->dev,
+					 "dp-dbg: %s tx sg skb len=%u frags=%u frag_list=%d gso=%u\n",
+					 netdev->name, len, skb_shinfo(skb)->nr_frags,
+					 !!skb_has_frag_list(skb), skb_shinfo(skb)->gso_size);
 	if (len < ETH_HLEN ||
 	    len > netdev->mtu + ETH_HLEN + VLAN_HLEN ||
 	    len + OCTEP_DP_TAG_LEN > OCTEP_DP_TXBUF_SIZE) {
+		if (octep_dp_debug)
+			dev_info_ratelimited(&octep->pdev->dev,
+					     "dp-debug: %s tx drop: bad length %u (mtu %u, slot room %zu)\n",
+					     netdev->name, len, netdev->mtu,
+					     (size_t)OCTEP_DP_TXBUF_SIZE - OCTEP_DP_TAG_LEN);
 		spin_lock_irqsave(&octep->dp_stats_lock, stats_flags);
 		port->stats.tx_dropped++;
 		spin_unlock_irqrestore(&octep->dp_stats_lock, stats_flags);
@@ -3615,8 +3815,13 @@ static ssize_t sdp_port_add_store(struct device *dev,
 	netdev->netdev_ops = &octep_dp_netdev_ops;
 	netdev->hw_features |= NETIF_F_HW_TC;
 	netdev->features |= NETIF_F_HW_TC;
+	if (octep_dp_sg) {
+		/* TX copies via skb_copy_bits and finishes partial checksums in software. */
+		netdev->hw_features |= NETIF_F_SG | NETIF_F_HW_CSUM;
+		netdev->features |= NETIF_F_SG | NETIF_F_HW_CSUM;
+	}
 	netdev->min_mtu = ETH_MIN_MTU;
-	netdev->max_mtu = OCTEP_MGMT_MTU;
+	netdev->max_mtu = octep_dp_max_mtu;
 	strscpy(netdev->name, "octep%d", IFNAMSIZ);
 	SET_NETDEV_DEV(netdev, &octep->pdev->dev);
 	eth_hw_addr_set(netdev, addr);
@@ -4199,6 +4404,9 @@ static ssize_t rpc_allow_write_store(struct device *dev,
 	if (value > 1)
 		return -EINVAL;
 	mutex_lock(&octep->lock);
+	if (octep->rpc_allow_write != !!value)
+		dev_info(dev, "gate: rpc write gate %s (by %s pid %d)\n",
+			 value ? "OPEN" : "CLOSED", current->comm, current->pid);
 	octep->rpc_allow_write = value;
 	mutex_unlock(&octep->lock);
 	return count;
@@ -4268,6 +4476,9 @@ static ssize_t offload_store(struct device *dev,
 		octep->rpc_fw_cfg = fw_cfg;
 		octep->rpc_fw_cfg_known = true;
 	}
+	dev_info(dev, "gate: firmware offload %s fw_cfg=0x%04x %s (by %s pid %d)\n",
+		 enable ? "ON" : "OFF", fw_cfg,
+		 err ? "FAILED" : "acknowledged", current->comm, current->pid);
 
 out_unlock:
 	mutex_unlock(&octep->lock);
@@ -4995,9 +5206,25 @@ static bool octep_ft_copy_tcp_state(const struct octep_ft_ent *e, u8 *out)
 	spin_lock_bh(&ct->lock);
 	seen = ct->proto.tcp.seen;
 	for (d = 0; d < 2; d++) {
+		/*
+		 * conntrack's td_maxwin on a fresh flow is the unscaled SYN/SYN-ACK window
+		 * (e.g. 65535 for a peer scaling by 14), far below what the peer advertises
+		 * once data flows. Floor each window at the largest value its scale can
+		 * express so the NPU never sees a window beyond its tracked maximum.
+		 */
+		u32 w = max_t(u32, seen[d].td_maxwin, 0xffffu << seen[d].td_scale) ?: 1;
+		u32 wo = max_t(u32, seen[d ^ 1].td_maxwin, 0xffffu << seen[d ^ 1].td_scale) ?: 1;
+		u32 room = max_t(u32, 16u << 20, min_t(u32, 2 * w, 1u << 28));
+		u32 room_o = max_t(u32, 16u << 20, min_t(u32, 2 * wo, 1u << 28));
+		u32 maxend = seen[d].td_maxend;
+		u32 reach = seen[d ^ 1].td_end + wo;
+
+		if ((s32)(reach - maxend) > 0)
+			maxend = reach;
+		/* Headroom as on BSD: the snapshot window is exhausted within one cwnd */
 		put_unaligned_le32(seen[d].td_end, out + OCTEP_TCP_SEEN(d) + 0);
-		put_unaligned_le32(seen[d].td_maxend, out + OCTEP_TCP_SEEN(d) + 4);
-		put_unaligned_le32(seen[d].td_maxwin, out + OCTEP_TCP_SEEN(d) + 8);
+		put_unaligned_le32(maxend + room_o, out + OCTEP_TCP_SEEN(d) + 4);
+		put_unaligned_le32(w + room, out + OCTEP_TCP_SEEN(d) + 8);
 		put_unaligned_le32(seen[d ^ 1].td_end, out + OCTEP_TCP_SEEN(d) + 12);
 	}
 	flags = OCTEP_TCP_SEQ_CHK_ON | OCTEP_TCP_LIBERAL_ORIG | OCTEP_TCP_LIBERAL_REPLY |
@@ -5007,6 +5234,43 @@ static bool octep_ft_copy_tcp_state(const struct octep_ft_ent *e, u8 *out)
 	nf_ct_put(ct);
 	put_unaligned_le32(flags, out + OCTEP_TCP_OFF_FLAGS);
 	return true;
+}
+
+/*
+ * Host TCP view for the cut-in gate. Only the last packet's ACK is known, so in-flight is
+ * measurable when that packet was an ACK: the opposite direction's sent end minus that ACK.
+ */
+static int octep_ft_tcp_gate(const struct octep_ft_ent *e, u32 *inflight, u8 *retrans, u8 *state)
+{
+	struct nf_conntrack_tuple t = {};
+	struct nf_conntrack_tuple_hash *h;
+	struct nf_conn *ct;
+	u8 dir;
+
+	t.src.l3num = AF_INET;
+	t.src.u3.ip = e->src;
+	t.src.u.tcp.port = htons(e->sport);
+	t.dst.u3.ip = e->dst;
+	t.dst.u.tcp.port = htons(e->dport);
+	t.dst.protonum = IPPROTO_TCP;
+	t.dst.dir = IP_CT_DIR_ORIGINAL;
+	h = nf_conntrack_find_get(&init_net, &nf_ct_zone_dflt, &t);
+	if (!h)
+		return -ENOENT;
+	ct = nf_ct_tuplehash_to_ctrack(h);
+	spin_lock_bh(&ct->lock);
+	*state = ct->proto.tcp.state;
+	*retrans = ct->proto.tcp.retrans;
+	dir = ct->proto.tcp.last_dir;
+	/* A pure ACK in the other direction acknowledges the data of direction !dir. */
+	*inflight = ct->proto.tcp.seen[!dir].td_end - ct->proto.tcp.last_ack;
+	if ((s32)*inflight < 0)
+		*inflight = 0;
+	if (ct->proto.tcp.last_end != ct->proto.tcp.last_seq)
+		*inflight = U32_MAX;
+	spin_unlock_bh(&ct->lock);
+	nf_ct_put(ct);
+	return 0;
 }
 
 /*
@@ -5075,12 +5339,14 @@ static void octep_ft_program_locked(struct octep *octep,
 	octep->ft_spare_set = jiffies_to_msecs(jiffies - sp->last_seen) > OCTEP_FT_MAX_AGE_MS;
 	octep_ft_fill_mflow(&mo, hot_is_orig ? hot->id : sp->id,
 			    hot_is_orig ? hot->revision : sp->revision, 0,
+			    octep_ft_first_action(),
 			    OCTEP_FT_CONN_BASE + slot, 1,
 			    octep->rpc_fw_rev, octep_ft_l3_rev,
 			    OCTEP_FT_NHOP_BASE + 2 * slot, 0,
 			    (u32)octep_ft_mflow_timeout);
 	octep_ft_fill_mflow(&mr, hot_is_orig ? sp->id : hot->id,
 			    hot_is_orig ? sp->revision : hot->revision, 1,
+			    octep_ft_first_action(),
 			    OCTEP_FT_CONN_BASE + slot, 1,
 			    octep->rpc_fw_rev, octep_ft_l3_rev,
 			    OCTEP_FT_NHOP_BASE + 2 * slot + 1, 0,
@@ -5114,7 +5380,20 @@ static void octep_ft_program_locked(struct octep *octep,
 			print_hex_dump(KERN_INFO, "ft: dbg flow-create: ", DUMP_PREFIX_OFFSET, 16, 1, &fc, sizeof(fc), false);
 		}
 		octep->ft_conn[slot].used = true;
+		octep->ft_conn[slot].fc = fc;
+		octep->ft_conn[slot].revives = 0;
 		octep->ft_conn[slot].since = jiffies;
+		octep->ft_conn[slot].alloc_next = jiffies;
+		octep->ft_conn[slot].alloc_ts[0] = 0;
+		octep->ft_conn[slot].alloc_ts[1] = 0;
+		octep->ft_conn[slot].tup = *corig;
+		octep->ft_conn[slot].cutin_pending = octep_ft_cutin && octep_ft_cutin_ms;
+		octep->ft_conn[slot].cutin_at = jiffies + msecs_to_jiffies(octep_ft_cutin_ms);
+		octep->ft_conn[slot].blackhole_checked = false;
+		octep->ft_conn[slot].hw_active = false;
+		octep->ft_conn[slot].reply_ts = 0;
+		octep->ft_conn[slot].reply_ts_moved = jiffies;
+		octep->ft_conn[slot].reply_ts_poll = jiffies;
 		octep->ft_conn[slot].rearm = jiffies;
 		octep->ft_conn[slot].id[0] = hot_is_orig ? hot->id : sp->id;
 		octep->ft_conn[slot].rev[0] = hot_is_orig ? hot->revision : sp->revision;
@@ -5169,24 +5448,44 @@ static void octep_ft_program_locked(struct octep *octep,
  * Proactively re-issue MFLOW_PROGRAM for both directions of every live connection, well inside
  * ft_mflow_timeout, so a genuinely busy flow cannot be aged out by firmware even though its own
  * traffic should (per vendor design) have kept it alive on its own. See ft_mflow_rearm comment.
+ *
+ * Bug fixed here (live readback showed fw_valid 1->0, state 2->0, firmware revision bumping to 1
+ * right after a rearm, while host_valid stayed 1): we were resending the *same* id_rev every
+ * cycle. Firmware reads a repeat of an already-committed id_rev as nothing new to confirm and
+ * drops the slot back to invalid/inactive instead of refreshing its timeout. id_rev only has 6
+ * bits of room in the payload (id | id_rev << 25 | BIT(31)), so bump it with wraparound on every
+ * rearm the same way a fresh program would, and keep our own copy in sync for the next cycle and
+ * for teardown/rollback, which also need the id's current revision.
  */
 static void octep_ft_rearm_locked(struct octep *octep)
 {
 	struct octep_rpc_mflow_payload m;
 	unsigned int slot, i;
 
+	unsigned int rearm_secs;
+
 	if (octep_ft_mflow_rearm <= 0)
 		return;
+	/*
+	 * ft_mflow_rearm is a live 0644 knob; clamp it against the current ft_mflow_timeout on
+	 * every call instead of only at probe() so a bad runtime write (rearm >= timeout) can't
+	 * put us right back into the same collapse this function exists to avoid.
+	 */
+	rearm_secs = (unsigned int)octep_ft_mflow_rearm;
+	if (octep_ft_mflow_timeout > 5 && rearm_secs >= (unsigned int)octep_ft_mflow_timeout)
+		rearm_secs = (unsigned int)octep_ft_mflow_timeout - 5;
 	for (slot = 0; slot < OCTEP_FT_CONNS; slot++) {
 		struct octep_ft_conn *c = &octep->ft_conn[slot];
 
 		if (!c->used)
 			continue;
-		if (time_before(jiffies, c->rearm + octep_ft_mflow_rearm * HZ))
+		if (time_before(jiffies, c->rearm + rearm_secs * HZ))
 			continue;
 		c->rearm = jiffies;
 		for (i = 0; i < 2; i++) {
+			c->rev[i] = (c->rev[i] + 1) & 0x3f;
 			octep_ft_fill_mflow(&m, c->id[i], c->rev[i], i,
+					    c->cutin_pending ? octep_ft_first_action() : (u32)octep_ft_mflow_action,
 					    OCTEP_FT_CONN_BASE + slot, 1,
 					    octep->rpc_fw_rev, octep_ft_l3_rev,
 					    OCTEP_FT_NHOP_BASE + 2 * slot + i, 0,
@@ -5194,6 +5493,10 @@ static void octep_ft_rearm_locked(struct octep *octep)
 			octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_MFLOW_PROGRAM,
 						    (const u8 *)&m, sizeof(m));
 		}
+		dev_info_ratelimited(&octep->pdev->dev,
+				     "ft: rearmed conn %u ids %u/%u rev %u/%u\n",
+				     OCTEP_FT_CONN_BASE + slot, c->id[0], c->id[1],
+				     c->rev[0], c->rev[1]);
 	}
 }
 
@@ -5217,6 +5520,151 @@ static void octep_ft_debug_conn_locked(struct octep *octep, unsigned int slot)
 		 OCTEP_FT_CONN_BASE + slot,
 		 jiffies_to_msecs(jiffies - c->since), c->id[0], st[0], err[0],
 		 c->id[1], st[1], err[1], cerr, cerr ? 0 : 32, cerr ? NULL : ce);
+	if (cerr)
+		return;
+	/* Whole NPU conn entry against the TCP block we sent, to see whether the NPU's window state still matches the host snapshot. */
+	dev_info(&octep->pdev->dev, "ft: dbg npu conn[0..63] %64ph\n", ce);
+	dev_info(&octep->pdev->dev, "ft: dbg npu conn[64..107] %44ph\n", ce + 64);
+	dev_info(&octep->pdev->dev, "ft: dbg sent tcp[0..59] %60ph\n", c->fc.tcp_state);
+}
+
+/* Second half of make-before-break: flip a staged conn's microflows to the forward action and log it. */
+static void octep_ft_cutin_locked(struct octep *octep)
+{
+	struct octep_rpc_mflow_payload m;
+	unsigned int slot, i;
+
+	for (slot = 0; slot < OCTEP_FT_CONNS; slot++) {
+		struct octep_ft_conn *c = &octep->ft_conn[slot];
+		int err[2] = {};
+
+		const u8 *mf, *ce;
+		const char *why = NULL;
+		u32 inflight = 0;
+		u8 retrans = 0, tstate = 0;
+		bool timed_out;
+
+		if (!c->used || !c->cutin_pending || time_before(jiffies, c->cutin_at))
+			continue;
+		timed_out = time_after(jiffies, c->cutin_at + msecs_to_jiffies(octep_ft_cutin_wait_ms));
+		/* Flow status checks first: NPU reads and, for TCP, state, retransmits and unacked bytes. */
+		if (octep_rpc_read_connection_locked(octep, OCTEP_FT_CONN_BASE + slot, &ce))
+			why = "npu conn unreadable";
+		else if (octep_rpc_mflow_read_locked(octep, c->id[0], &mf) ||
+			 octep_rpc_mflow_read_locked(octep, c->id[1], &mf))
+			why = "npu microflow unreadable";
+		else if (c->tup.proto == IPPROTO_TCP) {
+			if (octep_ft_tcp_gate(&c->tup, &inflight, &retrans, &tstate))
+				why = "host conntrack gone";
+			else if (tstate != TCP_CONNTRACK_ESTABLISHED)
+				why = "tcp not established";
+			else if (retrans)
+				why = "host retransmits";
+			else if (inflight > octep_ft_cutin_inflight)
+				why = "unacked data above ft_cutin_inflight";
+		}
+		if (why && !timed_out) {
+			dev_info(&octep->pdev->dev,
+				 "ft: cut-in conn %u waiting: %s (tcp state %u retrans %u inflight %u)\n",
+				 OCTEP_FT_CONN_BASE + slot, why, tstate, retrans,
+				 inflight == U32_MAX ? 0 : inflight);
+			continue;
+		}
+		c->rearm = jiffies;
+		dev_info(&octep->pdev->dev,
+			 "ft: cut-in conn %u: staged %ums, %s, flipping action %d -> %d (tcp state %u retrans %u inflight %u)\n",
+			 OCTEP_FT_CONN_BASE + slot, jiffies_to_msecs(jiffies - c->since),
+			 why ? "checks timed out" : "checks passed",
+			 octep_ft_cutin_action, octep_ft_mflow_action, tstate, retrans,
+			 inflight == U32_MAX ? 0 : inflight);
+		octep_ft_debug_conn_locked(octep, slot);
+		for (i = 0; i < 2; i++) {
+			/* The firmware accepts a write only at the slot's current revision (bits 8..13 of the state), so read it, never bump. */
+			if (!octep_rpc_mflow_read_locked(octep, c->id[i], &mf))
+				c->rev[i] = (get_unaligned_le32(mf + 84) >> 8) & 0x3f;
+			octep_ft_fill_mflow(&m, c->id[i], c->rev[i], i,
+					    (u32)octep_ft_mflow_action,
+					    OCTEP_FT_CONN_BASE + slot, 1,
+					    octep->rpc_fw_rev, octep_ft_l3_rev,
+					    OCTEP_FT_NHOP_BASE + 2 * slot + i, 0,
+					    (u32)octep_ft_mflow_timeout);
+			err[i] = octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_MFLOW_PROGRAM,
+							     (const u8 *)&m, sizeof(m));
+		}
+		dev_info(&octep->pdev->dev,
+			 "ft: cut-in conn %u done rev %u/%u rpc %d/%d\n",
+			 OCTEP_FT_CONN_BASE + slot, c->rev[0], c->rev[1], err[0], err[1]);
+		if (err[0] || err[1])
+			continue;
+		/* Forwarding starts now: restart the blackhole and frozen-reply clocks from the flip. */
+		c->cutin_pending = false;
+		c->since = jiffies;
+		c->blackhole_checked = false;
+		c->hw_active = false;
+		c->reply_ts = 0;
+		c->reply_ts_moved = jiffies;
+		c->reply_ts_poll = jiffies;
+		octep_ft_debug_conn_locked(octep, slot);
+	}
+}
+
+/*
+ * A truly offloaded (wire-to-wire) connection is *supposed* to stop producing
+ * host-visible frames -- that is the entire point of hardware offload, not a
+ * failure symptom. octep_ft_check_blackhole_locked() below used to treat the
+ * resulting silence on the rx_flow tracker as proof of a black hole and
+ * release the connection within OCTEP_FT_BLACKHOLE_JIFFIES regardless, which
+ * tore down every successful offload a few seconds after it started working
+ * (confirmed live: WIRE_TO_WIRE counters rising, then "carried no
+ * host-visible frames ... released" at the 3s mark). Ask the firmware
+ * directly whether the microflow is still active/accepted (fw_valid and
+ * state==2) before trusting the host-side silence as a sign of trouble.
+ */
+static bool octep_ft_mflow_active_locked(struct octep *octep, u32 id)
+{
+	const u8 *mf;
+	u32 entry_state, action;
+
+	if (octep_rpc_mflow_read_locked(octep, id, &mf))
+		return false;
+	entry_state = get_unaligned_le32(mf + 84);
+	action = get_unaligned_le32(mf + 92);
+	return ((entry_state >> 16) & 0xff) && (action >> 28) == 2;
+}
+
+/* Firmware hit timestamp of a microflow; frozen means no packet matched it. */
+static bool octep_ft_mflow_ts_locked(struct octep *octep, u32 id, u32 *ts)
+{
+	const u8 *mf;
+
+	if (octep_rpc_mflow_read_locked(octep, id, &mf))
+		return false;
+	*ts = get_unaligned_le32(mf + 72);
+	return true;
+}
+
+/*
+ * A firmware-active TCP flow whose reply microflow never advances is not
+ * forwarding ACKs, so the sender stalls. Polled every 1s (not per tick) to keep
+ * RPC load off the shared lock; true once the reply timestamp has been frozen
+ * for ft_reply_frozen seconds (default 2).
+ */
+static bool octep_ft_reply_frozen_locked(struct octep *octep,
+					 struct octep_ft_conn *c)
+{
+	u32 ts;
+
+	if (time_before(jiffies, c->reply_ts_poll + HZ))
+		return false;
+	c->reply_ts_poll = jiffies;
+	if (!octep_ft_mflow_ts_locked(octep, c->id[1], &ts))
+		return false;
+	if (ts != c->reply_ts) {
+		c->reply_ts = ts;
+		c->reply_ts_moved = jiffies;
+		return false;
+	}
+	return time_after(jiffies, c->reply_ts_moved + READ_ONCE(octep_ft_reply_frozen_s) * HZ);
 }
 
 /*
@@ -5236,8 +5684,45 @@ static void octep_ft_check_blackhole_locked(struct octep *octep,
 		if (octep_ft_debug && c->used &&
 		    time_before(jiffies, c->since + 8 * HZ))
 			octep_ft_debug_conn_locked(octep, slot);
-		if (!c->used || time_before(jiffies, c->since + OCTEP_FT_BLACKHOLE_JIFFIES))
+		/* A staged conn is not forwarding yet, so host silence says nothing until the flip. */
+		if (!c->used || c->cutin_pending ||
+		    time_before(jiffies, c->since + OCTEP_FT_BLACKHOLE_JIFFIES))
 			continue;
+		/*
+		 * Only pay for the extra RPC round trips once per connection: a long-lived
+		 * offloaded flow would otherwise get re-queried every second of its life
+		 * (this scan runs on a 1s delayed_work), stacking up RPC latency under the
+		 * same global lock that MFLOW_PROGRAM/FLOW_CREATE_FP also need and starving
+		 * them -- the exact regression a continuous per-tick check introduced.
+		 */
+		if (!c->blackhole_checked) {
+			c->blackhole_checked = true;
+			c->hw_active = octep_ft_mflow_active_locked(octep, c->id[0]) ||
+				       octep_ft_mflow_active_locked(octep, c->id[1]);
+			if (c->hw_active)
+				dev_info(&octep->pdev->dev,
+					 "ft: conn %u firmware-active, host silence is offload not a black hole\n",
+					 OCTEP_FT_CONN_BASE + slot);
+		}
+		/* Sticky: a one-tick continue let the next 1s scan release a live offload. */
+		if (c->hw_active) {
+			bool tcp = false;
+
+			for (i = 0; i < OCTEP_FT_MAX && !tcp; i++)
+				tcp = octep->ft_ent[i].used &&
+				      octep->ft_ent[i].conn == (int)slot &&
+				      octep->ft_ent[i].proto == IPPROTO_TCP;
+			if (!tcp || !octep_ft_reply_frozen_locked(octep, c))
+				continue;
+			dev_info(&octep->pdev->dev,
+				 "ft: conn %u reply microflow frozen for %us while firmware-active, releasing to the slow path\n",
+				 OCTEP_FT_CONN_BASE + slot, READ_ONCE(octep_ft_reply_frozen_s));
+			/* One NPU view of the conn and both microflows at the stall, before they are torn down. */
+			octep_ft_debug_conn_locked(octep, slot);
+			if (octep_dp_dbg & 4)
+				octep_dp_dbg_rings(octep, "flow-release");
+			goto release;
+		}
 		for (i = 0; i < OCTEP_FT_MAX && !seen; i++) {
 			const struct octep_ft_ent *e = &octep->ft_ent[i];
 
@@ -5259,15 +5744,17 @@ static void octep_ft_check_blackhole_locked(struct octep *octep,
 		}
 		if (seen)
 			continue;
+release:
 		for (i = 0; i < OCTEP_FT_MAX; i++) {
 			struct octep_ft_ent *e = &octep->ft_ent[i];
 
 			if (e->used && e->conn == (int)slot && e->proto == IPPROTO_TCP)
 				e->blackhole = true;
 		}
-		dev_info(&octep->pdev->dev,
-			 "ft: conn %u carried no host-visible frames for %us after offload, released and kept on the slow path\n",
-			 OCTEP_FT_CONN_BASE + slot, OCTEP_FT_BLACKHOLE_JIFFIES / HZ);
+		if (!c->hw_active)
+			dev_info(&octep->pdev->dev,
+				 "ft: conn %u carried no host-visible frames for %us after offload, released and kept on the slow path\n",
+				 OCTEP_FT_CONN_BASE + slot, OCTEP_FT_BLACKHOLE_JIFFIES / HZ);
 		octep_ft_release_locked(octep, slot);
 	}
 }
@@ -5315,7 +5802,8 @@ static void octep_ft_scan_locked(struct octep *octep)
 		const struct octep_rx_flow_track *hot = NULL, *partner = NULL;
 
 		if (!e->used || e->conn >= 0 || e->blackhole ||
-		    time_before(jiffies, e->retry_at))
+		    time_before(jiffies, e->retry_at) ||
+		    time_before(jiffies, e->born + msecs_to_jiffies(octep_ft_delay_ms)))
 			continue;
 		if (!octep_ft_offload_nat &&
 		    (e->nsrc != e->src || e->ndst != e->dst ||
@@ -5340,6 +5828,7 @@ static void octep_ft_scan_locked(struct octep *octep)
 			struct octep_ft_ent *o = &octep->ft_ent[j];
 
 			if (o == e || !o->used || o->conn >= 0 || o->proto != e->proto ||
+			    time_before(jiffies, o->born + msecs_to_jiffies(octep_ft_delay_ms)) ||
 			    e->src != o->ndst || e->dst != o->nsrc ||
 			    e->sport != o->ndport || e->dport != o->nsport)
 				continue;
@@ -5433,6 +5922,128 @@ static void octep_ft_scan_locked(struct octep *octep)
 	kfree(tracks);
 }
 
+/* NPU system counters logged with each npu-alloc line: wire-to-wire, firmware/L3 revision mismatches, conn reclaim and inactive-microflow punts. */
+static const u8 octep_ft_alloc_cnt_idx[7] = { 0, 2, 42, 43, 52, 53, 59 };
+
+/* NPU counter names (SFOS 22/23 order, matches our firmware) for the "moved" line; others print by id. */
+static const struct { u8 id; const char *name; } octep_ft_cnt_names[] = {
+	{ 0, "RX_WIRE" }, { 1, "TX_WIRE" }, { 2, "WIRE_TO_WIRE" }, { 3, "RX_KN" },
+	{ 8, "TX_DROP" }, { 9, "TX_DROP_QUEUE_FULL" }, { 10, "TX_DROP_LEN_ERR" },
+	{ 11, "TX_DROP_SHAPER_INV" }, { 21, "TX_DROP_POLL" }, { 22, "TX_DROP_ERR" },
+	{ 24, "DROP_LIF_INDEX_INVALID" }, { 25, "DROP_LIF_LU_NULL" },
+	{ 26, "DROP_LIF_INVALID" }, { 27, "DROP_LIF_ADMIN_DISABLED" },
+	{ 28, "DROP_LIF_NOT_MY_MAC" }, { 29, "DROP_MTU_EXCEEDED" },
+	{ 30, "DROP_TCP_SEQ_CHK_INVALID" }, { 31, "DROP_IPS_VERDICT" },
+	{ 33, "DROP_MFLOW_ACTION" }, { 34, "DROP_MFLOW_UNSUPPORTED_ACTION" },
+	{ 35, "DROP_FRAG_ERROR" }, { 36, "DROP_IG_ERR" },
+	{ 40, "TO_KN_NON_ACCEL" }, { 42, "TO_KN_FW_REV_MISMATCH" },
+	{ 43, "TO_KN_L3_FW_REV_MISMATCH" }, { 52, "TO_KN_CONN_RECLAIM_PENDING" },
+	{ 53, "TO_KN_CONN_RECLAIMED" }, { 56, "TO_KN_TCP_SEQ_CHK_INVALID" },
+	{ 57, "TO_KN_TCP_MAX_RETRANS" }, { 58, "TO_KN_TCP_FIN_SYN_RST" },
+	{ 59, "TO_KN_MFLOW_NOT_ACTIVE" }, { 60, "TO_KN_EG_ERR" },
+};
+
+/* With dp_debug, one dmesg line listing every NPU counter that moved since the previous read. */
+static void octep_ft_cnt_moved_report(struct octep *octep, const u8 *reply)
+{
+	char line[400];
+	size_t n = 0;
+	unsigned int i, k;
+
+	for (i = 0; i < OCTEP_RPC_SYS_COUNTER_COUNT; i++) {
+		u64 now = get_unaligned_le64(reply + i * sizeof(u64));
+		u64 delta = now - octep->alloc_cnt_all[i];
+		const char *name = NULL;
+
+		octep->alloc_cnt_all[i] = now;
+		if (!delta || delta == now)
+			continue;
+		for (k = 0; k < ARRAY_SIZE(octep_ft_cnt_names); k++)
+			if (octep_ft_cnt_names[k].id == i)
+				name = octep_ft_cnt_names[k].name;
+		if (n < sizeof(line))
+			n += scnprintf(line + n, sizeof(line) - n, " %s[%u]+%llu",
+				       name ?: "ctr", i, (unsigned long long)delta);
+	}
+	if (n)
+		dev_info(&octep->pdev->dev, "dp-debug: npu counters moved:%s\n", line);
+}
+
+/* One dmesg line per offloaded conn straight from the NPU (every 1s while young, then 5s): both microflows' hit timestamps and states, the pushed per-flow stats, and the NPU counter deltas that show where its frames go. */
+static void octep_ft_alloc_report_locked(struct octep *octep)
+{
+	unsigned int slot, i;
+	u64 cnt[7] = {}, d[7] = {};
+	bool have_cnt = false, tried_cnt = false;
+
+	for (slot = 0; slot < OCTEP_FT_CONNS; slot++) {
+		struct octep_ft_conn *c = &octep->ft_conn[slot];
+		u32 ts[2] = {}, st[2] = {};
+		u8 raw[2][OCTEP_RPC_MFLOW_READ_REPLY_LEN] = {};
+		int err[2];
+		const u8 *mf;
+
+		if (!c->used || time_before(jiffies, c->alloc_next))
+			continue;
+		c->alloc_next = jiffies + (jiffies_to_msecs(jiffies - c->since) < 10000 ? HZ : 5 * HZ);
+		if (!tried_cnt) {
+			u8 payload[OCTEP_RPC_TBL_REQ_LEN] = {};
+			const u8 *reply;
+
+			tried_cnt = true;
+			put_unaligned_le16(OCTEP_RPC_SYS_COUNTER_COUNT, payload + 4);
+			put_unaligned_le32(OCTEP_RPC_SYS_COUNTER_COUNT - 1, payload + 8);
+			if (!octep_rpc_post_command_locked(octep,
+							   OCTEP_RPC_CMD_LO_WORKER_SYS_CNT_READ,
+							   payload, sizeof(payload)) &&
+			    octep->rpc_last_len == OCTEP_RPC_SYS_COUNTER_COUNT * sizeof(u64)) {
+				reply = (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+				if (octep_dp_debug)
+					octep_ft_cnt_moved_report(octep, reply);
+				for (i = 0; i < ARRAY_SIZE(cnt); i++) {
+					cnt[i] = get_unaligned_le64(reply + octep_ft_alloc_cnt_idx[i] * sizeof(u64));
+					d[i] = cnt[i] - octep->alloc_cnt[i];
+					octep->alloc_cnt[i] = cnt[i];
+				}
+				have_cnt = true;
+			}
+		}
+		for (i = 0; i < 2; i++) {
+			err[i] = octep_rpc_mflow_read_locked(octep, c->id[i], &mf);
+			if (!err[i]) {
+				ts[i] = get_unaligned_le32(mf + 72);
+				st[i] = get_unaligned_le32(mf + 84);
+				memcpy(raw[i], mf, sizeof(raw[i]));
+			}
+		}
+		/* Raw slot bytes for the first 6s, to diff the orig and reply microflows. */
+		if (jiffies_to_msecs(jiffies - c->since) < 6000)
+			for (i = 0; i < 2; i++)
+				if (!err[i])
+					dev_info(&octep->pdev->dev,
+						 "npu-dump: conn %u age %ums %s id %u: %*phN %*phN\n",
+						 OCTEP_FT_CONN_BASE + slot,
+						 jiffies_to_msecs(jiffies - c->since),
+						 i ? "reply" : "orig", c->id[i],
+						 58, raw[i], 58, raw[i] + 58);
+		dev_info(&octep->pdev->dev,
+			 "npu-alloc: conn %u age %ums orig id %u ts %u (+%u) state 0x%08x (%d) reply id %u ts %u (+%u) state 0x%08x (%d) conn_stats msgs=%llu entries=%llu\n",
+			 OCTEP_FT_CONN_BASE + slot,
+			 jiffies_to_msecs(jiffies - c->since),
+			 c->id[0], ts[0], ts[0] - c->alloc_ts[0], st[0], err[0],
+			 c->id[1], ts[1], ts[1] - c->alloc_ts[1], st[1], err[1],
+			 (unsigned long long)READ_ONCE(octep->cmsg_conn_stats_messages),
+			 (unsigned long long)READ_ONCE(octep->cmsg_conn_stats_entries));
+		if (have_cnt)
+			dev_info(&octep->pdev->dev,
+				 "npu-alloc: conn %u npu counters since last report: RX_WIRE +%llu WIRE_TO_WIRE +%llu FW_REV_MISMATCH +%llu L3_FW_REV_MISMATCH +%llu CONN_RECLAIM_PENDING +%llu CONN_RECLAIMED +%llu MFLOW_NOT_ACTIVE +%llu (totals RX_WIRE=%llu WIRE_TO_WIRE=%llu)\n",
+				 OCTEP_FT_CONN_BASE + slot,
+				 d[0], d[1], d[2], d[3], d[4], d[5], d[6], cnt[0], cnt[1]);
+		c->alloc_ts[0] = ts[0];
+		c->alloc_ts[1] = ts[1];
+	}
+}
+
 static void octep_ft_work(struct work_struct *work)
 {
 	struct octep *octep = container_of(to_delayed_work(work), struct octep,
@@ -5444,7 +6055,9 @@ static void octep_ft_work(struct work_struct *work)
 	if (!octep->ft_stop) {
 		if (octep->rpc_allow_write) {
 			octep_ft_scan_locked(octep);
+			octep_ft_cutin_locked(octep);
 			octep_ft_rearm_locked(octep);
+			octep_ft_alloc_report_locked(octep);
 		}
 		for (i = 0; i < OCTEP_FT_MAX; i++)
 			any |= octep->ft_ent[i].used;
@@ -5560,6 +6173,7 @@ static int octep_ft_add(struct net_device *netdev, struct flow_cls_offload *f)
 	e.iface = opriv->port->iface;
 	e.tag = opriv->port->tag;
 	e.used = true;
+	e.born = jiffies;
 
 	mutex_lock(&octep->lock);
 	if (!octep->ft_stop) {
@@ -6419,6 +7033,7 @@ static int octep_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	struct octep *octep;
 	int err;
 
+	octep_dp_max_mtu = clamp(octep_dp_max_mtu, 1500u, 9000u);
 	err = pci_enable_device_mem(pdev);
 	if (err)
 		return err;

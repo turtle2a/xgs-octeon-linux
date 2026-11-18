@@ -79,6 +79,19 @@ every 30 seconds from startup and remains active after recovery or a temporary
 PF unbind; no user `sudo -i` session is needed. The checker inspects SDP sysfs
 state even if systemd reports the oneshot bring-up unit as `active (exited)`.
 
+### Wedged NPU (rings armed, handshake idle, scratch 0)
+
+If the target stops answering the handshake (`rings=armed handshake=idle
+scratch=0x0 front_netdevs=0`, repeating `no target response on offer N`),
+`--auto` correctly refuses. The status checker runs
+`sdp-recover-npu.sh --wedged` itself once per boot, after bring-up has waited
+`OCTEP_WEDGED_AFTER_S` (default 300s). Operators can run it by hand:
+`sudo scripts/octep/sdp-recover-npu.sh --wedged`. It stops the bring-up
+service, does one PCI bus reset, and restarts bring-up; no reboot is needed.
+It refuses while `sdp-bringup.sh`, `rpc-port-setup.sh` or `octep-hook-live.sh`
+is running. After the reset the NPU reboots its firmware, so ports take 1-2
+minutes to return.
+
 The original incident was observed during an acceleration/flow-telemetry
 driver test that reloaded OCTEP; afterward host SDP state was stopped/idle
 while target-owned scratch remained `0x1f`. Treat this as the observed trigger,

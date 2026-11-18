@@ -8,6 +8,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT HUP INT TERM
 mkdir -p "$TMP/bin"
 : > "$TMP/kmsg"
+printf 'octep 1645720 0 - Live 0x0000000000000000 (OE)\n' > "$TMP/modules"
 
 cat > "$TMP/bin/systemctl" <<'EOF'
 #!/bin/sh
@@ -23,6 +24,9 @@ show)
 	esac
 	;;
 start)
+	printf 'active:exited\n' > "$MOCK_UNIT_STATE"
+	;;
+restart)
 	printf 'active:exited\n' > "$MOCK_UNIT_STATE"
 	;;
 stop|reset-failed) ;;
@@ -46,6 +50,7 @@ run_check() {
 	MOCK_UNIT_STATE="$TMP/unit-state" \
 	MOCK_RECOVERY_RC=$1 \
 	OCTEP_STATUS_KMSG="$TMP/kmsg" \
+	OCTEP_PROC_MODULES="$TMP/modules" \
 	OCTEP_SDP_RECOVERY_SCRIPT="$TMP/recovery" \
 	sh "$STATUS_CHECK"
 }
@@ -183,4 +188,39 @@ if grep -Eq '^(start|reset-failed|stop) ' "$TMP/systemctl.log"; then
 	exit 1
 fi
 
-echo "PASS: recovery defers transient PF unbinds, preserves monitoring on unsafe states and errors, and handles successful and normal bring-up paths"
+# Module unloaded (e.g. rmmod for an upgrade): the checker must restart bring-up itself.
+printf 'active:exited\n' > "$TMP/unit-state"
+reset_logs
+: > "$TMP/modules"
+run_check 5 > "$TMP/output"
+grep -q '^restart xgs-octep-sdp-bringup.service$' "$TMP/systemctl.log"
+grep -q 'octep module is not loaded' "$TMP/output"
+if grep -q '^stop xgs-octep-sdp-status.timer$' "$TMP/systemctl.log"; then
+	echo "FAIL: module-gone restart stopped the heartbeat timer" >&2
+	exit 1
+fi
+
+# Auto-restart wedge path: nothing before WEDGED_AFTER_S, one --wedged after it, stamp cleared on recovery.
+export OCTEP_RESTART_SEEN="$TMP/restart-seen" OCTEP_RECOVERY_MARKER="$TMP/marker" OCTEP_PROC_UPTIME="$TMP/uptime"
+rm -f "$OCTEP_RESTART_SEEN" "$OCTEP_RECOVERY_MARKER"
+printf '1000.00 0.00\n' > "$OCTEP_PROC_UPTIME"
+printf 'activating:auto-restart\n' > "$TMP/unit-state"
+reset_logs
+run_check 3 > "$TMP/output"
+[ "$(cat "$OCTEP_RESTART_SEEN")" = 1000 ] || { echo "FAIL: first sight not stamped" >&2; exit 1; }
+if grep -q '^--wedged$' "$TMP/recovery.log"; then echo "FAIL: --wedged fired on first sight" >&2; exit 1; fi
+printf '1299.00 0.00\n' > "$OCTEP_PROC_UPTIME"
+reset_logs
+run_check 3 > "$TMP/output"
+if grep -q '^--wedged$' "$TMP/recovery.log"; then echo "FAIL: --wedged fired at 299s" >&2; exit 1; fi
+printf '1300.00 0.00\n' > "$OCTEP_PROC_UPTIME"
+printf 'activating:auto-restart\n' > "$TMP/unit-state"
+reset_logs
+run_check 3 > "$TMP/output"
+grep -q '^--wedged$' "$TMP/recovery.log" || { echo "FAIL: --wedged did not fire at 300s" >&2; exit 1; }
+printf 'active:exited\n' > "$TMP/unit-state"
+reset_logs
+run_check 3 > "$TMP/output"
+[ ! -e "$OCTEP_RESTART_SEEN" ] || { echo "FAIL: stamp not cleared after recovery" >&2; exit 1; }
+
+echo "PASS: recovery defers transient PF unbinds, preserves monitoring on unsafe states and errors, handles successful and normal bring-up paths, and restarts bring-up when the module is gone"

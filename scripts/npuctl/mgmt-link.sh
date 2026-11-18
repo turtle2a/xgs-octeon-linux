@@ -14,7 +14,7 @@ LINK=${NPU_MGMT_IF:-}
 HOST_ADDR=${NPU_HOST_ADDR:-169.254.254.1}
 NPU_ADDR=${NPU_ADDR:-169.254.254.2}
 PREFIX_LEN=${NPU_PREFIX_LEN:-30}
-KEY=${NPU_SSH_KEY:-"${HOME}/.ssh/id_ed25519_npu"}
+KEY=${NPU_SSH_KEY:-/etc/keys/mvmgt.x86}
 
 require_link() {
 	[ -n "$LINK" ] || { echo "set NPU_MGMT_IF to the host management-link interface" >&2; return 1; }

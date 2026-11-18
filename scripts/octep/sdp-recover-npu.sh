@@ -205,11 +205,22 @@ configure_all_octep_dhcp() {
 	done
 }
 
-[ "${1:-}" = --auto ] || {
-	echo "Usage: $0 --auto (invoked by the root SDP status service)" >&2
+FORCE=0
+case "${1:-}" in
+--auto) ;;
+--wedged) FORCE=1 ;;
+*)
+	echo "Usage: $0 --auto | --wedged" >&2
+	echo "  --auto    invoked by the root SDP status service" >&2
+	echo "  --wedged  operator-run: reset an armed-but-idle NPU that never answers the handshake" >&2
 	exit 64
-}
+	;;
+esac
 [ "$(id -u)" -eq 0 ] || fail "must run as root"
+
+# One recovery at a time: the status timer's --auto and an operator --wedged must not both reset the bus.
+exec 9>"${OCTEP_RECOVER_LOCK:-/run/xgs-octep-recover.lock}"
+flock -n 9 || skip "another recovery is already running"
 
 if [ -z "$DEVICE" ]; then
 	for candidate in "$SYSFS_ROOT"/*; do
@@ -237,12 +248,30 @@ PACKET_SERVICE=$(state_value packet_service "$STATE")
 	[ -n "$SCRATCH" ] && [ -n "$FRONT_NETDEVS" ] &&
 	[ -n "$PACKET_SERVICE" ] || blocked "unrecognized SDP state: $STATE"
 
+WEDGED=0
 case $RINGS:$RING_COUNT:$HANDSHAKE:$FRONT_NETDEVS:$PACKET_SERVICE in
 stopped:0:idle:0:disabled|armed:8:completed:10:rx-poll,tx-ring0) ;;
+armed:8:idle:0:rx-poll,tx-ring0)
+	[ "$FORCE" -eq 1 ] && [ "$SCRATCH" = 0x0000000000000000 ] &&
+		WEDGED=1
+	[ "$WEDGED" -eq 1 ] ||
+		skip "state is not safely resettable: $STATE (an operator can use --wedged)"
+	;;
 *) skip "state is not safely resettable: $STATE" ;;
 esac
+if [ "$WEDGED" -eq 1 ]; then
+	systemctl stop "$BRINGUP_UNIT" ||
+		fail "could not stop $BRINGUP_UNIT"
+	sleep 1
+	for busy in sdp-bringup.sh rpc-port-setup.sh octep-hook-live.sh; do
+		pgrep -f "$busy" >/dev/null 2>&1 &&
+			blocked "$busy is running; stop it first"
+	done
+fi
 case $SCRATCH in
 0x0000000000000001|0x000000000000001f) ;;
+0x0000000000000000) [ "$WEDGED" -eq 1 ] ||
+	blocked "unexpected handshake scratch $SCRATCH; only the observed 0x1 and 0x1f states are reset automatically" ;;
 *) blocked "unexpected handshake scratch $SCRATCH; only the observed 0x1 and 0x1f states are reset automatically" ;;
 esac
 if [ "$RINGS:$RING_COUNT:$HANDSHAKE:$FRONT_NETDEVS:$PACKET_SERVICE" = \
@@ -257,7 +286,7 @@ if [ "$RINGS:$RING_COUNT:$HANDSHAKE:$FRONT_NETDEVS:$PACKET_SERVICE" = \
 	configure_all_octep_dhcp
 	exit 3
 fi
-[ ! -e "$RECOVERY_MARKER" ] ||
+[ ! -e "$RECOVERY_MARKER" ] || [ "$FORCE" -eq 1 ] ||
 	skip "one automatic reset was already attempted this boot"
 
 BDF=${DEVICE##*/}
@@ -271,6 +300,35 @@ PARENT_BDF=${PARENT_PATH##*/}
 [ -r "$PARENT_PATH/class" ] &&
 	[ "$(cat "$PARENT_PATH/class")" = 0x060400 ] ||
 	blocked "upstream device is not a PCI-to-PCI bridge"
+
+# A prior octep load can leave SR-IOV VFs (01:00.1-.4) enabled; rmmod does not
+# tear them down, so they linger as sibling PCI functions on the NPU bus and
+# would otherwise permanently block the isolation check below on every
+# subsequent recovery attempt. Disable them here; this is a no-op if already 0.
+if [ -w "$DEVICE/sriov_numvfs" ]; then
+	CURRENT_VFS=$(cat "$DEVICE/sriov_numvfs" 2>/dev/null || echo 0)
+	if [ "$CURRENT_VFS" != "0" ]; then
+		log "disabling $CURRENT_VFS leftover SR-IOV VF(s) on $BDF before bus isolation check"
+		if ! echo 0 >"$DEVICE/sriov_numvfs" 2>/dev/null; then
+			# octep_sriov_configure() refuses changes while SDP is active or the
+			# handshake scratch is owned, which is the wedged state recovery runs in.
+			# The VFs are unbound, so remove them as PCI functions instead; the bus
+			# reset later in recovery resets the PF's SR-IOV state.
+			log "WARNING: sriov_numvfs refused (driver busy); removing unbound VF functions directly"
+			for vf in "$DEVICE"/virtfn*; do
+				[ -e "$vf" ] || continue
+				vf_path=$(readlink -f "$vf")
+				[ -e "$vf_path/driver" ] && fail "VF $(basename "$vf_path") is bound to a driver; refusing to remove"
+				# A plain shell redirect to remove was refused here and a bare write can hang, so
+				# go through tee under a timeout; a stuck VF is logged, not fatal.
+				echo 1 | timeout 10 tee "$vf_path/remove" >/dev/null 2>&1 ||
+					log "WARNING: could not remove VF function $(basename "$vf_path")"
+			done
+			echo 1 | timeout 10 tee /sys/bus/pci/rescan >/dev/null 2>&1 || true
+		fi
+		sleep 1
+	fi
+fi
 
 BUS_PREFIX=${BDF%:*}
 BUS_DEVICE_COUNT=0
@@ -354,6 +412,13 @@ case "$STATE" in
 	fail "SDP state did not reach the expected ready state"
 	;;
 esac
+
+# Offload is opt-in: only require it when the module was loaded with flow_offload=Y.
+if [ "$(cat /sys/module/octep/parameters/flow_offload 2>/dev/null)" = Y ]; then
+	[ "$(cat "$DEVICE/rpc_allow_write" 2>/dev/null)" = 1 ] &&
+		case $(cat "$DEVICE/offload" 2>/dev/null) in *requested=on*acknowledged=yes*) true ;; *) false ;; esac ||
+		fail "SDP rings are up but NPU flow offload is not enabled (gate: $(cat "$DEVICE/offload" 2>/dev/null))"
+fi
 
 configure_all_octep_dhcp
 log "NPU recovery and SDP bring-up succeeded"

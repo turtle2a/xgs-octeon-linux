@@ -127,6 +127,18 @@ handling.
 When run with `sudo`, each report line is also written to the kernel log; view
 it with `sudo dmesg | grep xgs-accel-status`.
 
+### NPU flow offload (optional, disabled by default)
+
+Hardware flow offload is **off** after install and after every boot, until the
+stall tracked as Task 9 item 7 is fixed: the module loads with `flow_offload=N`,
+the write gate stays closed, and all routed traffic takes the host path.
+Forwarded TCP flows that the NPU takes over can stall until the driver's guard
+releases them, so enable it only for testing. To opt in, uncomment
+`options octep flow_offload=1` in
+`/etc/modprobe.d/xgs-octep.conf`, reload the module, then run
+`sudo /usr/local/xgs/linux/scripts/octep/offload-enable.sh` (add it as an
+`ExecStartPost` of `xgs-octep-sdp-bringup.service` to repeat it at boot).
+
 ## Optional Transit Throughput Test
 
 `scripts/tests/iperf-transit-test.sh` is a standalone test-host utility; the

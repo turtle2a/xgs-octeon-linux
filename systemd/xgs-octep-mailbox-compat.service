@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=Read-only OCTEP/TX2 mailbox compatibility probe
+After=systemd-udev-settle.service xgs-octep-sdp-bringup.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/xgs/linux/scripts/tests/octep-tx2-mailbox-compat-test.sh
+TimeoutStartSec=2min
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

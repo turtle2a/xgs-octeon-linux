@@ -121,6 +121,50 @@ done
 [ "$READY" = 1 ] ||
 	fail "NPU barmap did not become ready after $READY_ATTEMPTS attempts"
 
+VF_CONFIG=/sys/module/octep/parameters/sriov_vfs
+if [ -r "$VF_CONFIG" ]; then
+	VF_COUNT=$(cat "$VF_CONFIG") ||
+		fail "cannot read the octep sriov_vfs module parameter"
+else
+	VF_COUNT=0
+fi
+case $VF_COUNT in
+	0|4) ;;
+	*) fail "octep sriov_vfs must be 0 or 4, not $VF_COUNT" ;;
+esac
+
+if [ -r "$DEVICE/sriov_numvfs" ]; then
+	CURRENT_VFS=$(cat "$DEVICE/sriov_numvfs") ||
+		fail "cannot read current SR-IOV VF count"
+	if [ "$VF_COUNT" -gt 0 ] && [ "$CURRENT_VFS" -eq 0 ]; then
+		if ! printf '%s\n' "$VF_COUNT" >"$DEVICE/sriov_numvfs"; then
+			fail "could not enable $VF_COUNT SR-IOV VFs"
+		fi
+		CURRENT_VFS=$(cat "$DEVICE/sriov_numvfs") ||
+			fail "cannot verify the SR-IOV VF count"
+	fi
+	if [ "$VF_COUNT" -gt 0 ] && [ "$CURRENT_VFS" -ne "$VF_COUNT" ]; then
+		fail "configured VF count $VF_COUNT does not match the enabled count $CURRENT_VFS"
+	fi
+	if [ "$CURRENT_VFS" -gt 0 ]; then
+		VF_SEEN=0
+		for vf in "$DEVICE"/virtfn*; do
+			[ -L "$vf" ] || continue
+			vf_device=$(readlink -f "$vf") ||
+				fail "cannot resolve VF link $vf"
+			[ "$(cat "$vf_device/vendor")" = 0x177d ] &&
+				[ "$(cat "$vf_device/device")" = 0xa303 ] ||
+				fail "$(basename "$vf_device") is not an OCTEON TX VF (177d:a303)"
+			VF_SEEN=$((VF_SEEN + 1))
+		done
+		[ "$VF_SEEN" -eq "$CURRENT_VFS" ] ||
+			fail "expected $CURRENT_VFS OCTEON VFs but found $VF_SEEN"
+		log "SR-IOV: $CURRENT_VFS OCTEON VFs are present; bind them to vfio-pci before DPDK use"
+	fi
+elif [ "$VF_COUNT" -gt 0 ]; then
+	fail "the OCTEP PF does not expose sriov_numvfs"
+fi
+
 read_state() {
 	STATE=$(cat "$DEVICE/sdp_state") ||
 		fail "cannot read SDP state from $DEVICE"
@@ -150,7 +194,7 @@ if [ "$RINGS" != armed ]; then
 	if ! printf '1\n' >"$DEVICE/sdp_start"; then
 		fail "SDP ring arming failed; inspect the kernel journal"
 	fi
-	log "SDP ring 0 and its seven receive-only sibling rings armed"
+	log "SDP PF rings armed"
 	read_state
 fi
 
