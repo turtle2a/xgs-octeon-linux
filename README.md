@@ -219,8 +219,14 @@ each prints one line):
 
 These are plain iptables rules and are not persistent; `xgs-nat.service`
 re-applies the default at boot. To keep NAT off across reboots run
-`sudo touch /etc/xgs-nat-off`. For `mgmt`, set `GW=` at the top of
-`xgs-nat.sh` to the WAN gateway. NetworkManager is never modified.
+`sudo touch /etc/xgs-nat-off`. NetworkManager is never modified.
+
+Besides masquerading, `start` pins the LAN subnet (default `10.4.4.0/28`) to the
+WAN with a policy route (`ip rule ... lookup 100`), so internet traffic is not
+sent out another uplink that has a lower-metric default route. The gateway is
+read from the DHCP default route on the WAN port (`192.168.1.1` is only a
+fallback). To change the WAN port, gateway or LAN subnet, set `WAN=`, `GW=` or
+`LAN_NET=` in `/etc/xgs-nat.conf`.
 
 ## Pre-Upload Test Record
 
