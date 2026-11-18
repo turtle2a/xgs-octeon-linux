@@ -400,6 +400,12 @@ if systemctl cat dnsmasq.service >/dev/null 2>&1; then
 	systemctl enable --quiet dnsmasq.service
 	systemctl restart dnsmasq.service ||
 		echo "xgs-linux-install: dnsmasq.service failed to start; check /etc/dnsmasq.d/xgs-lan.conf" >&2
+	# ufw drops inbound DHCP requests unless UDP 67 is allowed on the LAN ports
+	if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'; then
+		for i in 0 2 3 4 5 6 7 8 9; do
+			ufw allow in on octep$i to any port 67 proto udp >/dev/null
+		done
+	fi
 else
 	echo "xgs-linux-install: dnsmasq is not installed; LAN ports will not serve DHCP until it is" >&2
 fi
