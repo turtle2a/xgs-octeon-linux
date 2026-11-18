@@ -8,6 +8,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+TimeoutStartSec=150
 ExecStart=/usr/local/xgs/linux/scripts/nat/xgs-nat.sh start
 ExecStop=/usr/local/xgs/linux/scripts/nat/xgs-nat.sh stop
 
