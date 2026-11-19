@@ -58,6 +58,7 @@ for file in \
 	modules-load.d/xgs-vfio.conf modprobe.d/xgs-octep.conf \
 	sysctl.d/90-xgs-octep-forwarding.conf kea/kea-dhcp4.conf \
 	scripts/nat/xgs-nat.sh scripts/nat/xgs-lan.sh scripts/nat/nat-port4.sh scripts/nat/nat-off.sh \
+	scripts/xgs/xgs-auto-update.sh scripts/xgs/xgs-auto-update-ctl.sh cron/xgs-auto-update \
 	systemd/xgs-nat.service \
 	octep/Makefile octep/octep.c octep/dkms.conf \
 	scripts/xgs/npu-health.sh scripts/xgs/npu-run.sh \
@@ -141,6 +142,10 @@ remove_if_unchanged "$SCRIPT_DIR/scripts/octep/sdp-status-check.sh" \
 	"$XGS_ROOT/scripts/octep/sdp-status-check.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/npuctl/mgmt-link.sh" \
 	"$XGS_ROOT/scripts/npuctl/mgmt-link.sh"
+remove_if_unchanged "$SCRIPT_DIR/cron/xgs-auto-update" /etc/cron.d/xgs-auto-update
+for f in xgs-auto-update.sh xgs-auto-update-ctl.sh; do
+	remove_if_unchanged "$SCRIPT_DIR/scripts/xgs/$f" "$XGS_ROOT/scripts/xgs/$f"
+done
 for f in xgs-nat.sh xgs-lan.sh nat-port4.sh nat-off.sh; do
 	remove_if_unchanged "$SCRIPT_DIR/scripts/nat/$f" "$XGS_ROOT/scripts/nat/$f"
 done

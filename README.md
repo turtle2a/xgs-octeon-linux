@@ -153,6 +153,24 @@ Optional scripts in `/usr/local/xgs/linux/scripts/nat/` (run with `sudo`):
 To keep NAT off across reboots run `sudo touch /etc/xgs-nat-off`. Overrides
 (`WAN=`, `GW=`, `LAN_NETS=`, `MGMT_NET=`, `MGMT_IF=`) go in `/etc/xgs-nat.conf`.
 
+## Automatic system updates
+
+`install.sh` installs a cron job (`/etc/cron.d/xgs-auto-update`) that runs
+`xgs-auto-update.sh` as root at **05:00 and 13:00** daily. It works on Fedora
+(`dnf`) and Debian/Ubuntu/Mint (`apt`), never prompts, and never reboots.
+
+- **Kernel is held back** (`kernel*` on dnf; `linux-image`, `linux-headers`
+  and similar on apt) because the OCTEP driver is built for the running
+  kernel. If a reboot is needed, only `reboot required` is logged.
+- Log: `/var/log/xgs-auto-update.log`. A lock prevents overlapping runs.
+- Preview without changing anything: `sudo DRY_RUN=1 /usr/local/xgs/linux/scripts/xgs/xgs-auto-update.sh`
+- Switch off or on: `sudo /usr/local/xgs/linux/scripts/xgs/xgs-auto-update-ctl.sh disable|enable|status`
+  (creates or removes `/etc/xgs-auto-update-off`).
+- Overrides in `/etc/xgs-auto-update.conf`: `DNF_EXCLUDE`, `APT_SKIP`.
+- On Debian-based systems `needrestart` runs in list-only mode, so services
+  are not restarted automatically.
+- `install.sh` installs and enables `cronie` (dnf) or `cron` (apt) if missing.
+
 ## Pre-Upload Test Record
 
 Running the uninstaller is optional and is not required to upload the source.

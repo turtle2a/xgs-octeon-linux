@@ -302,6 +302,9 @@ install_script "$NAT_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-nat.sh"
 install_script "$NAT_LAN_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-lan.sh"
 install_script "$NAT_PORT4_SCRIPT" "$XGS_ROOT/scripts/nat/nat-port4.sh"
 install_script "$NAT_OFF_SCRIPT" "$XGS_ROOT/scripts/nat/nat-off.sh"
+install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update.sh"
+install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update-ctl.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update-ctl.sh"
+install_data "$SCRIPT_DIR/cron/xgs-auto-update" "$DESTDIR/etc/cron.d/xgs-auto-update"
 install_unit "$NAT_SERVICE" "$DESTDIR/usr/lib/systemd/system/xgs-nat.service"
 install_unit "$HEALTH_SERVICE" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.service"
 install_unit "$HEALTH_TIMER" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.timer"
@@ -424,6 +427,30 @@ fi
 
 step "NAT and firewall (ufw)"
 systemctl enable --quiet xgs-nat.service
+# Unattended updates at 05:00 and 13:00 (/etc/cron.d/xgs-auto-update) need a cron daemon
+# (Fedora: cronie/crond; Debian/Mint: cron). Kernel packages are held back.
+cron_unit=
+find_cron_unit() {
+	cron_unit=
+	for u in crond.service cron.service; do
+		if systemctl cat "$u" >/dev/null 2>&1; then cron_unit=$u; break; fi
+	done
+}
+find_cron_unit
+if [ -z "$cron_unit" ]; then
+	if command -v dnf >/dev/null 2>&1; then
+		dnf -y install cronie >/dev/null 2>&1 || true
+	elif command -v apt-get >/dev/null 2>&1; then
+		DEBIAN_FRONTEND=noninteractive apt-get -y install cron >/dev/null 2>&1 || true
+	fi
+	find_cron_unit
+fi
+if [ -n "$cron_unit" ]; then
+	systemctl enable --quiet --now "$cron_unit" || echo "xgs-linux-install: could not start $cron_unit" >&2
+	say "unattended updates scheduled 05:00 and 13:00 (disable: $XGS_ROOT/scripts/xgs/xgs-auto-update-ctl.sh disable)"
+else
+	echo "xgs-linux-install: no cron daemon (cronie/cron); unattended updates will not run until one is installed" >&2
+fi
 say "xgs-nat.service enabled: NAT/policy route out Port 2 (octep1) starts at boot"
 if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'; then
 	say "ufw is active: allowing inbound on the LAN octeps and management port"
