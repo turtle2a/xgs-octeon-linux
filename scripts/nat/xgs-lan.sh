@@ -89,7 +89,7 @@ EOF
 		nmcli connection add type ethernet ifname "$iface" \
 			con-name "$profile_name" ipv4.method "$method" \
 			${lan_addr:+ipv4.addresses "$lan_addr"} \
-			ipv6.method link-local \
+			ipv6.method link-local 802-3-ethernet.cloned-mac-address permanent \
 			ipv4.never-default yes ipv4.ignore-auto-routes no \
 			connection.autoconnect yes connection.autoconnect-retries 0 || {
 			log "WARNING: could not create a DHCP profile for $iface"
@@ -103,7 +103,7 @@ EOF
 
 	nmcli connection modify "$profile_uuid" ipv4.method "$method" \
 		${lan_addr:+ipv4.addresses "$lan_addr" ipv4.never-default yes} \
-		ipv6.method link-local \
+		ipv6.method link-local 802-3-ethernet.cloned-mac-address permanent \
 		connection.autoconnect yes connection.autoconnect-retries 0 || {
 		log "WARNING: could not configure DHCP on $iface"
 		return 0

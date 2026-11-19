@@ -25,6 +25,25 @@ fwd_rules() { # $1 = -I|-D; accept LAN->WAN and replies even under a default-dro
 	done
 }
 
+# Table 100 holds only a default route, so give it the WAN's own on-link subnet(s):
+# the WAN gateway and servers on that subnet are then reached directly.
+wan_links() {
+	ip -4 route show dev $WAN scope link 2>/dev/null | while read -r r; do
+		ip route replace $r dev $WAN table 100 2>/dev/null
+	done
+}
+
+# The "from <LAN subnet> lookup 100" rules also match packets the router itself
+# sends from a LAN address (ping/ssh replies from 10.4.4.10), which would leave via
+# the WAN. Traffic to a LAN or management subnet stays on its connected route.
+lan_local_rules() { # $1 = -A|-D
+	for net in $LAN_NETS $MGMT_NET; do
+		ip rule del to $net lookup main suppress_prefixlength 0 priority 90 2>/dev/null
+		[ "$1" = -A ] && ip rule add to $net lookup main suppress_prefixlength 0 priority 90
+	done
+	return 0
+}
+
 case $1 in
 start)
 	sysctl -qw net.ipv4.ip_forward=1
@@ -40,10 +59,12 @@ start)
 	done
 	DHCP_GW=$(ip -4 route show default dev $WAN 2>/dev/null | awk '{print $3; exit}')
 	ip route replace default via "${DHCP_GW:-$GW}" dev $WAN table 100
+	wan_links
 	for net in $LAN_NETS; do
 		ip rule del from $net lookup 100 2>/dev/null
 		ip rule add from $net lookup 100 priority 100
 	done
+	lan_local_rules -A
 	ip rule del from $MGMT_NET iif $MGMT_IF lookup 100 2>/dev/null
 	ip rule add from $MGMT_NET iif $MGMT_IF lookup 100 priority 101
 	echo "All LAN and management ports now routed via $WAN WAN"
@@ -51,6 +72,7 @@ start)
 mgmt)
 	DHCP_GW=$(ip -4 route show default dev $WAN 2>/dev/null | awk '{print $3; exit}')
 	ip route replace default via "${DHCP_GW:-$GW}" dev $WAN table 100
+	wan_links
 	ip rule del from $MGMT_NET iif $MGMT_IF lookup 100 2>/dev/null
 	ip rule add from $MGMT_NET iif $MGMT_IF lookup 100 priority 101
 	echo "$MGMT_NET now routed via $WAN WAN"
@@ -62,6 +84,7 @@ stop)
 		ip rule del from $net lookup 100 2>/dev/null
 	done
 	ip rule del from $MGMT_NET iif $MGMT_IF lookup 100 2>/dev/null
+	lan_local_rules -D
 	ip route flush table 100 2>/dev/null
 	echo "NAT removed"
 	;;
