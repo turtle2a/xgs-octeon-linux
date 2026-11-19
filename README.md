@@ -139,6 +139,8 @@ The installer sets up the router functions automatically:
 them up yourself (WAN via DHCP is typical). `enp2s0` is the out-of-band management port; see
 [docs/install-requirements.md](docs/install-requirements.md) for how to give it an address.
 
+If you only have the WAN gateway and don't want `enp2s0` (management) NATed out the WAN, put `MGMT_NAT=0` in `/etc/xgs-nat.conf` and run `sudo systemctl restart xgs-nat`; the LAN ports are still NATed.
+
 Optional scripts in `/usr/local/xgs/linux/scripts/nat/` (run with `sudo`):
 
 | Script | Result |

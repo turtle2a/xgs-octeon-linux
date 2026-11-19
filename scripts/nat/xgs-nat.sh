@@ -11,15 +11,17 @@ GW=192.168.1.1   # fallback WAN gateway; the DHCP default route on $WAN is prefe
 LAN_NETS="10.4.4.0/28 10.4.12.0/28 10.4.13.0/28 10.4.14.0/28 10.4.15.0/28 10.4.16.0/28 10.4.17.0/28 10.4.18.0/28 10.4.19.0/28"   # OCTEP LAN subnets (octep0, octep2-9) forced out the WAN
 MGMT_NET=10.1.1.0/28   # management subnet (enp2s0), also NATed out the WAN; enp2s0 itself is never reconfigured
 MGMT_IF=enp2s0
-# Optional overrides: WAN=, GW=, LAN_NETS=, MGMT_NET=, MGMT_IF= in /etc/xgs-nat.conf
+MGMT_NAT=1   # set MGMT_NAT=0 in /etc/xgs-nat.conf to leave enp2s0 out of NAT (WAN gateway only)
+# Optional overrides: WAN=, GW=, LAN_NETS=, MGMT_NET=, MGMT_IF=, MGMT_NAT= in /etc/xgs-nat.conf
 [ -r /etc/xgs-nat.conf ] && . /etc/xgs-nat.conf
+MGMT_NET_NAT=; [ "$MGMT_NAT" = 0 ] || MGMT_NET_NAT=$MGMT_NET
 
 nat_rules() { # $1 = -A|-D
 	iptables -t nat $1 POSTROUTING -o $WAN -j MASQUERADE
 }
 
 fwd_rules() { # $1 = -I|-D; accept LAN->WAN and replies even under a default-drop FORWARD policy
-	for net in $LAN_NETS $MGMT_NET; do
+	for net in $LAN_NETS $MGMT_NET_NAT; do
 		iptables $1 FORWARD -s $net -o $WAN -j ACCEPT
 		iptables $1 FORWARD -d $net -i $WAN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 	done
@@ -37,7 +39,7 @@ wan_links() {
 # sends from a LAN address (ping/ssh replies from 10.4.4.10), which would leave via
 # the WAN. Traffic to a LAN or management subnet stays on its connected route.
 lan_local_rules() { # $1 = -A|-D
-	for net in $LAN_NETS $MGMT_NET; do
+	for net in $LAN_NETS $MGMT_NET_NAT; do
 		ip rule del to $net lookup main suppress_prefixlength 0 priority 90 2>/dev/null
 		[ "$1" = -A ] && ip rule add to $net lookup main suppress_prefixlength 0 priority 90
 	done
@@ -66,10 +68,11 @@ start)
 	done
 	lan_local_rules -A
 	ip rule del from $MGMT_NET iif $MGMT_IF lookup 100 2>/dev/null
-	ip rule add from $MGMT_NET iif $MGMT_IF lookup 100 priority 101
+	[ -z "$MGMT_NET_NAT" ] || ip rule add from $MGMT_NET iif $MGMT_IF lookup 100 priority 101
 	echo "All LAN and management ports now routed via $WAN WAN"
 	;;
 mgmt)
+	[ -n "$MGMT_NET_NAT" ] || { echo "MGMT_NAT=0: management subnet not NATed"; exit 0; }
 	DHCP_GW=$(ip -4 route show default dev $WAN 2>/dev/null | awk '{print $3; exit}')
 	ip route replace default via "${DHCP_GW:-$GW}" dev $WAN table 100
 	wan_links
