@@ -11,19 +11,24 @@ only libraries or build dependencies on the donor is not sufficient. Before
 moving the disk, apply the GRUB settings and regenerate the boot configuration
 as described in [Boot Loader Requirements](boot-loader-requirements.md).
 
-Once the donor system is ready, obtain the project on it so it travels with the
-disk. Clone it from GitHub and enter its directory:
-
-```sh
-git clone https://github.com/turtle2a/xgs-octeon-linux.git
-cd xgs-octeon-linux
-```
-
 Shut down the donor system, remove the prepared disk, and install or attach it
 to the XGS appliance. Configure the appliance's firmware or boot selection to
 boot from this donor-installed disk. After booting the appliance, complete any
-remaining OS setup there and install the matching kernel build files described
-below. Then follow [Install the OCTEP Driver](#install-the-octep-driver).
+remaining OS setup there, install the matching kernel build files described
+below. Copy or extract the Linux project tree onto the appliance. The OCTEP
+project installer is `install.sh` at the root of that tree, alongside
+`README.md` and the `octep/` directory. From the project root, run:
+
+```sh
+sudo sh ./install.sh
+```
+
+Or run it by absolute path from another directory, replacing the example path
+with the location of the project tree:
+
+```sh
+sudo sh /path/to/xgs-octeon-linux/install.sh
+```
 
 ## Requirements
 
@@ -58,35 +63,17 @@ tree. It was not required for installation, but was used during development.
 
 
 
-## Before Attaching the Donor Disk to the Appliance
+## Post Donor Disk Installation - XGS Pre-Installation
 
-Configure remote access before attaching the disk, in case a serial console is
-unavailable after boot. Confirm that the management LAN provides DHCP; if not,
-preconfigure a static address before attaching the disk. Install and configure
-SSH and XRDP if you plan to use them.
+For easier access and management of the XGS while its disk is connected to the
+donor machine, install and configure the SSH server, or leave it as is. Check
+that it is running with `systemctl status sshd.server`.
 
-If SSH and XRDP are installed and you plan to use them after attaching the disk
-to the appliance, allow connections from trusted management hosts before
-attaching it:
+If UFW is installed, allow access from your LAN to the appliance's LAN subnet.
+If DHCP is not running on your LAN, configure the adapter address manually
+later from the console, along with the required UFW rules.
 
-```sh
-sudo ufw allow from yourlansubnet/yourlannetworkmask to any port 22 proto tcp
-sudo ufw allow from yourlansubnet/yourlannetworkmask to any port 3389 proto tcp
-sudo ufw status
-```
 
-Example only, for a LAN of 192.168.0.0/24:
-
-```sh
-sudo ufw allow from 192.168.0.0/24 to any port 22 proto tcp
-sudo ufw allow from 192.168.0.0/24 to any port 3389 proto tcp
-```
-
-These examples restrict access to your management LAN. Replace
-`yourlansubnet/yourlannetworkmask` with the correct subnet and mask for your
-network. Port 22 assumes the default SSH port;
-change it if SSH is configured to use another port. These rules do not install
-or enable either service.
 
 ## Appliance BIOS Setting Requirements
 
@@ -192,7 +179,7 @@ On the test machine, install the build files matching its running kernel:
 
 ```sh
 sudo dnf makecache
-sudo dnf install "kernel-devel-$(uname -r)" dkms make gcc binutils kmod
+sudo dnf install "kernel-devel-$(uname -r)" dkms make gcc binutils kmod iptables kea
 ```
 
 Verify the build tree exists:
@@ -211,7 +198,7 @@ Update package lists and install headers for the running kernel:
 
 ```sh
 sudo apt-get update
-sudo apt-get install "linux-headers-$(uname -r)" dkms build-essential kmod
+sudo apt-get install "linux-headers-$(uname -r)" dkms build-essential kmod iptables kea-dhcp4-server
 ```
 
 The matching headers provide the build tree needed for this external DKMS
@@ -226,32 +213,11 @@ test -f "/lib/modules/$(uname -r)/build/Makefile" \
 
 If matching headers are unavailable, stop and resolve the kernel/package
 version mismatch before running the installer. The installer uses APT to
-install missing tool packages (`dkms`, `build-essential`, and `kmod`).
+install missing tool packages (`dkms`, `build-essential`, `kmod`, `iptables` and the Kea DHCP server `kea-dhcp4-server`).
 
 Linux Mint 22.x is Ubuntu-based; Linux Mint Debian Edition (LMDE) is
 Debian-based. Both use APT, but their kernel packages may differ. Always verify
 that `/lib/modules/$(uname -r)/build/Makefile` exists before installing.
-
-## Install the OCTEP Driver
-
-Do this on the appliance, after it has booted from the donor disk, has network
-access, and the matching kernel build files above are installed.
-
-The project tree was cloned onto the donor disk earlier. If it is not present,
-clone it again or copy or extract the Linux project tree onto the appliance.
-The OCTEP project installer is `install.sh` at the root of that tree, alongside
-`README.md` and the `octep/` directory. From the project root, run:
-
-```sh
-sudo sh ./install.sh
-```
-
-Or run it by absolute path from another directory, replacing the example path
-with the location of the project tree:
-
-```sh
-sudo sh /path/to/xgs-octeon-linux/install.sh
-```
 
 ## Optional Desktop and Remote-Access Setup
 
