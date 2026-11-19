@@ -436,16 +436,24 @@ find_cron_unit() {
 		if systemctl cat "$u" >/dev/null 2>&1; then cron_unit=$u; break; fi
 	done
 }
+step "Unattended updates (cron)"
 find_cron_unit
 if [ -z "$cron_unit" ]; then
 	if command -v dnf >/dev/null 2>&1; then
+		say "no cron daemon found; installing cronie (dnf)"
 		dnf -y install cronie >/dev/null 2>&1 || true
 	elif command -v apt-get >/dev/null 2>&1; then
+		say "no cron daemon found; installing cron (apt)"
 		DEBIAN_FRONTEND=noninteractive apt-get -y install cron >/dev/null 2>&1 || true
 	elif command -v pacman >/dev/null 2>&1; then
+		say "no cron daemon found; installing cronie (pacman)"
 		pacman -S --needed --noconfirm cronie >/dev/null 2>&1 || true
+	else
+		echo "xgs-linux-install: no dnf, apt-get or pacman; skipping cron install (continuing)" >&2
 	fi
 	find_cron_unit
+else
+	say "cron daemon present: $cron_unit"
 fi
 if [ -n "$cron_unit" ]; then
 	systemctl enable --quiet --now "$cron_unit" || echo "xgs-linux-install: could not start $cron_unit" >&2
