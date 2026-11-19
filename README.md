@@ -10,7 +10,8 @@ The current boot-verified configuration is Fedora 44 with kernel
 appliances or kernel versions need separate testing. Debian, openSUSE, and
 Arch Linux have booted on the appliance, but full NPU functionality remains a
 work in progress. XGS 136 uses a different Armada platform; SFP cage operation
-and hardware acceleration are not verified.
+and hardware acceleration are not verified. NPU flow offload is opt-in and
+experimental; see [docs/npu-flow-offload.md](docs/npu-flow-offload.md).
 
 The optional NAT helper is under `scripts/nat/`. It is not invoked or installed
 by `install.sh`; it adds NAT rules only when explicitly run and confirmed.
