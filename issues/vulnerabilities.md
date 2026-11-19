@@ -1,0 +1,89 @@
+# Vulnerability issues, with values
+
+Source of truth: [vulnerabilities/docs/vulnerability-mitigation.md](../vulnerabilities/docs/vulnerability-mitigation.md). Severity: 🟠 High impact, 🟡 Medium, ⚪ Low.
+
+## Risk register
+
+Likelihood and impact are Low/Medium/High. Treatment: Mitigate, Accept or Transfer. Residual is the risk after treatment.
+
+| ID | Risk | Likelihood | Impact | Treatment | Control | Residual | Status |
+|----|------|-----------|--------|-----------|---------|----------|--------|
+| R1 | Planted file or symlink makes a root test script run commands or load a bad module | Low | High | Mitigate | Root-only backup dir, input validation (items 1, 2) | Low | Fixed |
+| R2 | WAN host reaches LAN or management hosts through the router | Medium | High | Mitigate | Per-subnet NAT, `XGS-FWD` drops new WAN-initiated traffic (item 3) | Low | Fixed |
+| R3 | LAN host reaches host services on the router | Medium | Medium | Mitigate | ufw allows only DHCP on LAN ports by default (item 4); `XGS_UFW_LAN_DHCP_ONLY=0` for testing | Low (Medium on a test box left open) | Fixed for installs |
+| R4 | Compromised NPU attacks the host over the network | Low | High | Mitigate | ufw on `mvmgmt0` allows only NPU address to host link address; no forwarding | Low | Fixed |
+| R5 | Compromised NPU reads or writes host memory by DMA | Low | High | Accept | `iommu=pt` (passthrough) is required for this platform and cannot be changed (confirmed by hands-on testing on the hardware); NPU network access is isolated (R4); DMA can only be protected at the memory level (not implemented, not verified on this platform) | Medium-High | Accepted (hard to protect) |
+| R6 | Flooding or malformed TCP against the router | Medium | Medium | Mitigate (opt-in) | `xgs-hardening` service (conntrack limits, sanity drops, optional `SYN_RATE`) | Low | Optional |
+| R7 | CPU side channels with mitigations switched off | Low | Medium | Accept | Performance choice; remove the `=off` flags to restore | Medium | Accepted |
+| R8 | Unpatchable BIOS V115 and NPU firmware | Low | Medium | Accept | OS microcode and kernel updates; NPU isolated (R4, R5) | Low-Medium | Accepted |
+| R9 | Unpatched OS or kernel | Medium | Medium | Mitigate | Auto-update cron including kernels; DKMS rebuild logged; manual reboot | Low | Fixed |
+| R10 | Auto-update breaks the `octep` module | Low | Medium | Mitigate | Old kernel kept bootable; check `dkms status` before reboot; `xgs-auto-update-ctl.sh disable` for test windows | Low | Fixed |
+| R11 | `octep` RX length handling | Very low | Medium | Accept | Clamp patch kept, not applied (item 11) | Low | Deferred |
+| R12 | NPU ssh host key trust and passwordless NPU console | Low | Medium | Accept | Link isolated by R4 | Low | Accepted |
+| R13 | ssh (22) and RDP (3389) reachable from any address including the WAN (seen in `ufw status` on the test host) | Medium | High | Mitigate | Restrict to the management subnet with ufw, or confirm it is a deliberate test-box choice | Low once restricted | Open, awaiting decision |
+| R14 | Port renumbering after `CAGE_MAP` change breaks MAC-pinned NetworkManager profiles and NAT (loss of WAN and LAN service) | Medium | Medium | Mitigate | Keep repo `rpc-port-setup.sh`; renumbering note in CHANGELOG F1 | Low | Fixed in repo, deployed copy to be reinstalled |
+
+### R5 candidate controls (none implemented)
+
+| Candidate | How it would help | Status |
+|-----------|------------------|--------|
+| PCI passthrough to a Xen guest or a VFIO guest | The IOMMU confines the NPU's DMA to the guest's RAM, so the host's memory is out of reach. The NPU driver and dataplane would run in the guest | Not implemented; needs a design and offload test |
+| Memory encryption (`mem_encrypt=on`, SME/TSME) | Device reads of normal RAM return ciphertext | CPU shows `sev`/`sev_es` but no `sme` flag; likely a BIOS setting, not verified |
+
+## Test results
+
+Test: `vulnerabilities/scripts/xgs-hardening-test.sh [--live]`. Host: AMD Ryzen Embedded R1606G, Fedora, kernel 7.3.4.
+
+| Date | Check | Result | Notes |
+|------|-------|--------|-------|
+| 2026-11-20 | Stub tests (NAT rules, hardening, bad-input rejection) | 19/19 PASS | No system changes |
+| 2026-11-20 | Live, `xgs-hardening` | PASS | Service enabled and active, `XGS-HARD-PRE` present, conntrack 23/16384 |
+| 2026-11-20 | Live, DHCP server not on WAN/mgmt; policy routing present | PASS | |
+| 2026-11-20 | Live, NAT before deploying the new script | 2 FAIL (expected) | Old script: no `XGS-FWD`, bare MASQUERADE |
+| 2026-11-20 | Live, NAT after deploying the new script | PASS (all 10 live checks) | `XGS-FWD` first in FORWARD, no bare MASQUERADE, per-subnet MASQUERADE, `XGS-HARD-PRE` present, conntrack 26/16384 |
+| 2026-11-20 | Auto-update stub tests (kernels included, hold option, failures) | PASS | |
+| 2026-11-20 | Strict IOMMU | Not run | Passthrough cannot be changed on this platform; DMA exposure is an accepted risk (R5) |
+| 2026-11-20 | Live after reboot (twice), including from `vulnerabilities/scripts` | PASS (all live checks) | conntrack 29/16384 and 64/16384; stub 19/19 |
+| 2026-11-20 | Flow offload enabled at boot (`ExecStartPost=-offload-enable.sh`) | PASS | Journal: `OFFLOAD ENABLED` at boot, `offload-check.sh` ENABLED (gate on and acknowledged, flowtable and `flow add` present) |
+| 2026-11-20 | LAN client NAT to WAN (live stopgap: WAN=octep10) | PASS | Client reached the upstream gateway (ttl 63) and 8.8.4.4 (ttl 118) with offload ON |
+| 2026-11-20 | Router LAN address from the client (10.4.4.10) | PASS after live rule | Needed `ip rule to 10.4.4.0/28 lookup main` (item below); not yet persistent |
+| 2026-11-20 | `ufw status verbose` on lill1 | Observed | LAN open in/out (test box), 22/tcp and 3389/tcp from Anywhere incl. WAN, no `mvmgmt0` rules (installer R4 block not run on lill1) |
+| | iperf baseline with offload ON; R4 `mvmgmt0` rules; nmap scans | Pending | |
+
+Findings from this run:
+
+- **Port numbering shifted** (reboot after the SFP experiment): the deployed `rpc-port-setup.sh` had `CAGE_MAP="10:0 11:32768"` (repo: `10:1 11:2`). The cage netdevs became `octep0` and `octep1`, every other port moved up by two, NetworkManager profiles pinned by MAC no longer matched, and NAT (WAN=`octep1`) lost its WAN. Fix: install the repo `rpc-port-setup.sh` and reboot; SFP work later.
+- **Router LAN address unreachable from clients**: the `from <LAN> lookup 100` rule also matches the router's own replies, which then leave by the WAN. Live fix: `ip rule add to <LAN subnet> lookup main priority 99`. Pre-existing in the original script, not a regression.
+- **LAN subnets are isolated from each other** (policy routing plus ufw routed default deny). Original design, not part of the security changes.
+
+## Vulnerability assessment
+
+Run once the install is final and after a reboot, with the test box left open (`XGS_UFW_LAN_DHCP_ONLY=0`) and again with the release default. Results are filled in after the run; nothing below has been run yet.
+
+| # | Check | Method (from a LAN client, never the router) | Pass | Result |
+|---|-------|---------------------------------------------|------|--------|
+| 1 | Open ports on a LAN port, release default | `nmap -sS -sU -p- <router LAN address>` | Only udp 67 | Pending |
+| 2 | Open ports on a LAN port, test box (open) | same | Documented list only | Pending |
+| 3 | WAN-initiated access to LAN and management | From a WAN-side host, connect to a LAN address | Dropped | Pending |
+| 4 | LAN to management forwarding | Reach the management subnet from a LAN client | Open by default; blocked with `BLOCK_LAN_TO_MGMT=1` | Pending |
+| 5 | NPU link isolation | Host: ssh to the NPU works; NPU-initiated connection to another host port is refused | As described | Pending |
+| 6 | Malformed TCP / low-MSS SYN / null scan | `nmap -sN`, `hping3` equivalents | Dropped and counted in `XGS-HARD-PRE` | Pending |
+| 7 | Conntrack headroom under load | `cat /proc/sys/net/netfilter/nf_conntrack_count` during the iperf baseline | Well below `CT_MAX` | Pending |
+| 8 | CPU mitigation state | `/sys/devices/system/cpu/vulnerabilities/*` | Matches the accepted risks (R7) | Pending |
+| 9 | Throughput and offload unchanged | iperf baseline with offload ON before and after | Within baseline | Pending |
+
+Record: date, router and kernel version, the exact commands, and the result of each row. Scrub MACs and home paths before publishing.
+
+## Accepted risks (platform)
+
+Cannot be fixed from here:
+
+| Area | Status | Risk | Note |
+|------|--------|------|------|
+| BIOS/AGESA | V115 (2022); vendor support has ended, updates not possible | Low | Accepted. The OS covers most of it: microcode and kernel mitigations load at boot. OS microcode still updates: keep `amd-ucode-firmware` (Fedora/RHEL) or `amd64-microcode` (Debian/Mint) installed |
+| NPU CPU firmware | Vendor image, cannot be patched | Medium | Treated as untrusted: network isolation above; DMA is not isolated: `iommu=pt` is required and cannot be changed (the NPU is in its own IOMMU group) |
+| Drivers | Distro kernel drivers are patched by OS updates (kernels are included in the cron). The `octep` DKMS module is built from this repo and maintained here; NPU-side drivers are in the vendor image and cannot be patched | Low | Item 11 (RX length clamp) is deferred, patch kept |
+| `spectre_v2=off`, `spec_rstack_overflow=off`, `selinux=0` on the kernel command line | Mitigations off for throughput | Medium | Local-attacker side channels; remove the flags to restore, and retest throughput with offload ON |
+
+See `docs/security-review.md` for the full review.
+
