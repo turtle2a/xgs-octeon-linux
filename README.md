@@ -136,7 +136,8 @@ The installer sets up the router functions automatically:
   routes from each LAN octep to `octep1`. Without ufw nothing is added.
 
 `octep1` (WAN) and the management port `enp2s0` are never reconfigured; set
-them up yourself (WAN via DHCP is typical).
+them up yourself (WAN via DHCP is typical). `enp2s0` is the out-of-band management port; see
+[docs/install-requirements.md](docs/install-requirements.md) for how to give it an address.
 
 Optional scripts in `/usr/local/xgs/linux/scripts/nat/` (run with `sudo`):
 

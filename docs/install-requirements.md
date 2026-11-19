@@ -128,6 +128,27 @@ may obtain an address.
 
 Run `ifconfig` to check which adapter (LAN) has an address.
 
+### What the management port is, and giving it an address
+
+`enp2s0` is the appliance's out-of-band management port (the MGMT port beside
+the front USB ports). It is a normal host Ethernet adapter, separate from the
+OCTEP faceplate ports (`octep0`-`octep9`), and carries SSH and XRDP. The
+installer never configures it, so on a fresh install (including Linux Mint and
+Debian) it has no address until you give it one, and SSH and XRDP are not
+reachable until then. The name may differ; check with `ip -br link`.
+
+Use either option (run as root or with `sudo`):
+
+- DHCP from the LAN it is plugged into: `nmcli connection add type ethernet ifname enp2s0 con-name xgs-mgmt ipv4.method auto 802-3-ethernet.cloned-mac-address permanent`
+- Static address (the NAT script's management subnet is `10.1.1.0/28`, so
+  `10.1.1.14/28` fits): `nmcli connection add type ethernet ifname enp2s0 con-name xgs-mgmt ipv4.method manual ipv4.addresses 10.1.1.14/28 802-3-ethernet.cloned-mac-address permanent`
+  then `nmcli connection up xgs-mgmt`
+
+In the Mint/Ubuntu network GUI, edit the wired connection for `enp2s0`, set the
+IPv4 address, and set "Cloned MAC address" to "Permanent" so the address
+sticks across reboots. Without NetworkManager, use
+`ip addr add 10.1.1.14/28 dev enp2s0 && ip link set enp2s0 up` (not persistent).
+
 Run `lsof` to check whether the SSH ports are open.
 
 Connect to your SSH server on the XGS appliance.
