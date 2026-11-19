@@ -144,6 +144,12 @@ Use either option (run as root or with `sudo`):
   `10.1.1.14/28` fits): `nmcli connection add type ethernet ifname enp2s0 con-name xgs-mgmt ipv4.method manual ipv4.addresses 10.1.1.14/28 802-3-ethernet.cloned-mac-address permanent`
   then `nmcli connection up xgs-mgmt`
 
+Either `10.1.1.0/28` (for example `10.1.1.14/28`) or `10.1.1.0/24` works for
+the port itself. The NAT script only NATs `10.1.1.0/28` by default; if you use a
+`/24`, add `MGMT_NET=10.1.1.0/24` to `/etc/xgs-nat.conf` and run
+`sudo systemctl restart xgs-nat`. If the WAN gateway is all you have and you
+do not want `enp2s0` NATed, set `MGMT_NAT=0` there instead.
+
 In the Mint/Ubuntu network GUI, edit the wired connection for `enp2s0`, set the
 IPv4 address, and set "Cloned MAC address" to "Permanent" so the address
 sticks across reboots. Without NetworkManager, use
