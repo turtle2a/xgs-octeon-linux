@@ -1,16 +1,17 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Unattended system update for XGS appliances (Fedora: dnf, Debian/Mint: apt).
+# Unattended system update for XGS appliances (Fedora: dnf, Debian/Mint: apt, Arch: pacman).
 # Run from /etc/cron.d/xgs-auto-update at 05:00 and 13:00. Never prompts, never reboots.
 # Kernel packages are held back: the out-of-tree OCTEP driver is built for the running
 # kernel, so a kernel change is left to the operator (reboot-required is only logged).
 #   DRY_RUN=1 sudo xgs-auto-update.sh   show what would be installed, change nothing
 # Disable/enable: xgs-auto-update-ctl.sh disable|enable (creates /etc/xgs-auto-update-off).
-# Optional overrides in /etc/xgs-auto-update.conf: DNF_EXCLUDE, APT_SKIP.
+# Optional overrides in /etc/xgs-auto-update.conf: DNF_EXCLUDE, APT_SKIP, PACMAN_IGNORE.
 set -u
 LOG=${XGS_UPDATE_LOG:-/var/log/xgs-auto-update.log}
 LOCK=${XGS_UPDATE_LOCK:-/run/xgs-auto-update.lock}
 DNF_EXCLUDE='kernel*'
+PACMAN_IGNORE='linux,linux-headers,linux-lts,linux-lts-headers,linux-zen,linux-zen-headers,linux-hardened,linux-hardened-headers'
 APT_SKIP='^(linux-image|linux-headers|linux-modules|linux-kbuild|linux-libc-dev|linux-generic|linux-lowlatency|linux-oem|linux-signed)'
 [ -r /etc/xgs-auto-update.conf ] && . /etc/xgs-auto-update.conf
 
@@ -47,8 +48,21 @@ elif command -v apt-get >/dev/null 2>&1; then
 			-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
 			install --only-upgrade $pkgs || rc=$?
 	fi
+elif command -v pacman >/dev/null 2>&1; then
+	log "start (pacman, ignoring: $PACMAN_IGNORE, dry-run=$DRY)"
+	# Always a full sync (-Syu); a partial -Sy upgrade breaks Arch.
+	if [ "$DRY" = 1 ]; then
+		if command -v checkupdates >/dev/null 2>&1; then
+			checkupdates || true
+		else
+			log "dry-run: would run pacman -Syu (install pacman-contrib for a package list)"
+		fi
+	else
+		pacman -Syu --noconfirm --noprogressbar --ignore "$PACMAN_IGNORE"
+		rc=$?
+	fi
 else
-	log "no supported package manager (dnf or apt-get)"
+	log "no supported package manager (dnf, apt-get or pacman)"
 	exit 1
 fi
 

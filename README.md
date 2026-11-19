@@ -157,7 +157,7 @@ To keep NAT off across reboots run `sudo touch /etc/xgs-nat-off`. Overrides
 
 `install.sh` installs a cron job (`/etc/cron.d/xgs-auto-update`) that runs
 `xgs-auto-update.sh` as root at **05:00 and 13:00** daily. It works on Fedora
-(`dnf`) and Debian/Ubuntu/Mint (`apt`), never prompts, and never reboots.
+(`dnf`), Debian/Ubuntu/Mint (`apt`) and Arch (`pacman`), never prompts, and never reboots.
 
 - **Kernel is held back** (`kernel*` on dnf; `linux-image`, `linux-headers`
   and similar on apt) because the OCTEP driver is built for the running
@@ -166,7 +166,8 @@ To keep NAT off across reboots run `sudo touch /etc/xgs-nat-off`. Overrides
 - Preview without changing anything: `sudo DRY_RUN=1 /usr/local/xgs/linux/scripts/xgs/xgs-auto-update.sh`
 - Switch off or on: `sudo /usr/local/xgs/linux/scripts/xgs/xgs-auto-update-ctl.sh disable|enable|status`
   (creates or removes `/etc/xgs-auto-update-off`).
-- Overrides in `/etc/xgs-auto-update.conf`: `DNF_EXCLUDE`, `APT_SKIP`.
+- Overrides in `/etc/xgs-auto-update.conf`: `DNF_EXCLUDE`, `APT_SKIP`, `PACMAN_IGNORE`.
+- On Arch, `pacman -Syu` ignores `linux*` kernels (`PACMAN_IGNORE`); only full syncs are run, never partial.
 - On Debian-based systems `needrestart` runs in list-only mode, so services
   are not restarted automatically.
 - `install.sh` installs and enables `cronie` (dnf) or `cron` (apt) if missing.

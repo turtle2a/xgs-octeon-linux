@@ -442,6 +442,8 @@ if [ -z "$cron_unit" ]; then
 		dnf -y install cronie >/dev/null 2>&1 || true
 	elif command -v apt-get >/dev/null 2>&1; then
 		DEBIAN_FRONTEND=noninteractive apt-get -y install cron >/dev/null 2>&1 || true
+	elif command -v pacman >/dev/null 2>&1; then
+		pacman -S --needed --noconfirm cronie >/dev/null 2>&1 || true
 	fi
 	find_cron_unit
 fi
