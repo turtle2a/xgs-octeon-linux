@@ -10,6 +10,8 @@ Type=oneshot
 ExecStartPre=/sbin/modprobe octep
 ExecStart=/usr/local/xgs/linux/scripts/octep/sdp-bringup.sh
 ExecStartPost=/usr/local/xgs/linux/scripts/octep/rpc-port-setup.sh
+# NPU flow offload is on at every boot. The "-" keeps a failed enable (gate closed, FAIL in the journal) from restarting the bring-up on a running router.
+ExecStartPost=-/usr/local/xgs/linux/scripts/octep/offload-enable.sh
 TimeoutStartSec=20min
 Restart=on-failure
 RestartSec=30s

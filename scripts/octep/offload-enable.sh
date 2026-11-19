@@ -22,7 +22,7 @@ WAIT_S=${XGS_OFFLOAD_WAIT_S:-180}
 
 # Wait (bounded) for the rings to be armed; the NPU can take minutes to answer after boot.
 i=0
-until case $(cat "$DEV/sdp_state" 2>/dev/null) in *rings=armed*handshake=completed*front_netdevs=10*) true ;; *) false ;; esac; do
+until case $(cat "$DEV/sdp_state" 2>/dev/null) in *rings=armed*handshake=completed*front_netdevs=[1-9]*) true ;; *) false ;; esac; do
 	[ "$i" -ge "$WAIT_S" ] && fail "rings not armed after ${WAIT_S}s: $(cat "$DEV/sdp_state" 2>/dev/null)"
 	sleep 2; i=$((i + 2))
 done

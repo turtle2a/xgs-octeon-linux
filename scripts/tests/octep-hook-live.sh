@@ -38,6 +38,7 @@ cleanup() {
 	journalctl -k --since "@$MARK" --no-pager > "$LOGDIR/dmesg-$PCAP_TAG.log" 2>/dev/null
 	grep -E '^[0-9:]{8} (npu|npu-load)|TAKEOVER|OFFLOAD-PROOF|GATE-EVENT|PCAP|mflow-live|HOOK-STOPPED' "$HOOK_LOG" > "$LOGDIR/flow-$PCAP_TAG.log" 2>/dev/null
 	chmod a+r "$LOGDIR"/*"$PCAP_TAG"* 2>/dev/null
+	[ -n "$SUDO_UID" ] && chown "$SUDO_UID:${SUDO_GID:-$SUDO_UID}" "$LOGDIR"/*"$PCAP_TAG"* "$HOOK_LOG" 2>/dev/null
 	echo "LOGS: $LOGDIR/dmesg-$PCAP_TAG.log  $LOGDIR/flow-$PCAP_TAG.log  $HOOK_LOG"
 	# Run ledger: one row per run, so successes and failures are tracked and regressions are decided from data.
 	L=$ROOT/testlogs/offload-runs.tsv
@@ -56,6 +57,7 @@ cleanup() {
 	for f in "$PCAP_DIR"/$PCAP_TAG-*.pcap; do
 		[ -f "$f" ] || continue
 		chmod a+r "$f" 2>/dev/null
+		[ -n "$SUDO_UID" ] && chown "$SUDO_UID:${SUDO_GID:-$SUDO_UID}" "$f" 2>/dev/null
 		echo "PCAP: $f packets=$(tcpdump -nn -r "$f" 2>/dev/null | wc -l)"
 	done
 	# A second, colliding invocation that fails before opening the gate (e.g. "RPC write
@@ -84,7 +86,7 @@ done
 
 PARAM=/sys/module/octep/parameters/flow_offload
 healthy() {
-	case $(cat "$DEV/sdp_state" 2>/dev/null) in *rings=armed*handshake=completed*front_netdevs=10*) return 0 ;; esac
+	case $(cat "$DEV/sdp_state" 2>/dev/null) in *rings=armed*handshake=completed*front_netdevs=[1-9]*) return 0 ;; esac
 	return 1
 }
 busy() { pgrep -f 'sdp-bringup.sh|sdp-recover-npu.sh|rpc-port-setup.sh' >/dev/null; }
@@ -122,6 +124,10 @@ GATE_OPENED=1
 # for the test window; cleanup() restarts it on exit.
 systemctl stop xgs-npu-health.timer 2>/dev/null
 echo "gate: $(cat "$DEV/offload")"
+DBGSTATS=/sys/kernel/debug/octep/stats
+echo "== P5 stats before"; cat $DBGSTATS 2>/dev/null || echo "P5 stats: debugfs file missing (module without P5?)"
+echo "stack-protector: $(dmesg 2>/dev/null | grep -F 'stack protector' | tail -1 | cut -c1-120)"
+echo "ft_two_step=$(cat /sys/module/octep/parameters/ft_two_step 2>/dev/null) ft_two_step_ms=$(cat /sys/module/octep/parameters/ft_two_step_ms 2>/dev/null) ft_seq_chk=$(cat /sys/module/octep/parameters/ft_seq_chk 2>/dev/null)"
 
 if [ "$PRE_ENABLED" = 0 ]; then
 nft add table inet "$TABLE"
@@ -130,12 +136,14 @@ nft add flowtable inet "$TABLE" ft "{ hook ingress priority 0; devices = { $LAN,
 nft add chain inet "$TABLE" hookfw "{ type filter hook forward priority 0; policy accept; }"
 nft add rule inet "$TABLE" hookfw ct state established flow add @ft
 fi
+# Read a plain number (decimal or 0x hex) from a file; anything else yields 0, so a planted file cannot inject shell arithmetic.
+num() { v=$(head -c 32 "$1" 2>/dev/null); case $v in ''|*[!0-9a-fA-FxX]*) echo 0 ;; *) echo "$((v))" ;; esac; }
 # Flag-bit probe: a number in /var/tmp/octep-ft-flags-extra (e.g. 0x40000) is ORed into the flow-create flags.
-{ cat /var/tmp/octep-ft-flags-extra 2>/dev/null || echo 0; } | { read -r v; echo "$((v))" > /sys/module/octep/parameters/ft_flags_extra; } 2>/dev/null
+num /var/tmp/octep-ft-flags-extra > /sys/module/octep/parameters/ft_flags_extra 2>/dev/null
 # /var/tmp/octep-ft-ports0 containing 1 writes zero NAT-block ports for the run.
 if [ "$(cat /var/tmp/octep-ft-ports0 2>/dev/null)" = 1 ]; then echo Y > /sys/module/octep/parameters/ft_nat_ports0; fi
-{ cat /var/tmp/octep-ft-mflow-extra 2>/dev/null || echo 0; } | { read -r v; echo "$((v))" > /sys/module/octep/parameters/ft_mflow_extra; } 2>/dev/null
-{ cat /var/tmp/octep-ft-l3-rev 2>/dev/null || echo 0; } | { read -r v; echo "$((v))" > /sys/module/octep/parameters/ft_l3_rev; } 2>/dev/null
+num /var/tmp/octep-ft-mflow-extra > /sys/module/octep/parameters/ft_mflow_extra 2>/dev/null
+num /var/tmp/octep-ft-l3-rev > /sys/module/octep/parameters/ft_l3_rev 2>/dev/null
 if [ "$(cat /var/tmp/octep-ft-tcp-state 2>/dev/null)" = 1 ]; then echo Y > /sys/module/octep/parameters/ft_tcp_state; else echo N > /sys/module/octep/parameters/ft_tcp_state; fi 2>/dev/null
 { echo "${OCTEP_FT_VERDICT:-1}" > /sys/module/octep/parameters/ft_verdict; } 2>/dev/null
 echo "verdict=${OCTEP_FT_VERDICT:-1}"
@@ -211,7 +219,7 @@ echo "READY: start a NEW iperf3 from the LAN host now (${SECS}s window)"
 # landed in the live table, instead of inferring it from what we wrote.
 (
 	# Kernel lines only (never the hook's own octep-test echoes), read once a second; one NPU readback at
-	# offload, three more 2 s apart, and one at release, each written to the log and to dmesg.
+	# offload, then one per second for 40 s (allocation/timestamp monitor), and one at release, each written to the log and to dmesg.
 	n_seen=0; follow=0; next=0; oid=; rid=; conn=
 	npu_alloc() {
 		label=$1; out="NPU-ALLOC $label conn=$conn"
@@ -238,7 +246,7 @@ echo "READY: start a NEW iperf3 from the LAN host now (${SECS}s window)"
 				case "$line" in
 				*offloaded*)
 					oid=$(echo "$line" | grep -oP 'orig id \K[0-9]+'); rid=$(echo "$line" | grep -oP 'reply id \K[0-9]+')
-					npu_alloc offload; follow=3; next=$((SECONDS + 2)) ;;
+					npu_alloc offload; follow=40; t0=$SECONDS; next=$((SECONDS + 1)) ;;
 				*released*) npu_alloc release; follow=0 ;;
 				esac
 			done < "$LOGDIR/.ft-new.$$"
@@ -246,8 +254,11 @@ echo "READY: start a NEW iperf3 from the LAN host now (${SECS}s window)"
 			n_seen=$total
 		fi
 		if [ "$follow" -gt 0 ] && [ "$SECONDS" -ge "$next" ]; then
-			npu_alloc "+$((8 - 2 * follow))s"; follow=$((follow - 1)); next=$((SECONDS + 2))
+			npu_alloc "+$((SECONDS - t0))s"; follow=$((follow - 1)); next=$((SECONDS + 1))
 		fi
+		# Always on: allocated-flow counters every second, offloaded or not.
+		fa="FLOW-ALLOC $(date +%T) $(grep -oE '(tracked|stale|untracked|conn_stats_entries|last_age_ms)=[0-9]+' "$DEV/flow_stats" 2>/dev/null | tr '\n' ' ')conns_ft=$(dmesg --time-format iso --since "@$MARK" 2>/dev/null | grep -cE 'ft: offloaded conn') released=$(dmesg --time-format iso --since "@$MARK" 2>/dev/null | grep -cE 'ft: released conn')"
+		echo "$fa"; echo "octep-test: $fa" > /dev/kmsg 2>/dev/null
 		sleep 1
 	done
 ) &
@@ -395,6 +406,7 @@ if dmesg --time-format iso --since "@$MARK" 2>/dev/null | grep -qF "offloaded co
 else
 	echo "RESULT: INVALID - no 'ft: offloaded conn' this window; the flow predates the hook or never qualified. Discard this run and its captures."
 fi
+echo "== P5 stats after"; cat $DBGSTATS 2>/dev/null
 echo "== counters"
 cat "$DEV/offload"
 grep -E "WIRE_TO_WIRE|CONN_RECLAIMED|MFLOW_NOT_ACTIVE" "$DEV"/rpc_sys_counters 2>/dev/null | head

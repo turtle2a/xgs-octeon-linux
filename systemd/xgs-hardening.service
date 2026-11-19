@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=XGS optional conntrack tuning and packet sanity filtering
+After=network-pre.target xgs-octep-sdp-bringup.service
+Before=xgs-nat.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/xgs/linux/scripts/nat/xgs-hardening.sh start
+ExecStop=/usr/local/xgs/linux/scripts/nat/xgs-hardening.sh stop
+
+[Install]
+WantedBy=multi-user.target

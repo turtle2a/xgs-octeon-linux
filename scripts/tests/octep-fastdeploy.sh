@@ -11,7 +11,8 @@ set -u
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 KO=${1:-$ROOT/octep/octep.ko}
 DEST=/lib/modules/$(uname -r)/extra/octep.ko.xz
-PREV=${OCTEP_DEPLOY_PREV:-/var/tmp/octep.ko.xz.prev}
+PREV_DIR=/var/lib/xgs
+PREV=${OCTEP_DEPLOY_PREV:-$PREV_DIR/octep.ko.xz.prev}
 LINKS_WANT=${OCTEP_DEPLOY_LINKS:-10}
 WAIT_S=${OCTEP_DEPLOY_WAIT_S:-240}
 UNIT=xgs-octep-sdp-bringup.service
@@ -51,7 +52,9 @@ restore() {
 	fi
 }
 
-cp "$DEST" "$PREV" || exit 2
+mkdir -p -m 0700 "$(dirname -- "$PREV")" || exit 2
+rm -f -- "$PREV"
+cp -P --no-preserve=mode "$DEST" "$PREV" || exit 2
 xz --check=crc32 -c "$KO" >"$DEST.new" && mv "$DEST.new" "$DEST" || { echo "octep-fastdeploy: install failed" >&2; exit 2; }
 depmod -a
 

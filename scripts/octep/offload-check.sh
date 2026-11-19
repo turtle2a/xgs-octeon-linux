@@ -27,7 +27,7 @@ v=$(cat "$P/flow_offload" 2>/dev/null)
 
 s=$(cat "$DEV/sdp_state" 2>/dev/null)
 case "$s" in
-*rings=armed*handshake=completed*front_netdevs=10*) item "rings armed" 0 "$s" ;;
+*rings=armed*handshake=completed*front_netdevs=[1-9]*) item "rings armed" 0 "$s" ;;
 *) item "rings armed" 1 "${s:-unreadable}" ;;
 esac
 

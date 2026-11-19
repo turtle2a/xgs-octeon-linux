@@ -57,13 +57,14 @@ for file in \
 	install.sh uninstall.sh \
 	modules-load.d/xgs-vfio.conf modprobe.d/xgs-octep.conf \
 	sysctl.d/90-xgs-octep-forwarding.conf kea/kea-dhcp4.conf \
-	scripts/nat/xgs-nat.sh scripts/nat/xgs-lan.sh scripts/nat/nat-port4.sh scripts/nat/nat-off.sh \
+	scripts/nat/xgs-nat.sh scripts/nat/xgs-hardening.sh scripts/nat/xgs-lan.sh scripts/nat/nat-port4.sh scripts/nat/nat-off.sh \
 	scripts/xgs/xgs-auto-update.sh scripts/xgs/xgs-auto-update-ctl.sh cron/xgs-auto-update \
-	systemd/xgs-nat.service \
+	systemd/xgs-nat.service systemd/xgs-hardening.service \
 	octep/Makefile octep/octep.c octep/dkms.conf \
 	scripts/xgs/npu-health.sh scripts/xgs/npu-run.sh \
 	scripts/octep/npu-platform.sh scripts/octep/rpc-port-setup.sh \
 	scripts/octep/sdp-ring-test.sh scripts/octep/sdp-bringup.sh \
+	scripts/octep/offload-enable.sh scripts/octep/offload-check.sh \
 	scripts/octep/sdp-status-check.sh scripts/npuctl/mgmt-link.sh \
 	systemd/xgs-npu-health.service systemd/xgs-npu-health.timer \
 	systemd/xgs-octep-sdp-bringup.service \
@@ -79,6 +80,7 @@ stop_and_disable_unit xgs-octep-sdp-status.service
 stop_and_disable_unit xgs-npu-health.timer
 stop_and_disable_unit xgs-npu-health.service
 stop_and_disable_unit xgs-octep-sdp-bringup.service
+stop_and_disable_unit xgs-hardening.service
 stop_and_disable_unit xgs-nat.service
 
 DKMS_STATUS=$(dkms status) || fail "could not query DKMS registrations"
@@ -106,6 +108,8 @@ remove_if_unchanged "$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf" \
 	/etc/sysctl.d/90-xgs-octep-forwarding.conf
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-nat.service" \
 	/usr/lib/systemd/system/xgs-nat.service
+remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-hardening.service" \
+	/usr/lib/systemd/system/xgs-hardening.service
 remove_if_unchanged "$SCRIPT_DIR/kea/kea-dhcp4.conf" \
 	/etc/kea/kea-dhcp4.conf
 
@@ -136,6 +140,10 @@ remove_if_unchanged "$SCRIPT_DIR/scripts/octep/rpc-port-setup.sh" \
 	"$XGS_ROOT/scripts/octep/rpc-port-setup.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/octep/sdp-ring-test.sh" \
 	"$XGS_ROOT/scripts/octep/sdp-ring-test.sh"
+remove_if_unchanged "$SCRIPT_DIR/scripts/octep/offload-enable.sh" \
+	"$XGS_ROOT/scripts/octep/offload-enable.sh"
+remove_if_unchanged "$SCRIPT_DIR/scripts/octep/offload-check.sh" \
+	"$XGS_ROOT/scripts/octep/offload-check.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/octep/sdp-bringup.sh" \
 	"$XGS_ROOT/scripts/octep/sdp-bringup.sh"
 remove_if_unchanged "$SCRIPT_DIR/scripts/octep/sdp-status-check.sh" \
@@ -146,7 +154,7 @@ remove_if_unchanged "$SCRIPT_DIR/cron/xgs-auto-update" /etc/cron.d/xgs-auto-upda
 for f in xgs-auto-update.sh xgs-auto-update-ctl.sh; do
 	remove_if_unchanged "$SCRIPT_DIR/scripts/xgs/$f" "$XGS_ROOT/scripts/xgs/$f"
 done
-for f in xgs-nat.sh xgs-lan.sh nat-port4.sh nat-off.sh; do
+for f in xgs-nat.sh xgs-hardening.sh xgs-lan.sh nat-port4.sh nat-off.sh; do
 	remove_if_unchanged "$SCRIPT_DIR/scripts/nat/$f" "$XGS_ROOT/scripts/nat/$f"
 done
 remove_if_unchanged "$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf" \

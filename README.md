@@ -11,7 +11,9 @@ appliances or kernel versions need separate testing. Debian, openSUSE, and
 Arch Linux have booted on the appliance, but full NPU functionality remains a
 work in progress. XGS 136 uses a different Armada platform; SFP cage operation
 and hardware acceleration are not verified. NPU flow offload is opt-in and
-experimental; see [docs/npu-flow-offload.md](docs/npu-flow-offload.md).
+experimental; see [docs/npu-flow-offload.md](docs/npu-flow-offload.md). The installed
+bring-up service enables it at every boot (`offload-enable.sh`); check with
+`/usr/local/xgs/linux/scripts/octep/offload-check.sh`.
 
 The optional NAT helper is under `scripts/nat/`. It is not invoked or installed
 by `install.sh`; it adds NAT rules only when explicitly run and confirmed.
@@ -31,6 +33,32 @@ Linux Mint, network appliance.
 The optional NAT helper is currently specific to the tested port layout: WAN
 choices are physical ports 2 and 4. Check the target appliance's port mapping
 before using it; it does not configure other models automatically.
+
+The NPU-bearing appliances found in the vendor property spec files (Octeon, Armada and
+others) are listed in [docs/compatible-appliances.md](docs/compatible-appliances.md).
+It is an inference from spec files, not a test result: use it at your own risk.
+
+## Vulnerabilities
+
+Brief: the router was reviewed for security. Medium and High findings were fixed without changing how
+the appliance operates (NAT, DHCP, NPU offload all unchanged). Low findings and platform limits are
+documented and accepted. Everything lives in the [`vulnerabilities/`](vulnerabilities/) tree.
+
+| Area | Where |
+| --- | --- |
+| Changes, options, test results, assessment table, risk register (R1-R14) | [vulnerabilities/docs/vulnerability-mitigation.md](vulnerabilities/docs/vulnerability-mitigation.md) |
+| Review findings | [docs/security-review.md](docs/security-review.md) |
+| Change log and test specs | [CHANGELOG.md](CHANGELOG.md) |
+| Stub and `--live` test script | `vulnerabilities/scripts/xgs-hardening-test.sh` |
+| IOMMU strict-mode test script | `vulnerabilities/scripts/octep-iommu-strict-test.sh` |
+
+| Risk | Status |
+| --- | --- |
+| WAN reaching LAN or management (R2), LAN reaching router services (R3), NPU network attack (R4) | Fixed |
+| Flood and malformed traffic (R6) | Optional `xgs-hardening` service |
+| OS and kernel updates (R9, R10) | Fixed (auto-update) |
+| NPU DMA (R5), CPU side channels (R7), unpatchable BIOS and NPU firmware (R8) | Accepted |
+| ssh and RDP open to the WAN (R13) | Open, awaiting decision |
 
 ## Installation (in order)
 

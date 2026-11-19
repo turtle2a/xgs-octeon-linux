@@ -13,17 +13,53 @@ MGMT_NET=10.1.1.0/28   # management subnet (enp2s0), also NATed out the WAN; enp
 MGMT_IF=enp2s0
 MGMT_NAT=1   # set MGMT_NAT=0 in /etc/xgs-nat.conf to leave enp2s0 out of NAT (WAN gateway only)
 # Optional overrides: WAN=, GW=, LAN_NETS=, MGMT_NET=, MGMT_IF=, MGMT_NAT= in /etc/xgs-nat.conf
+BLOCK_LAN_TO_MGMT=0   # set to 1 in /etc/xgs-nat.conf to drop forwarded LAN -> management traffic (off: unchanged behaviour)
+
 [ -r /etc/xgs-nat.conf ] && . /etc/xgs-nat.conf
 MGMT_NET_NAT=; [ "$MGMT_NAT" = 0 ] || MGMT_NET_NAT=$MGMT_NET
 
-nat_rules() { # $1 = -A|-D
-	iptables -t nat $1 POSTROUTING -o $WAN -j MASQUERADE
+# The conf is sourced as root: refuse values that are not plain interface names or address lists.
+case $WAN$MGMT_IF in *[!A-Za-z0-9_.-]*|'') echo "xgs-nat: invalid WAN/MGMT_IF" >&2; exit 64 ;; esac
+case $GW$MGMT_NET$LAN_NETS in *[!0-9./\ ]*|'') echo "xgs-nat: invalid GW/MGMT_NET/LAN_NETS" >&2; exit 64 ;; esac
+
+nat_rules() { # $1 = -A|-D; masquerade only our own LAN/management sources
+	for net in $LAN_NETS $MGMT_NET_NAT; do
+		iptables -t nat $1 POSTROUTING -s $net -o $WAN -j MASQUERADE
+	done
 }
 
-fwd_rules() { # $1 = -I|-D; accept LAN->WAN and replies even under a default-drop FORWARD policy
+# Chain XGS-FWD: accept LAN->WAN and replies (also under a default-drop FORWARD policy), drop new
+# WAN-initiated traffic to the LAN/management subnets, then RETURN so the host's own policy
+# (ufw, the offload flowtable) still applies to everything else.
+fwd_rules() { # $1 = -I|-D
+	if [ "$1" = -D ]; then
+		iptables -D FORWARD -j XGS-FWD 2>/dev/null
+		iptables -F XGS-FWD 2>/dev/null
+		iptables -X XGS-FWD 2>/dev/null
+		return 0
+	fi
+	iptables -N XGS-FWD 2>/dev/null || iptables -F XGS-FWD
+	iptables -A XGS-FWD -m conntrack --ctstate INVALID -j DROP
 	for net in $LAN_NETS $MGMT_NET_NAT; do
-		iptables $1 FORWARD -s $net -o $WAN -j ACCEPT
-		iptables $1 FORWARD -d $net -i $WAN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+		iptables -A XGS-FWD -s $net -o $WAN -j ACCEPT
+		iptables -A XGS-FWD -d $net -i $WAN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+		iptables -A XGS-FWD -d $net -i $WAN -j DROP
+	done
+	if [ "$BLOCK_LAN_TO_MGMT" = 1 ]; then
+		for net in $LAN_NETS; do
+			iptables -I XGS-FWD 1 -s $net -d $MGMT_NET -j DROP
+		done
+	fi
+	iptables -A XGS-FWD -j RETURN
+	iptables -C FORWARD -j XGS-FWD 2>/dev/null || iptables -I FORWARD 1 -j XGS-FWD
+}
+
+# Rules written by earlier releases: removed so an upgrade leaves no blanket MASQUERADE behind.
+legacy_rules() {
+	iptables -t nat -D POSTROUTING -o $WAN -j MASQUERADE 2>/dev/null
+	for net in $LAN_NETS $MGMT_NET_NAT; do
+		iptables -D FORWARD -s $net -o $WAN -j ACCEPT 2>/dev/null
+		iptables -D FORWARD -d $net -i $WAN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null
 	done
 }
 
@@ -49,9 +85,11 @@ lan_local_rules() { # $1 = -A|-D
 case $1 in
 start)
 	sysctl -qw net.ipv4.ip_forward=1
-	nat_rules -C 2>/dev/null || nat_rules -A
-	fwd_rules -D 2>/dev/null
-	fwd_rules -I 2>/dev/null
+	legacy_rules
+	nat_rules -D 2>/dev/null
+	nat_rules -A
+	fwd_rules -D
+	fwd_rules -I
 	# The main table's default route can prefer enp2s0 (lower metric), so
 	# pin the OCTEP LAN subnet to the WAN with a policy route. The unit can
 	# start before DHCP completes, so wait for the WAN default route.
@@ -81,8 +119,9 @@ mgmt)
 	echo "$MGMT_NET now routed via $WAN WAN"
 	;;
 stop)
+	legacy_rules
 	nat_rules -D 2>/dev/null
-	fwd_rules -D 2>/dev/null
+	fwd_rules -D
 	for net in $LAN_NETS; do
 		ip rule del from $net lookup 100 2>/dev/null
 	done

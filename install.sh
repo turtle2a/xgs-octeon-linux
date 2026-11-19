@@ -18,6 +18,8 @@ RUN_SCRIPT="$SCRIPT_DIR/scripts/xgs/npu-run.sh"
 PLATFORM_SCRIPT="$SCRIPT_DIR/scripts/octep/npu-platform.sh"
 OCTEP_PORT_SETUP_SCRIPT="$SCRIPT_DIR/scripts/octep/rpc-port-setup.sh"
 OCTEP_RING_TEST_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-ring-test.sh"
+OCTEP_OFFLOAD_ENABLE_SCRIPT="$SCRIPT_DIR/scripts/octep/offload-enable.sh"
+OCTEP_OFFLOAD_CHECK_SCRIPT="$SCRIPT_DIR/scripts/octep/offload-check.sh"
 OCTEP_SDP_BRINGUP_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-bringup.sh"
 MGMT_LINK_SCRIPT="$SCRIPT_DIR/scripts/npuctl/mgmt-link.sh"
 HEALTH_SERVICE="$SCRIPT_DIR/systemd/xgs-npu-health.service"
@@ -155,6 +157,8 @@ done
 [ -f "$PLATFORM_SCRIPT" ] || fail "missing NPU platform script"
 [ -f "$OCTEP_PORT_SETUP_SCRIPT" ] || fail "missing OCTEP port-setup script"
 [ -f "$OCTEP_RING_TEST_SCRIPT" ] || fail "missing OCTEP ring-test script"
+[ -f "$OCTEP_OFFLOAD_ENABLE_SCRIPT" ] || fail "missing OCTEP offload-enable script"
+[ -f "$OCTEP_OFFLOAD_CHECK_SCRIPT" ] || fail "missing OCTEP offload-check script"
 [ -f "$OCTEP_SDP_BRINGUP_SCRIPT" ] || fail "missing OCTEP SDP bring-up script"
 [ -f "$MGMT_LINK_SCRIPT" ] || fail "missing NPU management-link script"
 [ -f "$HEALTH_SERVICE" ] || fail "missing NPU health-check systemd unit"
@@ -286,6 +290,8 @@ install_script "$RUN_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-run.sh"
 install_script "$PLATFORM_SCRIPT" "$XGS_ROOT/scripts/octep/npu-platform.sh"
 install_script "$OCTEP_PORT_SETUP_SCRIPT" "$XGS_ROOT/scripts/octep/rpc-port-setup.sh"
 install_script "$OCTEP_RING_TEST_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-ring-test.sh"
+install_script "$OCTEP_OFFLOAD_ENABLE_SCRIPT" "$XGS_ROOT/scripts/octep/offload-enable.sh"
+install_script "$OCTEP_OFFLOAD_CHECK_SCRIPT" "$XGS_ROOT/scripts/octep/offload-check.sh"
 install_script "$OCTEP_SDP_BRINGUP_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-bringup.sh"
 install_script "$MGMT_LINK_SCRIPT" "$XGS_ROOT/scripts/npuctl/mgmt-link.sh"
 install_unit "$HEALTH_SERVICE" "$XGS_ROOT/systemd/xgs-npu-health.service"
@@ -302,10 +308,12 @@ install_script "$NAT_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-nat.sh"
 install_script "$NAT_LAN_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-lan.sh"
 install_script "$NAT_PORT4_SCRIPT" "$XGS_ROOT/scripts/nat/nat-port4.sh"
 install_script "$NAT_OFF_SCRIPT" "$XGS_ROOT/scripts/nat/nat-off.sh"
+install_script "$SCRIPT_DIR/scripts/nat/xgs-hardening.sh" "$XGS_ROOT/scripts/nat/xgs-hardening.sh"
 install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update.sh"
 install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update-ctl.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update-ctl.sh"
 install_data "$SCRIPT_DIR/cron/xgs-auto-update" "$DESTDIR/etc/cron.d/xgs-auto-update"
 install_unit "$NAT_SERVICE" "$DESTDIR/usr/lib/systemd/system/xgs-nat.service"
+install_unit "$SCRIPT_DIR/systemd/xgs-hardening.service" "$DESTDIR/usr/lib/systemd/system/xgs-hardening.service"
 install_unit "$HEALTH_SERVICE" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.service"
 install_unit "$HEALTH_TIMER" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.timer"
 install_unit "$OCTEP_SDP_BRINGUP_SERVICE" \
@@ -427,6 +435,11 @@ fi
 
 step "NAT and firewall (ufw)"
 systemctl enable --quiet xgs-nat.service
+# Optional conntrack tuning and packet sanity filtering: installed always, enabled only on request.
+if [ "${XGS_HARDENING:-0}" = 1 ]; then
+	systemctl enable --quiet xgs-hardening.service
+	say "xgs-hardening.service enabled (conntrack tuning, mangle sanity filter)"
+fi
 # Unattended updates at 05:00 and 13:00 (/etc/cron.d/xgs-auto-update) need a cron daemon
 # (Fedora: cronie/crond; Debian/Mint: cron). Kernel packages are held back.
 cron_unit=
@@ -461,11 +474,42 @@ if [ -n "$cron_unit" ]; then
 else
 	echo "xgs-linux-install: no cron daemon (cronie/cron); unattended updates will not run until one is installed" >&2
 fi
+# CPU microcode comes from the distro (best effort; Debian needs non-free-firmware for these).
+# XGS_SKIP_MICROCODE=1 skips it.
+if [ "${XGS_SKIP_MICROCODE:-0}" != 1 ]; then
+	ucode_pkg=
+	case $(grep -m1 '^vendor_id' /proc/cpuinfo 2>/dev/null) in
+	*AuthenticAMD*) ucode_pkg_dnf=amd-ucode-firmware; ucode_pkg_apt=amd64-microcode; ucode_pkg_pacman=amd-ucode ;;
+	*GenuineIntel*) ucode_pkg_dnf=microcode_ctl; ucode_pkg_apt=intel-microcode; ucode_pkg_pacman=intel-ucode ;;
+	*) ucode_pkg_dnf=; ucode_pkg_apt=; ucode_pkg_pacman= ;;
+	esac
+	if command -v dnf >/dev/null 2>&1; then
+		ucode_pkg=$ucode_pkg_dnf
+		[ -z "$ucode_pkg" ] || rpm -q "$ucode_pkg" >/dev/null 2>&1 || dnf -y install "$ucode_pkg" >/dev/null 2>&1 || ucode_pkg="!$ucode_pkg"
+	elif command -v apt-get >/dev/null 2>&1; then
+		ucode_pkg=$ucode_pkg_apt
+		[ -z "$ucode_pkg" ] || dpkg -s "$ucode_pkg" >/dev/null 2>&1 || DEBIAN_FRONTEND=noninteractive apt-get -y install "$ucode_pkg" >/dev/null 2>&1 || ucode_pkg="!$ucode_pkg"
+	elif command -v pacman >/dev/null 2>&1; then
+		ucode_pkg=$ucode_pkg_pacman
+		[ -z "$ucode_pkg" ] || pacman -Q "$ucode_pkg" >/dev/null 2>&1 || pacman -S --needed --noconfirm "$ucode_pkg" >/dev/null 2>&1 || ucode_pkg="!$ucode_pkg"
+	fi
+	case $ucode_pkg in
+	'') ;;
+	!*) echo "xgs-linux-install: could not install CPU microcode package ${ucode_pkg#!}; install it manually" >&2 ;;
+	*) say "CPU microcode package present: $ucode_pkg" ;;
+	esac
+fi
 say "xgs-nat.service enabled: NAT/policy route out Port 2 (octep1) starts at boot"
 if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'; then
-	say "ufw is active: allowing inbound on the LAN octeps and management port"
+	# Default: only DHCP (udp 67) is allowed in on the LAN octeps; allow SSH etc. per trusted host yourself,
+	# as docs/install-requirements.md describes. XGS_UFW_LAN_DHCP_ONLY=0 opens all inbound there (testing/assessment).
+	say "ufw is active: allowing DHCP on the LAN octeps and all inbound on the management port"
 	for i in 0 2 3 4 5 6 7 8 9; do
-		ufw allow in on octep$i >/dev/null && say "ufw: allow in on octep$i"
+		if [ "${XGS_UFW_LAN_DHCP_ONLY:-1}" = 1 ]; then
+			ufw allow in on octep$i proto udp to any port 67 >/dev/null && say "ufw: allow DHCP in on octep$i"
+		else
+			ufw allow in on octep$i >/dev/null && say "ufw: allow in on octep$i"
+		fi
 	done
 	ufw allow in on enp2s0 >/dev/null && say "ufw: allow in on enp2s0"
 	# Forwarded LAN traffic: ufw's FORWARD policy is drop by default
@@ -474,6 +518,23 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: 
 			ufw route allow in on octep$i out on octep1 >/dev/null &&
 				say "ufw: route octep$i -> octep1"
 		done
+	fi
+	# The NPU is a separate Linux system with PCIe DMA into the host: on its link (mvmgmt0) only the
+	# NPU address may reach the host's own link address; nothing else is accepted and nothing is
+	# forwarded. XGS_UFW_NPU_ISOLATE=0 skips this; XGS_NPU_PORTS="22 ..." limits it to those tcp ports.
+	if [ "${XGS_UFW_NPU_ISOLATE:-1}" = 1 ]; then
+		npu_host=${NPU_HOST_ADDR:-169.254.254.1}
+		npu_addr=${NPU_ADDR:-169.254.254.2}
+		ufw route insert 1 deny in on mvmgmt0 >/dev/null && say "ufw: no forwarding from mvmgmt0"
+		ufw insert 1 deny in on mvmgmt0 >/dev/null
+		if [ -n "${XGS_NPU_PORTS:-}" ]; then
+			for p in $XGS_NPU_PORTS; do
+				ufw insert 1 allow in on mvmgmt0 proto tcp from "$npu_addr" to "$npu_host" port "$p" >/dev/null
+			done
+		else
+			ufw insert 1 allow in on mvmgmt0 from "$npu_addr" to "$npu_host" >/dev/null
+		fi
+		say "ufw: mvmgmt0 accepts only $npu_addr -> $npu_host"
 	fi
 else
 	say "ufw not active: no firewall rules added"
