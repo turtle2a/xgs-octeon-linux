@@ -58,7 +58,7 @@ depmod -a
 systemctl stop "$UNIT" 2>/dev/null
 rmmod octep 2>/dev/null
 start=$(date +%s)
-if ! modprobe octep; then
+if ! modprobe octep ${OCTEP_MODPARAMS:-}; then
 	echo "octep-fastdeploy: modprobe failed; kernel says:" >&2
 	dmesg | tail -5 >&2
 	restore
@@ -77,6 +77,8 @@ fi
 WAIT_S=$WAIT_S_ALL
 if wait_links; then
 	[ "$(mgmt_state)" = "$MGMT_BEFORE" ] || echo "octep-fastdeploy: WARNING $MGMT changed during deploy: before [$MGMT_BEFORE] after [$(mgmt_state)]" >&2
+	# The reload re-creates octep1, so the kernel drops the WAN policy route; re-apply it.
+	systemctl restart xgs-nat.service 2>/dev/null || true
 	echo "octep-fastdeploy: DEPLOYED, $(links) links up in $(($(date +%s) - start))s"
 	exit 0
 fi

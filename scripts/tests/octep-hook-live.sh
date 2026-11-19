@@ -89,6 +89,7 @@ healthy() {
 }
 busy() { pgrep -f 'sdp-bringup.sh|sdp-recover-npu.sh|rpc-port-setup.sh' >/dev/null; }
 
+for _ in $(seq 1 20); do healthy && ! busy && break; sleep 2; done
 healthy && ! busy || { echo "FAIL: NPU not healthy or a bring-up is running; nothing changed. $(cat "$DEV/sdp_state")" >&2; exit 1; }
 # a read-only parameter is fine when the loaded build already has it on
 if [ "$(cat "$PARAM")" != Y ]; then
@@ -147,6 +148,11 @@ echo "baseline params: ft_brctl=$(cat /sys/module/octep/parameters/ft_brctl) ft_
 { echo "${OCTEP_FT_CUTIN:-0}" > /sys/module/octep/parameters/ft_cutin; } 2>/dev/null
 echo "ft_cutin=$(cat /sys/module/octep/parameters/ft_cutin)"
 echo "l3_rev=$(cat /sys/module/octep/parameters/ft_l3_rev 2>/dev/null)"
+# Change G: once the NPU forwards the original direction, host conntrack never sees that data, so the later server ACKs look out of window (INVALID) and are dropped. Liberal mode keeps them; the invalid counter delta below shows whether it happened.
+ct_invalid() { awk 'NR>1{ s += strtonum("0x"$5) } END{print s+0}' /proc/net/stat/nf_conntrack 2>/dev/null; }
+{ echo "${OCTEP_CT_LIBERAL:-1}" > /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal; } 2>/dev/null
+echo "nf_conntrack_tcp_be_liberal=$(cat /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal 2>/dev/null)"
+CT_INVALID0=$(ct_invalid)
 echo "tcp_state=$(cat /sys/module/octep/parameters/ft_tcp_state 2>/dev/null)"
 echo "mflow_extra=$(cat /sys/module/octep/parameters/ft_mflow_extra 2>/dev/null)"
 echo "nat_ports0=$(cat /sys/module/octep/parameters/ft_nat_ports0 2>/dev/null)"
@@ -160,9 +166,14 @@ if [ "${4:-}" = dnat ]; then
 fi
 # Review captures: TCP port 5201 headers (96 bytes) on both ports; each stops by itself after the window.
 mkdir -p "$PCAP_DIR"
+TD_PIDS=""
 for ifc in "$LAN" "$WAN"; do
-	tcpdump -nn -i "$ifc" -Z root -s 96 -G $((SECS + 10)) -W 1 -w "$PCAP_DIR/$PCAP_TAG-$ifc.pcap" tcp port 5201 >/dev/null 2>"$LOGDIR/$PCAP_TAG-tcpdump-$ifc.err" &
+	tcpdump -nn -i "$ifc" -Z root -B 262144 -s 96 -c 250000 -w "$PCAP_DIR/$PCAP_TAG-$ifc.pcap" tcp port 5201 >/dev/null 2>"$LOGDIR/$PCAP_TAG-tcpdump-$ifc.err" &
+	TD_PIDS="$TD_PIDS $!"
 done
+# Full-length frames (about 30 MB) of the first 20000 packets on the WAN port, so the TCP checksum of NPU-forwarded frames can be verified (the 96-byte captures cannot).
+tcpdump -nn -i "$WAN" -Z root -s 0 -c 60000 -w "$PCAP_DIR/$PCAP_TAG-full-$WAN.pcap" tcp port 5201 >/dev/null 2>>"$LOGDIR/$PCAP_TAG-tcpdump-$WAN.err" &
+TD_PIDS="$TD_PIDS $!"
 sleep 2
 for ifc in "$LAN" "$WAN"; do
 	if [ -f "$PCAP_DIR/$PCAP_TAG-$ifc.pcap" ]; then m="PCAP-START ok $PCAP_DIR/$PCAP_TAG-$ifc.pcap"; else m="PCAP-START FAILED for $ifc: $(head -c 200 "$LOGDIR/$PCAP_TAG-tcpdump-$ifc.err" | tr '\n' ' ')"; fi
@@ -369,10 +380,14 @@ for p in pending:
 flush_load(True)
 say("OFFLOAD-PROOF SUMMARY: " + (f"{took} takeover(s) proven" if took else "NONE proven - do not treat this run as an offload result"))
 PY
+# Wait for the analysis only; the size-capped captures never end by themselves, so stop them here.
+wait $!
+[ -n "$TD_PIDS" ] && kill $TD_PIDS 2>/dev/null
 wait
 
 echo "== hook dmesg"
 dmesg --time-format iso --since "@$MARK" 2>/dev/null | grep -E "octep 0000:01:00.0: ft:|octep.*ft: |ft: dbg" | tail -80
+echo "CT-INVALID delta during run: $(( $(ct_invalid) - CT_INVALID0 ))"
 echo "== conntrack"
 grep dport=5201 /proc/net/nf_conntrack | cut -c1-250
 if dmesg --time-format iso --since "@$MARK" 2>/dev/null | grep -qF "offloaded conn"; then

@@ -35,6 +35,8 @@ for kv in ft_tcp_state=Y ft_offload_nat=Y ft_verdict=${OCTEP_FT_VERDICT:-1} ft_b
 	[ -w "$P/${kv%%=*}" ] && echo "${kv#*=}" >"$P/${kv%%=*}" 2>/dev/null
 done
 
+# Offloaded data bypasses host conntrack, so later server ACKs look out of window; liberal mode keeps them from being INVALID.
+[ -w /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal ] && echo "${OCTEP_CT_LIBERAL:-1}" >/proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal
 echo Y >"$PARAM" || fail "could not set flow_offload=Y"
 echo 1 >"$DEV/rpc_allow_write" || fail "could not open the RPC write gate"
 echo on >"$DEV/offload" || fail "could not request firmware offload"
