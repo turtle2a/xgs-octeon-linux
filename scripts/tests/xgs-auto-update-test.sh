@@ -5,7 +5,7 @@
 set -u
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 UPD=$ROOT/scripts/xgs/xgs-auto-update.sh
-UNSHARE=$(command -v unshare) || { echo "SKIP: unshare not found"; exit 0; }
+UNSHARE=$(command -v unshare) || [ "$(id -u)" -eq 0 ] || { echo "SKIP: unshare not found"; exit 0; }
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 fails=0
@@ -23,10 +23,20 @@ stub() { # dir name [exit] [stdout]
 	printf '#!/bin/sh\necho "%s $*" >>%s/calls\n%s\nexit %s\n' "$2" "$1" "${4:-}" "${3:-0}" >"$1/bin/$2"
 	chmod +x "$1/bin/$2"
 }
-runupd() { # dir [env...]
+runupd() { # dir [VAR=val...]
 	d=$1
 	shift
-	env PATH="$d/bin" XGS_UPDATE_LOG="$d/log" XGS_UPDATE_LOCK="$d/lock" "$@" "$UNSHARE" -r "$UPD"
+	(
+		PATH="$d/bin"
+		XGS_UPDATE_LOG="$d/log"
+		XGS_UPDATE_LOCK="$d/lock"
+		export PATH XGS_UPDATE_LOG XGS_UPDATE_LOCK
+		for kv in "$@"; do export "$kv"; done
+		runroot "$UPD"
+	)
+}
+runroot() { # run a script as uid 0 (already root, or via a user namespace)
+	if [ "$(id -u)" -eq 0 ]; then /bin/sh "$1"; else "$UNSHARE" -r /bin/sh "$1"; fi
 }
 
 # dnf: kernel excluded, noninteractive
@@ -56,6 +66,7 @@ runupd $D; rc=$?
 # installer cron block: unsupported system and failing installs must never abort (set -eu)
 BLOCK=$T/block.sh
 sed -n '/^cron_unit=$/,/^say "xgs-nat.service enabled/p' "$ROOT/install.sh" | sed '$d' >"$BLOCK"
+[ -s "$BLOCK" ] && grep -q "Unattended updates (cron)" "$BLOCK" || { echo "FAIL: install.sh has no cron block (old install.sh?)"; exit 1; }
 cron_case() { # name tools... ; systemctl always "no unit"
 	n=$1
 	shift
