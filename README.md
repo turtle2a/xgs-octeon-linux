@@ -18,8 +18,10 @@ bring-up service enables it at every boot (`offload-enable.sh`); check with
 The optional NAT helper is under `scripts/nat/`. It is not invoked or installed
 by `install.sh`; it adds NAT rules only when explicitly run and confirmed.
 
-Keywords: OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 3300, Fedora, Debian,
-Linux Mint, network appliance.
+Project page: <https://turtle2a.github.io/xgs-octeon-linux/>
+
+Keywords: OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 3300, XGS 2300, Fedora, Debian,
+Linux Mint, network appliance, NAT router, flow offload, nftables, kea DHCP.
 
 ## Hardware Compatibility
 
