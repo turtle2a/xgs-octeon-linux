@@ -20,15 +20,15 @@ by `install.sh`; it adds NAT rules only when explicitly run and confirmed.
 
 Project page: <https://turtle2a.github.io/xgs-octeon-linux/>
 
-Keywords: OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 3300, XGS 2300, Fedora, Debian,
+Keywords: OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 2300, XGS 3300, Fedora, Debian,
 Linux Mint, network appliance, NAT router, flow offload, nftables, kea DHCP.
 
 ## Hardware Compatibility
 
 | Appliance or family | Status | Notes |
 | --- | --- | --- |
-| XGS 3300 | Tested for OCTEP startup | Fedora 44, kernel `7.3.3-200.fc44`; ten front-port interfaces were observed. This does not verify SFP cages or hardware acceleration. |
-| XGS 2300 | Unverified candidate | Do not assume compatibility from the model name. Confirm the OCTEON TX PCI ID, firmware/NWA interface, and port mapping, then test on the appliance. |
+| XGS 2300 | Tested for OCTEP startup | Fedora 44, kernel `7.3.3-200.fc44`; ten front-port interfaces were observed. This does not verify SFP cages or hardware acceleration. |
+| XGS 3300 | Unverified candidate | Do not assume compatibility from the model name. Confirm the OCTEON TX PCI ID, firmware/NWA interface, and port mapping, then test on the appliance. |
 | Other OCTEON TX appliances | Unverified candidates | The installer expects PCI vendor/device `177d:a300`; matching that ID alone does not establish firmware, port-map, or full hardware compatibility. |
 | XGS 136 | Not supported by this installer | It uses an Armada platform and needs a separate Linux implementation. |
 

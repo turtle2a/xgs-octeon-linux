@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OCTEP Linux driver for OCTEON TX XGS appliances (XGS 3300, XGS 2300) | xgs-octeon-linux</title>
-<meta name="description" content="Open-source Linux OCTEP driver, DKMS package and installer for OCTEON TX network appliances such as the XGS 3300 and XGS 2300. Run Fedora, Debian or Linux Mint on the hardware with NAT routing and optional NPU flow offload.">
-<meta name="keywords" content="OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 3300, XGS 2300, Fedora, Debian, Linux Mint, network appliance, flow offload, nftables, NAT router">
+<title>OCTEP Linux driver for OCTEON TX XGS appliances (XGS 2300, XGS 3300) | xgs-octeon-linux</title>
+<meta name="description" content="Open-source Linux OCTEP driver, DKMS package and installer for OCTEON TX network appliances such as the XGS 2300 and XGS 2300. Run Fedora, Debian or Linux Mint on the hardware with NAT routing and optional NPU flow offload.">
+<meta name="keywords" content="OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 2300, XGS 3300, Fedora, Debian, Linux Mint, network appliance, flow offload, nftables, NAT router">
 <link rel="canonical" href="https://turtle2a.github.io/xgs-octeon-linux/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="OCTEP Linux driver for OCTEON TX XGS appliances">
-<meta property="og:description" content="Open-source Linux driver, DKMS package and installer for OCTEON TX network appliances (XGS 3300, XGS 2300).">
+<meta property="og:description" content="Open-source Linux driver, DKMS package and installer for OCTEON TX network appliances (XGS 2300, XGS 3300).">
 <meta property="og:url" content="https://turtle2a.github.io/xgs-octeon-linux/">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareSourceCode",
   "name": "xgs-octeon-linux",
-  "description": "Linux OCTEP driver, DKMS configuration and installer for OCTEON TX network appliances (XGS 3300, XGS 2300).",
+  "description": "Linux OCTEP driver, DKMS configuration and installer for OCTEON TX network appliances (XGS 2300, XGS 3300).",
   "codeRepository": "https://github.com/turtle2a/xgs-octeon-linux",
   "programmingLanguage": ["C", "Shell"],
   "license": "https://spdx.org/licenses/GPL-2.0-or-later.html",
@@ -37,7 +37,7 @@ th,td{border:1px solid #d0d7de;padding:.4rem .6rem;text-align:left}
 <h1>OCTEP Linux driver and installer for OCTEON TX XGS appliances</h1>
 <p>Run a standard Linux distribution on OCTEON TX network appliances. The project provides the
 Linux <strong>OCTEP</strong> driver (DKMS), service scripts, an installer, and NAT/firewall setup
-for the tested <strong>XGS 3300</strong>, with optional, experimental NPU flow offload.</p>
+for the tested <strong>XGS 2300</strong>, with optional, experimental NPU flow offload.</p>
 <p><a href="https://github.com/turtle2a/xgs-octeon-linux">Source on GitHub</a> &middot;
 GPL-2.0-or-later</p>
 </header>
@@ -52,13 +52,13 @@ GPL-2.0-or-later</p>
 </ul>
 
 <h2>Supported hardware</h2>
-<div class="note"><strong>Disclaimer.</strong> Only one appliance is tested: an XGS 3300 (OCTEON TX).
+<div class="note"><strong>Disclaimer.</strong> Only one appliance is tested: an XGS 2300 (OCTEON TX).
 Other models are inferences from vendor spec files, not test results. Test at your own risk and do not
 install on hardware you cannot recover. This project is not affiliated with or endorsed by any
 appliance vendor.</div>
 <table>
 <tr><th>Family</th><th>Status</th></tr>
-<tr><td>XGS 3300 (OCTEON TX)</td><td>Tested</td></tr>
+<tr><td>XGS 2300 (OCTEON TX)</td><td>Tested</td></tr>
 <tr><td>Other OCTEON TX models</td><td>Likely, untested</td></tr>
 <tr><td>OCTEON TX2</td><td>Unknown</td></tr>
 <tr><td>Armada models (for example XGS 136)</td><td>Different design, not supported</td></tr>

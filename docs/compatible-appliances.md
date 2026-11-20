@@ -1,6 +1,6 @@
 # Appliances that may be compatible (Task 10a)
 
-> **Disclaimer.** This project is verified on **one** appliance only: an XGS 3300
+> **Disclaimer.** This project is verified on **one** appliance only: an XGS 2300
 > (OCTEON TX, CN83xx family). Everything else in this table is an *inference from
 > the vendor appliance property spec files*, not a test result. Hardware with a
 > similar name can use different switch wiring, PCI IDs and firmware. Do not run
@@ -18,7 +18,7 @@ files fall into these groups:
 |---|---|---|
 | `NO` | 95 | x86 appliances and virtual images. Out of scope (no NPU). |
 | `ARMADA` | 20 | Marvell Armada SoC with its own switch. A different design from the OCTEON PCIe NPU. Not expected to work. |
-| `OCTEON_TX` | 4 | Same family as the tested XGS 3300. Most likely to work. |
+| `OCTEON_TX` | 4 | Same family as the tested XGS 2300. Most likely to work. |
 | `OCTEON_TX2` | 17 | Newer OCTEON TX2. Different generation; unknown. |
 | `OCTEON_TX2_98XX` | 2 | OCTEON TX2 98xx, high end. Different generation; unknown. |
 
@@ -26,10 +26,10 @@ files fall into these groups:
 
 | Model | CPU cores | RAM | Port layout (spec string) | Status |
 |---|---|---|---|---|
-| XGS 2100 | 4 | 8 GB | `Port8_F2MA` | Untested. A BSD capture of an XGS 2300 shows the same NPU family. |
-| XGS 2300 | 4 | 8 GB | `Port8_F2MA` | Untested. |
+| XGS 2100 | 4 | 8 GB | `Port8_F2MA` | Untested. Same NPU family as the tested XGS 2300. |
+| **XGS 2300** | 4 | 8 GB | `Port8_F2MA` | **Tested.** Copper ports work. NAT'd offload does not (item 7). SFP cages are not working (task 9c). |
 | XGS 3100 | 4 | 12 GB | `Port8_F4MA` | Untested. |
-| **XGS 3300** | 8 | 16 GB | `Port8_F4MA` | **Tested.** Copper ports work. NAT'd offload does not (item 7). SFP cages are not working (task 9c). |
+| XGS 3300 | 8 | 16 GB | `Port8_F4MA` | Untested. |
 
 ## OCTEON TX2 and TX2 98xx (unknown)
 
@@ -58,7 +58,7 @@ driver targets.
 ## Reading the port layout string
 
 `PortN_Fx` is the number of copper ports (`N`) and fibre or SFP ports (`x`), for
-example `Port8_F2MA` is 8 copper plus 2 fibre. On the tested XGS 3300 the firmware
+example `Port8_F2MA` is 8 copper plus 2 fibre. On the tested XGS 2300 the firmware
 reports 12 NetAgent ports. Ten become `octep0` to `octep9`. How the fibre cages map
 to those netdevs is still being verified (task 9c).
 

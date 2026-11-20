@@ -1,16 +1,16 @@
 # Appliance tree (from the vendor property spec files)
 
-> **Disclaimer.** Inferred from the `NPU=` field of 138 vendor spec files, not tested. Only the XGS 3300 is verified. See [compatible-appliances.md](compatible-appliances.md) for the reasoning and table. Hardware with a similar name may differ in wiring, PCI IDs and firmware. Use at your own risk; not affiliated with any vendor.
+> **Disclaimer.** Inferred from the `NPU=` field of 138 vendor spec files, not tested. Only the XGS 2300 is verified. See [compatible-appliances.md](compatible-appliances.md) for the reasoning and table. Hardware with a similar name may differ in wiring, PCI IDs and firmware. Use at your own risk; not affiliated with any vendor.
 
 Each entry: `model  cores/RAM  port layout`. The model name is the spec file's `CRMODEL` value. `**` marks the tested unit.
 
 ```
-OCTEON TX  (same family as the tested XGS 3300) - most likely to work  (4 spec files)
+OCTEON TX  (same family as the tested XGS 2300) - most likely to work  (4 spec files)
 └── series XGXXP
     ├── XGS2100  4c/8GB  Port8_F2MA
-    ├── XGS2300  4c/8GB  Port8_F2MA
+    ├── XGS2300 **  4c/8GB  Port8_F2MA
     ├── XGS3100  4c/12GB  Port8_F4MA
-    └── XGS3300 **  8c/16GB  Port8_F4MA
+    └── XGS3300  8c/16GB  Port8_F4MA
 
 OCTEON TX2  (newer generation) - unknown  (17 spec files)
 └── series XGXXP

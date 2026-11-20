@@ -1,6 +1,6 @@
 # SFP cage issues
 
-Host: XGS 3300 (OCTEON TX). Per-attempt detail is in the maintainer's local changelog (entry C1 and the SFP entries on 2026-11-19).
+Host: XGS 2300 (OCTEON TX). Per-attempt detail is in the maintainer's local changelog (entry C1 and the SFP entries on 2026-11-19).
 
 | # | Severity | Issue | Value / evidence | Status |
 |---|----------|-------|------------------|--------|

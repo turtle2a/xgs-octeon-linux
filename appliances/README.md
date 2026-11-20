@@ -1,6 +1,6 @@
 # Appliance directory
 
-> **Disclaimer.** Generated from the vendor appliance property spec files. Only the XGS 3300 is tested; every other entry is an inference. Hardware with a similar name may differ in wiring, PCI IDs and firmware. Use at your own risk; not affiliated with any vendor.
+> **Disclaimer.** Generated from the vendor appliance property spec files. Only the XGS 2300 is tested; every other entry is an inference. Hardware with a similar name may differ in wiring, PCI IDs and firmware. Use at your own risk; not affiliated with any vendor.
 
 ## NPU appliances possibly suitable for this install
 
@@ -9,9 +9,9 @@ Only appliances whose spec file reports an OCTEON NPU. Armada (20 files) is not 
 | Model | NPU | Cores | RAM | Port layout | Likelihood | Spec |
 |---|---|---|---|---|---|---|
 | XGS2100 | OCTEON_TX | 4 | 8GB | `Port8_F2MA` | 🟡 Most likely (same family as tested) | [file](octeon-tx/xgs2100_rl01.md) |
-| XGS2300 | OCTEON_TX | 4 | 8GB | `Port8_F2MA` | 🟡 Most likely (same family as tested) | [file](octeon-tx/xgs2300_rl01.md) |
+| XGS2300 | OCTEON_TX | 4 | 8GB | `Port8_F2MA` | ✅ **Tested** | [file](octeon-tx/xgs2300_rl01.md) |
 | XGS3100 | OCTEON_TX | 4 | 12GB | `Port8_F4MA` | 🟡 Most likely (same family as tested) | [file](octeon-tx/xgs3100_rl01.md) |
-| XGS3300 | OCTEON_TX | 8 | 16GB | `Port8_F4MA` | ✅ **Tested** | [file](octeon-tx/xgs3300_rl01.md) |
+| XGS3300 | OCTEON_TX | 8 | 16GB | `Port8_F4MA` | 🟡 Most likely (same family as tested) | [file](octeon-tx/xgs3300_rl01.md) |
 | XGS4300 | OCTEON_TX2 | 12 | 32GB | `Port8_F4MAB` | ⚪ Unknown (newer generation) | [file](octeon-tx2/xgs4300_am01.md) |
 | XGS4300 | OCTEON_TX2 | 12 | 32GB | `Port8_F4MAB` | ⚪ Unknown (newer generation) | [file](octeon-tx2/xgs4300_am03.md) |
 | XGS4300 | OCTEON_TX2 | 12 | 32GB | `Port8_F4MAB` | ⚪ Unknown (newer generation) | [file](octeon-tx2/xgs4300_am02.md) |

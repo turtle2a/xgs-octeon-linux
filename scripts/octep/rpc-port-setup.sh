@@ -9,7 +9,7 @@ NWA_DISCOVERY_WAIT=${NWA_DISCOVERY_WAIT:-140}
 RPC_WAIT=${RPC_WAIT:-140}
 LOGFILE=${LOGFILE:-/var/log/xgs-octep-port-setup.log}
 
-# Defaults match the XGS 3300 panel; override these maps for another board.
+# Defaults match the XGS 2300 panel; override these maps for another board.
 CAGE_MAP=${OCTEP_CAGE_MAP:-"10:1 11:2"}
 SWITCH_MAP=${OCTEP_SWITCH_MAP:-"0:33024 1:33280 2:33536 3:33792 4:34048 5:34304 6:34560 7:34816 8:35072 9:35328"}
 
