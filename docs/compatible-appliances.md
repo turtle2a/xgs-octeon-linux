@@ -7,6 +7,8 @@
 > the installer on hardware you cannot recover, and test at your own risk. This
 > project is not affiliated with or endorsed by any appliance vendor.
 
+Full list of all 138 spec files as a tree: [appliance-tree.md](appliance-tree.md). Browsable folders, one file per spec: [`appliances/`](../appliances/).
+
 ## How this was derived
 
 The firmware property file for each appliance has an `NPU=` field. The 138 spec
