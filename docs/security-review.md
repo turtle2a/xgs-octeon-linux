@@ -49,6 +49,6 @@ Scope: only Medium and High findings are addressed (none are High). Low findings
 | 3 | Medium | Low | Mitigated | Scoped MASQUERADE; `XGS-FWD` chain drops new WAN-initiated traffic to LAN/mgmt; LAN->mgmt block opt-in (`BLOCK_LAN_TO_MGMT=1`); conf values validated. Routing lines unchanged. Both NAT variants (repo, and a variant built from the older script deployed on lill1) pass the stub test |
 | 4 | Medium | Low | Fixed for new installs | Default is DHCP-only on LAN ports; `XGS_UFW_LAN_DHCP_ONLY=0` leaves it open for testing (lill1 stays open) |
 
-Live retest (deploy, reboot, offload verified ON first) is in CHANGELOG.md, Change S1-S11. The kernel module is untouched.
+Live retest (deploy, reboot, offload verified ON first) is in the maintainer's local changelog (S1-S11). The kernel module is untouched.
 
 User guide and options: [vulnerability-mitigation.md](../vulnerabilities/docs/vulnerability-mitigation.md).

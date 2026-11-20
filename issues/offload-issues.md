@@ -1,6 +1,6 @@
 # NPU flow offload issues
 
-Host: XGS 3300 (OCTEON TX). Details and test specs per attempt are in [CHANGELOG.md](../CHANGELOG.md) (entries R16-R25, O1, O2).
+Host: XGS 3300 (OCTEON TX). Per-attempt details are in the maintainer's local changelog (entries R16-R25, O1, O2).
 
 | # | Severity | Issue | Value / evidence | Status |
 |---|----------|-------|------------------|--------|
