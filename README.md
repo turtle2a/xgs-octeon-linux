@@ -46,7 +46,7 @@ documented and accepted. Everything lives in the [`vulnerabilities/`](vulnerabil
 
 | Area | Where |
 | --- | --- |
-| Changes, options, test results, assessment table, risk register (R1-R16) | [vulnerabilities/docs/vulnerability-mitigation.md](vulnerabilities/docs/vulnerability-mitigation.md) |
+| Changes, options, test results, assessment table, risk register (R1-R17) | [vulnerabilities/docs/vulnerability-mitigation.md](vulnerabilities/docs/vulnerability-mitigation.md) |
 | Review findings | [docs/security-review.md](docs/security-review.md) |
 | Stub and `--live` test script | `vulnerabilities/scripts/xgs-hardening-test.sh` |
 | IOMMU strict-mode test script | `vulnerabilities/scripts/octep-iommu-strict-test.sh` |

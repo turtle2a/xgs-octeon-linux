@@ -309,6 +309,7 @@ install_script "$NAT_LAN_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-lan.sh"
 install_script "$NAT_PORT4_SCRIPT" "$XGS_ROOT/scripts/nat/nat-port4.sh"
 install_script "$NAT_OFF_SCRIPT" "$XGS_ROOT/scripts/nat/nat-off.sh"
 install_script "$SCRIPT_DIR/scripts/nat/xgs-hardening.sh" "$XGS_ROOT/scripts/nat/xgs-hardening.sh"
+install_script "$SCRIPT_DIR/scripts/nat/xgs-ufw-admin.sh" "$XGS_ROOT/scripts/nat/xgs-ufw-admin.sh"
 install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update.sh"
 install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update-ctl.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update-ctl.sh"
 install_data "$SCRIPT_DIR/cron/xgs-auto-update" "$DESTDIR/etc/cron.d/xgs-auto-update"
@@ -519,23 +520,37 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: 
 				say "ufw: route octep$i -> octep1"
 		done
 	fi
-	# The NPU is a separate Linux system with PCIe DMA into the host: on its link (mvmgmt0) only the
-	# NPU address may reach the host's own link address; nothing else is accepted and nothing is
-	# forwarded. XGS_UFW_NPU_ISOLATE=0 skips this; XGS_NPU_PORTS="22 ..." limits it to those tcp ports.
+	# The NPU is a separate Linux system with PCIe DMA into the host: on its link only the NPU address
+	# may reach the host's own link address; nothing else is accepted and nothing is forwarded. The link
+	# is the netdev the driver registers on the NPU's PCI function (not octepN); XGS_NPU_LINK_IF overrides.
+	# XGS_UFW_NPU_ISOLATE=0 skips this; XGS_NPU_PORTS="22 ..." limits it to those tcp ports.
 	if [ "${XGS_UFW_NPU_ISOLATE:-1}" = 1 ]; then
 		npu_host=${NPU_HOST_ADDR:-169.254.254.1}
 		npu_addr=${NPU_ADDR:-169.254.254.2}
-		ufw route insert 1 deny in on mvmgmt0 >/dev/null && say "ufw: no forwarding from mvmgmt0"
-		ufw insert 1 deny in on mvmgmt0 >/dev/null
-		if [ -n "${XGS_NPU_PORTS:-}" ]; then
-			for p in $XGS_NPU_PORTS; do
-				ufw insert 1 allow in on mvmgmt0 proto tcp from "$npu_addr" to "$npu_host" port "$p" >/dev/null
+		npu_if=${XGS_NPU_LINK_IF:-}
+		if [ -z "$npu_if" ]; then
+			for d in /sys/bus/pci/devices/${NPU_PCI:-0000:01:00.0}/net/*; do
+				n=${d##*/}
+				case $n in octep*|'*') ;; *) npu_if=$n; break ;; esac
 			done
-		else
-			ufw insert 1 allow in on mvmgmt0 from "$npu_addr" to "$npu_host" >/dev/null
 		fi
-		say "ufw: mvmgmt0 accepts only $npu_addr -> $npu_host"
+		if [ -z "$npu_if" ]; then
+			say "ufw: NPU link interface not found (set XGS_NPU_LINK_IF); NPU isolation rules skipped"
+		else
+			ufw route insert 1 deny in on "$npu_if" >/dev/null && say "ufw: no forwarding from $npu_if"
+			ufw insert 1 deny in on "$npu_if" >/dev/null
+			if [ -n "${XGS_NPU_PORTS:-}" ]; then
+				for p in $XGS_NPU_PORTS; do
+					ufw insert 1 allow in on "$npu_if" proto tcp from "$npu_addr" to "$npu_host" port "$p" >/dev/null
+				done
+			else
+				ufw insert 1 allow in on "$npu_if" from "$npu_addr" to "$npu_host" >/dev/null
+			fi
+			say "ufw: $npu_if accepts only $npu_addr -> $npu_host"
+		fi
 	fi
+	# The NPU's ssh private key must not be readable by other users (ssh also refuses it otherwise)
+	[ -f /etc/keys/mvmgt.x86 ] && chmod 600 /etc/keys/mvmgt.x86
 else
 	say "ufw not active: no firewall rules added"
 fi

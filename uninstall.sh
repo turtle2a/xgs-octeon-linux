@@ -57,7 +57,7 @@ for file in \
 	install.sh uninstall.sh \
 	modules-load.d/xgs-vfio.conf modprobe.d/xgs-octep.conf \
 	sysctl.d/90-xgs-octep-forwarding.conf kea/kea-dhcp4.conf \
-	scripts/nat/xgs-nat.sh scripts/nat/xgs-hardening.sh scripts/nat/xgs-lan.sh scripts/nat/nat-port4.sh scripts/nat/nat-off.sh \
+	scripts/nat/xgs-nat.sh scripts/nat/xgs-hardening.sh scripts/nat/xgs-ufw-admin.sh scripts/nat/xgs-lan.sh scripts/nat/nat-port4.sh scripts/nat/nat-off.sh \
 	scripts/xgs/xgs-auto-update.sh scripts/xgs/xgs-auto-update-ctl.sh cron/xgs-auto-update \
 	systemd/xgs-nat.service systemd/xgs-hardening.service \
 	octep/Makefile octep/octep.c octep/dkms.conf \
@@ -154,7 +154,7 @@ remove_if_unchanged "$SCRIPT_DIR/cron/xgs-auto-update" /etc/cron.d/xgs-auto-upda
 for f in xgs-auto-update.sh xgs-auto-update-ctl.sh; do
 	remove_if_unchanged "$SCRIPT_DIR/scripts/xgs/$f" "$XGS_ROOT/scripts/xgs/$f"
 done
-for f in xgs-nat.sh xgs-hardening.sh xgs-lan.sh nat-port4.sh nat-off.sh; do
+for f in xgs-nat.sh xgs-hardening.sh xgs-ufw-admin.sh xgs-lan.sh nat-port4.sh nat-off.sh; do
 	remove_if_unchanged "$SCRIPT_DIR/scripts/nat/$f" "$XGS_ROOT/scripts/nat/$f"
 done
 remove_if_unchanged "$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf" \
