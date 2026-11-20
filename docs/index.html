@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCTEP Linux driver for OCTEON TX XGS appliances (XGS 3300, XGS 2300) | xgs-octeon-linux</title>
+<meta name="description" content="Open-source Linux OCTEP driver, DKMS package and installer for OCTEON TX network appliances such as the XGS 3300 and XGS 2300. Run Fedora, Debian or Linux Mint on the hardware with NAT routing and optional NPU flow offload.">
+<meta name="keywords" content="OCTEON TX, OCTEP, Linux NPU driver, DKMS, XGS 3300, XGS 2300, Fedora, Debian, Linux Mint, network appliance, flow offload, nftables, NAT router">
+<link rel="canonical" href="https://turtle2a.github.io/xgs-octeon-linux/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OCTEP Linux driver for OCTEON TX XGS appliances">
+<meta property="og:description" content="Open-source Linux driver, DKMS package and installer for OCTEON TX network appliances (XGS 3300, XGS 2300).">
+<meta property="og:url" content="https://turtle2a.github.io/xgs-octeon-linux/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "xgs-octeon-linux",
+  "description": "Linux OCTEP driver, DKMS configuration and installer for OCTEON TX network appliances (XGS 3300, XGS 2300).",
+  "codeRepository": "https://github.com/turtle2a/xgs-octeon-linux",
+  "programmingLanguage": ["C", "Shell"],
+  "license": "https://spdx.org/licenses/GPL-2.0-or-later.html",
+  "runtimePlatform": "Linux"
+}
+</script>
+<style>
+body{font:16px/1.55 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;color:#1b1f23}
+h1{font-size:1.7rem;line-height:1.25}h2{margin-top:2rem;font-size:1.2rem}
+a{color:#0b5fd6}code,pre{background:#f3f4f6;border-radius:4px}code{padding:.1rem .3rem}
+pre{padding:.8rem;overflow:auto}table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #d0d7de;padding:.4rem .6rem;text-align:left}
+.note{border-left:4px solid #d4a72c;background:#fff8e1;padding:.6rem 1rem}
+</style>
+</head>
+<body>
+<header>
+<h1>OCTEP Linux driver and installer for OCTEON TX XGS appliances</h1>
+<p>Run a standard Linux distribution on OCTEON TX network appliances. The project provides the
+Linux <strong>OCTEP</strong> driver (DKMS), service scripts, an installer, and NAT/firewall setup
+for the tested <strong>XGS 3300</strong>, with optional, experimental NPU flow offload.</p>
+<p><a href="https://github.com/turtle2a/xgs-octeon-linux">Source on GitHub</a> &middot;
+GPL-2.0-or-later</p>
+</header>
+<main>
+<h2>What it does</h2>
+<ul>
+<li>Builds and loads the <code>octep</code> driver with DKMS, so it survives kernel updates.</li>
+<li>Brings up the NPU front ports as network interfaces (<code>octep0</code> to <code>octep9</code>).</li>
+<li>Routes all LAN ports out one uplink with per-subnet NAT, a default-drop firewall and DHCP (kea).</li>
+<li>Optional NPU flow offload through an nftables flowtable (experimental; see the project documents).</li>
+<li>Health checks, an uninstaller and an optional hardening service.</li>
+</ul>
+
+<h2>Supported hardware</h2>
+<div class="note"><strong>Disclaimer.</strong> Only one appliance is tested: an XGS 3300 (OCTEON TX).
+Other models are inferences from vendor spec files, not test results. Test at your own risk and do not
+install on hardware you cannot recover. This project is not affiliated with or endorsed by any
+appliance vendor.</div>
+<table>
+<tr><th>Family</th><th>Status</th></tr>
+<tr><td>XGS 3300 (OCTEON TX)</td><td>Tested</td></tr>
+<tr><td>Other OCTEON TX models</td><td>Likely, untested</td></tr>
+<tr><td>OCTEON TX2</td><td>Unknown</td></tr>
+<tr><td>Armada models (for example XGS 136)</td><td>Different design, not supported</td></tr>
+</table>
+<p>The full list is in
+<a href="https://github.com/turtle2a/xgs-octeon-linux/blob/main/docs/compatible-appliances.md">compatible appliances</a>.</p>
+
+<h2>Quick start</h2>
+<pre>git clone https://github.com/turtle2a/xgs-octeon-linux.git
+cd xgs-octeon-linux
+sudo sh ./install.sh</pre>
+<p>Read the
+<a href="https://github.com/turtle2a/xgs-octeon-linux/blob/main/README.md">README</a> and the
+<a href="https://github.com/turtle2a/xgs-octeon-linux/blob/main/docs/install-requirements.md">install requirements</a>
+first, in particular the boot loader notes.</p>
+
+<h2>Security</h2>
+<p>A reviewed risk table with fixes and open items:
+<a href="https://github.com/turtle2a/xgs-octeon-linux/blob/main/vulnerabilities/docs/vulnerability-mitigation.md">vulnerability mitigation</a>.</p>
+
+<h2>Contribute</h2>
+<p>Test results on other appliances are the most useful contribution. Open an issue or pull request on
+<a href="https://github.com/turtle2a/xgs-octeon-linux">GitHub</a>.</p>
+</main>
+</body>
+</html>
