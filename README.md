@@ -83,6 +83,12 @@ documented and accepted. Everything lives in the [`vulnerabilities/`](vulnerabil
    (`[3/9] compiling the OCTEP module ...`). The module compile, the DKMS
    build and the initramfs update are slow and can each take a minute or more;
    that is normal, the current step is always shown.
+
+   The installer checks the NPU PCI ID. On an Armada (`11ab:7080`) or OCTEON TX2
+   (`177d:b200`, `177d:b100`) appliance it prints a disclaimer and stops, because
+   those need vendor drivers that are not in this project. `sudo sh ./install.sh
+   --allow-untested-platform` continues anyway; that is untested and the NPU
+   ports will not appear.
 4. **Reboot**, then verify:
 
    ```sh

@@ -32,6 +32,8 @@ Only appliances whose spec file reports an OCTEON NPU. Armada (20 files) is not 
 | XGS7500 | OCTEON_TX2_98XX | 64 | 128GB | `Port8_F14MAB_N2` | ⚪ Unknown (high end) | [file](octeon-tx2-98xx/xgs7500_ci01.md) |
 | XGS8500 | OCTEON_TX2_98XX | 128 | 256GB | `Port8_F14MAB_N2` | ⚪ Unknown (high end) | [file](octeon-tx2-98xx/xgs8500_ci01.md) |
 
+Installing on a non-OCTEON-TX appliance: `install.sh` stops with a disclaimer unless you pass `--allow-untested-platform` (untested; see [compatible-appliances](../docs/compatible-appliances.md)).
+
 One folder per NPU type, one file per spec. Overview: [compatible-appliances](../docs/compatible-appliances.md), [tree view](../docs/appliance-tree.md).
 
 | Folder | NPU | Files |

@@ -68,11 +68,44 @@ run_timeout() {
 	fi
 }
 
-case ${1:-} in
-	"") ;;
-	--replace-managed) REPLACE_MANAGED=1 ;;
-	*) fail "usage: $0 [--replace-managed]" ;;
-esac
+PLATFORM_FORCE=0
+for arg in "$@"; do
+	case $arg in
+		--replace-managed) REPLACE_MANAGED=1 ;;
+		--allow-untested-platform) PLATFORM_FORCE=1 ;;
+		*) fail "usage: $0 [--replace-managed] [--allow-untested-platform]" ;;
+	esac
+done
+
+# The driver here targets the OCTEON TX PCIe NPU (177d:a300). Sophos' xgs-host-startup.sh tells the
+# platforms apart by the same PCI IDs. Other NPUs need vendor drivers that are not in this project,
+# so stop unless the operator accepts that. No NPU or no lspci keeps the previous behaviour.
+check_platform() {
+	[ -z "$DESTDIR" ] || return 0
+	command -v lspci >/dev/null 2>&1 || { say "platform: not checked (lspci not installed)"; return 0; }
+	ids=$(lspci -n 2>/dev/null) || { say "platform: not checked (lspci failed)"; return 0; }
+	if printf '%s\n' "$ids" | grep -q '177d:a300'; then
+		say "platform: OCTEON TX (177d:a300), supported (verified on XGS 2300)"
+		return 0
+	fi
+	found=
+	printf '%s\n' "$ids" | grep -q '11ab:7080' && found="Marvell Armada (11ab:7080)"
+	printf '%s\n' "$ids" | grep -q '177d:b200' && found="OCTEON TX2 (177d:b200)"
+	printf '%s\n' "$ids" | grep -q '177d:b100' && found="OCTEON TX2 98xx (177d:b100)"
+	[ -n "$found" ] || { say "platform: no known NPU PCI ID found; continuing as before"; return 0; }
+	cat >&2 <<EOF
+xgs-linux-install: DISCLAIMER - detected $found, not the OCTEON TX NPU (177d:a300).
+  This project is verified only on an XGS 2300 (OCTEON TX). Armada and OCTEON TX2 appliances use
+  different vendor drivers (for example mv_armada_drv) that are NOT included here, so the NPU ports
+  will not appear. Nothing about this platform is tested; installing may leave the unit without a
+  working network. Only continue on hardware you can recover. Not affiliated with any vendor.
+  Compatible-model list: appliances/README.md
+EOF
+	[ "$PLATFORM_FORCE" = 1 ] ||
+		fail "stopping. Re-run with --allow-untested-platform to install anyway (untested)"
+	say "continuing on an untested platform (--allow-untested-platform)"
+}
+check_platform
 
 require_command() {
 	command -v "$1" >/dev/null 2>&1 || fail "$1 is required"

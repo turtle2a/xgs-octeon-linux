@@ -9,6 +9,24 @@
 
 Full list of all 138 spec files as a tree: [appliance-tree.md](appliance-tree.md). Browsable folders, one file per spec: [`appliances/`](../appliances/).
 
+## Installer platform check (opt-in override)
+
+`install.sh` reads the NPU PCI ID with `lspci -n` (the same IDs Sophos' own
+`xgs-host-startup.sh` uses) and reports the platform on its first line:
+
+| PCI ID | Platform | Installer |
+|---|---|---|
+| `177d:a300` | OCTEON TX | Reports "supported" and continues. |
+| `11ab:7080` | Marvell Armada | Prints a disclaimer and stops. |
+| `177d:b200`, `177d:b100` | OCTEON TX2, TX2 98xx | Prints a disclaimer and stops. |
+| none found, or no `lspci` | unknown | Reports it and continues as before. |
+
+To install on an Armada or TX2 appliance anyway, run
+`sudo sh ./install.sh --allow-untested-platform`. This is **untested**: those
+platforms need vendor drivers (for example `mv_armada_drv`) that are not part of
+this project, so the NPU ports will not appear and the unit may be left without
+working networking. Only do it on hardware you can recover.
+
 ## How this was derived
 
 The firmware property file for each appliance has an `NPU=` field. The 138 spec
