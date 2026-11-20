@@ -343,6 +343,8 @@ install_script "$NAT_PORT4_SCRIPT" "$XGS_ROOT/scripts/nat/nat-port4.sh"
 install_script "$NAT_OFF_SCRIPT" "$XGS_ROOT/scripts/nat/nat-off.sh"
 install_script "$SCRIPT_DIR/scripts/nat/xgs-hardening.sh" "$XGS_ROOT/scripts/nat/xgs-hardening.sh"
 install_script "$SCRIPT_DIR/scripts/nat/xgs-ufw-admin.sh" "$XGS_ROOT/scripts/nat/xgs-ufw-admin.sh"
+install_script "$SCRIPT_DIR/scripts/boot/xgs-boot-profile.sh" "$XGS_ROOT/scripts/boot/xgs-boot-profile.sh"
+install_script "$SCRIPT_DIR/scripts/boot/low_perf_disable_vuln_grub_options.sh" "$XGS_ROOT/scripts/boot/low_perf_disable_vuln_grub_options.sh"
 install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update.sh"
 install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update-ctl.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update-ctl.sh"
 install_data "$SCRIPT_DIR/cron/xgs-auto-update" "$DESTDIR/etc/cron.d/xgs-auto-update"
@@ -587,6 +589,17 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: 
 else
 	say "ufw not active: no firewall rules added"
 fi
+
+cat <<EOF
+xgs-linux-install: WARNING - boot options were NOT changed by this install. If your boot options include
+  the vendor-style settings (spectre_v2=off, spec_rstack_overflow=off, iommu=pt), the system runs with
+  CPU side channels open and the NPU's DMA less restricted. They are faster: the secure (low perf) mode
+  costs about 14-19% throughput (293 vs 341-362 Mbit/s, XGS 2300).
+  If you require the secure, low performance mode: reboot first, then run (dry run, then apply, reboot):
+    sudo $XGS_ROOT/scripts/boot/low_perf_disable_vuln_grub_options.sh
+    sudo $XGS_ROOT/scripts/boot/low_perf_disable_vuln_grub_options.sh --apply
+  To go back to the faster options: sudo $XGS_ROOT/scripts/boot/xgs-boot-profile.sh performance --apply
+EOF
 
 echo ""
 echo "xgs-linux-install: DONE. Summary:"
