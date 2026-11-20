@@ -17,7 +17,7 @@ Full list of all 138 spec files as a tree: [appliance-tree.md](appliance-tree.md
 | PCI ID | Platform | Installer |
 |---|---|---|
 | `177d:a300` | OCTEON TX | Reports "supported" and continues. |
-| `11ab:7080` | Marvell Armada | Prints a disclaimer and stops. |
+| `11ab:7080` | Marvell Armada | Prints a disclaimer and stops unless `--allow-untested-platform` is given (option available, not validated). |
 | `177d:b200`, `177d:b100` | OCTEON TX2, TX2 98xx | Prints a disclaimer and stops. |
 | none found, or no `lspci` | unknown | Reports it and continues as before. |
 
@@ -35,7 +35,7 @@ files fall into these groups:
 | `NPU=` value | Files | Meaning for this project |
 |---|---|---|
 | `NO` | 95 | x86 appliances and virtual images. Out of scope (no NPU). |
-| `ARMADA` | 20 | Marvell Armada SoC with its own switch. A different design from the OCTEON PCIe NPU. Not expected to work. |
+| `ARMADA` | 20 | Marvell Armada SoC with its own switch. A different design from the OCTEON PCIe NPU. Installer option available, **not validated**. |
 | `OCTEON_TX` | 4 | Same family as the tested XGS 2300. Most likely to work. |
 | `OCTEON_TX2` | 17 | Newer OCTEON TX2. Different generation; unknown. |
 | `OCTEON_TX2_98XX` | 2 | OCTEON TX2 98xx, high end. Different generation; unknown. |
@@ -67,11 +67,13 @@ files fall into these groups:
 | XGS 7500 (98xx) | 64 | 128 GB |
 | XGS 8500 (98xx) | 128 | 256 GB |
 
-## Armada (not expected to work)
+## Armada (installer option available, not validated)
 
 XGS 87, 87w, 107, 107w, 116, 116w, 126, 126w, 136, 136w and 138, plus the
-116w VCR variants. These use `NPU=ARMADA`, which is not the OCTEON PCIe NPU this
-driver targets.
+116w VCR variants. These use `NPU=ARMADA`, a Marvell PCIe endpoint (`11ab:7080`)
+that needs vendor drivers not included here. `install.sh --allow-untested-platform`
+makes the installer continue on them, but nothing is validated and the NPU ports
+will not appear. Per-model list: [appliances/](../appliances/).
 
 ## Reading the port layout string
 

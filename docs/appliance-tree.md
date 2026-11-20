@@ -31,7 +31,7 @@ OCTEON TX2 98xx  (high end) - unknown  (2 spec files)
     ├── XGS7500  64c/128GB  Port8_F14MAB_N2
     └── XGS8500  128c/256GB  Port8_F14MAB_N2
 
-Armada  (own switch, different design) - not expected to work  (20 spec files)
+Armada  (Marvell PCIe endpoint, different design) - installer option available, not validated  (20 spec files)
 ├── series CRING
 │   ├── XGS87  2c/4GB  Port4_F1
 │   ├── XGS107  2c/4GB  Port8_F1

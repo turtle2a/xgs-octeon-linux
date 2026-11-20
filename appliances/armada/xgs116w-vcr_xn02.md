@@ -8,6 +8,6 @@
 | CPU cores | 4 |
 | RAM | 4GB |
 | Port layout | `Port8_F1` |
-| Status | Different design (own switch). Not expected to work. |
+| Status | Installer option available, **not validated**: `install.sh --allow-untested-platform`. Vendor drivers are not included, so ports will not appear. |
 
 Inferred from the vendor spec file, not a test result. See the [disclaimer](../README.md).

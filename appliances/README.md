@@ -4,7 +4,7 @@
 
 ## NPU appliances possibly suitable for this install
 
-Only appliances whose spec file reports an OCTEON NPU. Armada (20 files) is not expected to work and the 95 no-NPU files are out of scope; both are in their folders below.
+Only appliances whose spec file reports an OCTEON NPU. Armada has its own table below; the 95 no-NPU files are out of scope. Both are in their folders.
 
 | Model | NPU | Cores | RAM | Port layout | Likelihood | Spec |
 |---|---|---|---|---|---|---|
@@ -32,6 +32,33 @@ Only appliances whose spec file reports an OCTEON NPU. Armada (20 files) is not 
 | XGS7500 | OCTEON_TX2_98XX | 64 | 128GB | `Port8_F14MAB_N2` | ⚪ Unknown (high end) | [file](octeon-tx2-98xx/xgs7500_ci01.md) |
 | XGS8500 | OCTEON_TX2_98XX | 128 | 256GB | `Port8_F14MAB_N2` | ⚪ Unknown (high end) | [file](octeon-tx2-98xx/xgs8500_ci01.md) |
 
+## Armada appliances: installer option available, not validated
+
+The installer detects the Marvell Armada PCIe endpoint (`11ab:7080`) and, with `--allow-untested-platform`, continues. Nothing here is validated; the Armada vendor drivers (`mv_armada_drv` and others) are not part of this project, so the NPU ports will not appear.
+
+| Model | Cores | RAM | Port layout | Status | Spec |
+|---|---|---|---|---|---|
+| XGS107 | 2 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs107_sn01.md) |
+| XGS107w | 2 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs107w_sn01.md) |
+| XGS116 | 4 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs116_xn01.md) |
+| XGS116 | 4 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs116_xn02.md) |
+| XGS116w-VCR | 4 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs116w-vcr_xn01.md) |
+| XGS116w-VCR | 4 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs116w-vcr_xn02.md) |
+| XGS116w | 4 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs116w_xn01.md) |
+| XGS116w | 4 | 4GB | `Port8_F1` | 🟡 Option available, not validated | [file](armada/xgs116w_xn02.md) |
+| XGS126 | 4 | 6GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs126_xn01.md) |
+| XGS126 | 4 | 6GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs126_xn02.md) |
+| XGS126w | 4 | 6GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs126w_xn01.md) |
+| XGS126w | 4 | 6GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs126w_xn02.md) |
+| XGS136 | 4 | 8GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs136_xn01.md) |
+| XGS136 | 4 | 8GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs136_xn02.md) |
+| XGS136w | 4 | 8GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs136w_xn01.md) |
+| XGS136w | 4 | 8GB | `Port12_F2` | 🟡 Option available, not validated | [file](armada/xgs136w_xn02.md) |
+| XGS138 | 4 | 8GB | `Port6_F2` | 🟡 Option available, not validated | [file](armada/xgs138_xn01.md) |
+| XGS138 | 4 | 8GB | `Port6_F2` | 🟡 Option available, not validated | [file](armada/xgs138_xn02.md) |
+| XGS87 | 2 | 4GB | `Port4_F1` | 🟡 Option available, not validated | [file](armada/xgs87_sn01.md) |
+| XGS87w | 2 | 4GB | `Port4_F1` | 🟡 Option available, not validated | [file](armada/xgs87w_sn01.md) |
+
 Installing on a non-OCTEON-TX appliance: `install.sh` stops with a disclaimer unless you pass `--allow-untested-platform` (untested; see [compatible-appliances](../docs/compatible-appliances.md)).
 
 One folder per NPU type, one file per spec. Overview: [compatible-appliances](../docs/compatible-appliances.md), [tree view](../docs/appliance-tree.md).
@@ -41,5 +68,5 @@ One folder per NPU type, one file per spec. Overview: [compatible-appliances](..
 | [`octeon-tx/`](octeon-tx/) | OCTEON TX (most likely) | 4 |
 | [`octeon-tx2/`](octeon-tx2/) | OCTEON TX2 (unknown) | 17 |
 | [`octeon-tx2-98xx/`](octeon-tx2-98xx/) | OCTEON TX2 98xx (unknown) | 2 |
-| [`armada/`](armada/) | Armada (not expected) | 20 |
+| [`armada/`](armada/) | Armada (option available, not validated) | 20 |
 | [`no-npu/`](no-npu/) | No NPU (out of scope) | 95 |

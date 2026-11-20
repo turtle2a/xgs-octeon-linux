@@ -30,7 +30,7 @@ Linux Mint, network appliance, NAT router, flow offload, nftables, kea DHCP.
 | XGS 2300 | Tested for OCTEP startup | Fedora 44, kernel `7.3.3-200.fc44`; ten front-port interfaces were observed. This does not verify SFP cages or hardware acceleration. |
 | XGS 3300 | Unverified candidate | Do not assume compatibility from the model name. Confirm the OCTEON TX PCI ID, firmware/NWA interface, and port mapping, then test on the appliance. |
 | Other OCTEON TX appliances | Unverified candidates | The installer expects PCI vendor/device `177d:a300`; matching that ID alone does not establish firmware, port-map, or full hardware compatibility. |
-| XGS 136 | Not supported by this installer | It uses an Armada platform and needs a separate Linux implementation. |
+| Armada appliances (XGS 87 to 138) | Installer option available, not validated | `install.sh --allow-untested-platform`. Armada needs vendor drivers that are not included, so the NPU ports will not appear. See [appliances/](appliances/). |
 
 The optional NAT helper is currently specific to the tested port layout: WAN
 choices are physical ports 2 and 4. Check the target appliance's port mapping
