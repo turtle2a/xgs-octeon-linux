@@ -19,9 +19,11 @@ It will help if dhcp is on the donor machine and appliance LAN i.e.
 ( MGMT port on facia of appliance) and is operational, as ssh and xrdp should work directly
 after the disk is transferred to the appliance.
 
-Preparing for the WAN adapter's network (PORTS 2 & 4 -facia) ( see post installation section)
-when it comes up after the final boot is optional ,but ensure it is a separate network with 
-dhcp.Note,this can be changed later.
+Preparing for the WAN adapter's network (PORTS 2 & 4 on appliance facia) 
+( see post installation section) when it comes up after the final boot is optional ,
+but its is recommended to have a separate network with dhcp.
+
+Note,this can be changed later.
 
 
 Shut down the donor system, remove the prepared disk, and install or attach it
