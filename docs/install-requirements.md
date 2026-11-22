@@ -15,8 +15,9 @@ Prior to shutting down this donor pc ensure SSH server and XRDP are installed
 and working prior on this donor machine,this will help in the event the serial
 console is a problem.
 
-It will help if dhcp is on the donor and appliance lan ( MGMT port on facia of appliance)
-and is operational as ssh and xrdp should work directly.
+It will help if dhcp is on the donor machine and appliance LAN i.e. 
+( MGMT port on facia of appliance) and is operational, as ssh and xrdp should work directly
+after the disk is transferred to the appliance.
 
 Preparing for the WAN adapter's network (PORTS 2 & 4 -facia) ( see post installation section)
 when it comes up after the final boot is optional ,but ensure it is a separate network with 
