@@ -11,6 +11,18 @@ only libraries or build dependencies on the donor is not sufficient. Before
 moving the disk, apply the GRUB settings and regenerate the boot configuration
 as described in [Boot Loader Requirements](boot-loader-requirements.md).
 
+Prior to shutting down this donor pc ensure SSH server and XRDP are installed 
+and working prior on this donor machine,this will help in the event the serial
+console is a problem.
+
+It will help if dhcp is on the donor and appliance lan ( MGMT port on facia of appliance)
+and is operational as ssh and xrdp should work directly.
+
+Preparing for the WAN adapter's network (PORTS 2 & 4 -facia) ( see post installation section)
+when it comes up after the final boot is optional ,but ensure it is a separate network with 
+dhcp.Note,this can be changed later.
+
+
 Shut down the donor system, remove the prepared disk, and install or attach it
 to the XGS appliance. Configure the appliance's firmware or boot selection to
 boot from this donor-installed disk. After booting the appliance, complete any
@@ -29,6 +41,8 @@ with the location of the project tree:
 ```sh
 sudo sh /path/to/xgs-octeon-linux/install.sh
 ```
+
+
 
 ## Requirements
 
