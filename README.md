@@ -86,6 +86,12 @@ documented and accepted. Everything lives in the [`vulnerabilities/`](vulnerabil
    build and the initramfs update are slow and can each take a minute or more;
    that is normal, the current step is always shown.
 
+   Re-running over an existing install: if the installer stops with
+   `refusing to overwrite a different file: <path>`, a managed file under
+   `/usr/local/xgs/linux` or `/etc` was changed by hand. Check the file, then
+   rerun with `sudo sh ./install.sh --replace-managed`, which replaces the files
+   the installer manages (your edits to them are lost).
+
    The installer checks the NPU PCI ID. On an Armada (`11ab:7080`) or OCTEON TX2
    (`177d:b200`, `177d:b100`) appliance it prints a disclaimer and stops, because
    those need vendor drivers that are not in this project. `sudo sh ./install.sh
