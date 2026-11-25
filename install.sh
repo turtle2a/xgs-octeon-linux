@@ -555,6 +555,19 @@ else
 	say "ufw not active: no firewall rules added"
 fi
 
+# Boot options from docs/boot-loader-requirements.md: missing ones are merged into /etc/default/grub
+# (backup first, restored on failure). XGS_BOOT_EDIT=0 skips; DESTDIR installs never touch it.
+BOOT_CHANGED=0
+if [ -z "$DESTDIR" ]; then
+	boot_rc=0
+	sh "$SCRIPT_DIR/scripts/boot/xgs-grub-required.sh" || boot_rc=$?
+	case $boot_rc in
+	0) ;;
+	3) BOOT_CHANGED=1 ;;
+	*) echo "xgs-linux-install: boot option update failed; boot loader unchanged, apply docs/boot-loader-requirements.md manually" >&2 ;;
+	esac
+fi
+
 echo ""
 echo "xgs-linux-install: DONE. Summary:"
 echo "xgs-linux-install: default NAT: all LAN ports routed via Port 2 (octep1); optional: $XGS_ROOT/scripts/nat/nat-port4.sh or nat-off.sh"
@@ -566,4 +579,12 @@ echo "xgs-linux-install: enabled read-only PCI and serial-console health collect
 echo "xgs-linux-install: scripts and controls installed under /usr/local/xgs/linux"
 echo "xgs-linux-install: use sudo /usr/local/xgs/linux/scripts/octep/sdp-bringup.sh to manually arm rings"
 echo "xgs-linux-install: use sudo /usr/local/xgs/linux/scripts/octep/sdp-ring-test.sh for a guarded ring reload test"
-echo "xgs-linux-install: DKMS initramfs behavior follows system configuration; bootloader settings were not changed"
+if [ "$BOOT_CHANGED" = 1 ]; then
+	echo "xgs-linux-install: boot loader updated (backup under /var/backups/xgs-grub-*); DKMS initramfs behavior follows system configuration"
+elif [ -z "$DESTDIR" ]; then
+	echo "xgs-linux-install: boot loader unchanged (required options already present, skipped, or not GRUB); DKMS initramfs behavior follows system configuration"
+fi
+if [ -z "$DESTDIR" ]; then
+	echo ""
+	echo "xgs-linux-install: *** REBOOT REQUIRED to load OCTEP and apply boot options: sudo reboot ***"
+fi

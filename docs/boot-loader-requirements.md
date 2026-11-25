@@ -5,10 +5,16 @@ at boot. The same settings also work on Debian and Linux Mint, and most
 GRUB-based Linux distributions, including Arch Linux, use the same
 `/etc/default/grub` configuration format. Other distributions may use a
 different bootloader or require distribution-specific adjustments. These
-settings are documented for the tested system; `install.sh` does not edit the
-boot loader. Add or merge these values in `/etc/default/grub`, keeping any
-unrelated settings already needed by the system. Set `GRUB_DISTRIBUTOR` to
-match the installed distribution if desired:
+settings are documented for the tested system. `install.sh` merges any missing
+options into `/etc/default/grub` automatically: existing options are never
+changed, the file is backed up to `/var/backups/xgs-grub-<time>/` with a
+`SHA256SUMS` manifest, GRUB is regenerated for the installed distribution, and
+the backup is restored if regeneration fails. A reboot is required afterwards.
+Set `XGS_BOOT_EDIT=0` to skip this and apply the values by hand, or run
+`scripts/boot/xgs-grub-required.sh --check` to preview. To edit manually, add or
+merge these values in `/etc/default/grub`, keeping any unrelated settings
+already needed by the system. Set `GRUB_DISTRIBUTOR` to match the installed
+distribution if desired:
 
 ```sh
 GRUB_DEFAULT=0

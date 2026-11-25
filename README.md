@@ -70,7 +70,9 @@ documented and accepted. Everything lives in the [`vulnerabilities/`](vulnerabil
    (`kea-dhcp4-server` on Debian/Mint, `kea` on Fedora) if they are missing; it
    never installs or upgrades the kernel.
 2. **Configure the boot loader** (PCI bus and serial console settings):
-   [Boot Loader Requirements](docs/boot-loader-requirements.md).
+   [Boot Loader Requirements](docs/boot-loader-requirements.md). `install.sh`
+   merges any missing options into `/etc/default/grub` (backup first;
+   `XGS_BOOT_EDIT=0` skips), so this is only needed before moving a donor disk.
 3. **Clone and install:**
 
    ```sh
