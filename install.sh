@@ -5,20 +5,22 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 SOURCE_DIR="$SCRIPT_DIR/octep"
 VFIO_CONFIG="$SCRIPT_DIR/modules-load.d/xgs-vfio.conf"
-BRIDGE_STACK_CONFIG="$SCRIPT_DIR/modules-load.d/xgs-bridge-stack.conf"
-OCTEP_SYSCTL_CONFIG="$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf"
+SYSCTL_CONFIG="$SCRIPT_DIR/sysctl.d/90-xgs-octep-forwarding.conf"
+NAT_SCRIPT="$SCRIPT_DIR/scripts/nat/xgs-nat.sh"
+NAT_LAN_SCRIPT="$SCRIPT_DIR/scripts/nat/xgs-lan.sh"
+NAT_PORT4_SCRIPT="$SCRIPT_DIR/scripts/nat/nat-port4.sh"
+NAT_OFF_SCRIPT="$SCRIPT_DIR/scripts/nat/nat-off.sh"
+NAT_SERVICE="$SCRIPT_DIR/systemd/xgs-nat.service"
+KEA_CONFIG="$SCRIPT_DIR/kea/kea-dhcp4.conf"
 BLACKLIST_CONFIG="$SCRIPT_DIR/modprobe.d/xgs-octep.conf"
 HEALTH_SCRIPT="$SCRIPT_DIR/scripts/xgs/npu-health.sh"
-HEALTH_DEFAULT="$SCRIPT_DIR/systemd/xgs-npu-health.default"
-ACCEL_STATUS_SCRIPT="$SCRIPT_DIR/scripts/xgs/accel-status.sh"
-NAT_HELPER_SCRIPT="$SCRIPT_DIR/scripts/nat/xgs-nat.sh"
 RUN_SCRIPT="$SCRIPT_DIR/scripts/xgs/npu-run.sh"
 PLATFORM_SCRIPT="$SCRIPT_DIR/scripts/octep/npu-platform.sh"
 OCTEP_PORT_SETUP_SCRIPT="$SCRIPT_DIR/scripts/octep/rpc-port-setup.sh"
-OCTEP_OFFLOAD_ENABLE_SCRIPT="$SCRIPT_DIR/scripts/octep/offload-enable.sh"
 OCTEP_RING_TEST_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-ring-test.sh"
+OCTEP_OFFLOAD_ENABLE_SCRIPT="$SCRIPT_DIR/scripts/octep/offload-enable.sh"
+OCTEP_OFFLOAD_CHECK_SCRIPT="$SCRIPT_DIR/scripts/octep/offload-check.sh"
 OCTEP_SDP_BRINGUP_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-bringup.sh"
-OCTEP_SDP_RECOVERY_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-recover-npu.sh"
 MGMT_LINK_SCRIPT="$SCRIPT_DIR/scripts/npuctl/mgmt-link.sh"
 HEALTH_SERVICE="$SCRIPT_DIR/systemd/xgs-npu-health.service"
 HEALTH_TIMER="$SCRIPT_DIR/systemd/xgs-npu-health.timer"
@@ -26,23 +28,44 @@ OCTEP_SDP_BRINGUP_SERVICE="$SCRIPT_DIR/systemd/xgs-octep-sdp-bringup.service"
 OCTEP_SDP_STATUS_SCRIPT="$SCRIPT_DIR/scripts/octep/sdp-status-check.sh"
 OCTEP_SDP_STATUS_SERVICE="$SCRIPT_DIR/systemd/xgs-octep-sdp-status.service"
 OCTEP_SDP_STATUS_TIMER="$SCRIPT_DIR/systemd/xgs-octep-sdp-status.timer"
-OCTEP_MAILBOX_COMPAT_SCRIPT="$SCRIPT_DIR/scripts/tests/octep-tx2-mailbox-compat-test.sh"
-OCTEP_MAILBOX_COMPAT_SERVICE="$SCRIPT_DIR/systemd/xgs-octep-mailbox-compat.service"
 UNINSTALL_SCRIPT="$SCRIPT_DIR/uninstall.sh"
 DKMS_NAME=xgs-octep
 DKMS_VERSION=0.1.2
 EXPECTED_ALIAS='pci:v0000177Dd0000A300sv*sd*bc*sc*i*'
 REPLACE_MANAGED=0
+STEP_NO=0
+STEP_TOTAL=9
 
 DESTDIR=${DESTDIR:-}
 XGS_ROOT="$DESTDIR/usr/local/xgs/linux"
-NPU_SENSOR_SOURCE_DIR=${XGS_NPU_SENSOR_SOURCE_DIR:-}
 KVER=${KVER:-$(uname -r)}
 KDIR=${KDIR:-/lib/modules/$KVER/build}
 
 fail() {
 	echo "xgs-linux-install: $*" >&2
 	exit 1
+}
+
+say() {
+	echo "xgs-linux-install: $*"
+}
+
+# Visible progress: every phase announces itself before it can block.
+step() {
+	STEP_NO=$((STEP_NO + 1))
+	echo ""
+	echo "xgs-linux-install: [$STEP_NO/$STEP_TOTAL] $* ($(date +%H:%M:%S))"
+}
+
+# Bound a service action so a stuck unit cannot hang the installer.
+run_timeout() {
+	secs=$1
+	shift
+	if command -v timeout >/dev/null 2>&1; then
+		timeout "$secs" "$@"
+	else
+		"$@"
+	fi
 }
 
 case ${1:-} in
@@ -59,10 +82,6 @@ install_config() {
 	source=$1
 	target=$2
 
-	if [ "$REPLACE_MANAGED" -eq 1 ]; then
-		install -D -m 0644 "$source" "$target"
-		return
-	fi
 	if [ -e "$target" ]; then
 		if cmp -s "$source" "$target"; then
 			return
@@ -132,17 +151,14 @@ done
 [ -f "$SOURCE_DIR/octep.c" ] || fail "missing OCTEP source"
 [ -f "$SOURCE_DIR/dkms.conf" ] || fail "missing DKMS configuration"
 [ -f "$VFIO_CONFIG" ] || fail "missing VFIO modules-load configuration"
-[ -f "$BRIDGE_STACK_CONFIG" ] || fail "missing bridge protocol modules-load configuration"
 [ -f "$BLACKLIST_CONFIG" ] || fail "missing OCTEP modprobe configuration"
 [ -f "$HEALTH_SCRIPT" ] || fail "missing NPU health-check script"
-[ -f "$HEALTH_DEFAULT" ] || fail "missing NPU health sensor configuration"
-[ -f "$ACCEL_STATUS_SCRIPT" ] || fail "missing NPU/SDP status script"
-[ -f "$NAT_HELPER_SCRIPT" ] || fail "missing NAT script"
 [ -f "$RUN_SCRIPT" ] || fail "missing NPU console runner"
 [ -f "$PLATFORM_SCRIPT" ] || fail "missing NPU platform script"
 [ -f "$OCTEP_PORT_SETUP_SCRIPT" ] || fail "missing OCTEP port-setup script"
-[ -f "$OCTEP_OFFLOAD_ENABLE_SCRIPT" ] || fail "missing OCTEP offload-enable script"
 [ -f "$OCTEP_RING_TEST_SCRIPT" ] || fail "missing OCTEP ring-test script"
+[ -f "$OCTEP_OFFLOAD_ENABLE_SCRIPT" ] || fail "missing OCTEP offload-enable script"
+[ -f "$OCTEP_OFFLOAD_CHECK_SCRIPT" ] || fail "missing OCTEP offload-check script"
 [ -f "$OCTEP_SDP_BRINGUP_SCRIPT" ] || fail "missing OCTEP SDP bring-up script"
 [ -f "$MGMT_LINK_SCRIPT" ] || fail "missing NPU management-link script"
 [ -f "$HEALTH_SERVICE" ] || fail "missing NPU health-check systemd unit"
@@ -155,24 +171,11 @@ done
 	fail "missing OCTEP SDP status-check systemd unit"
 [ -f "$OCTEP_SDP_STATUS_TIMER" ] ||
 	fail "missing OCTEP SDP status-check timer"
-[ -f "$OCTEP_SDP_RECOVERY_SCRIPT" ] ||
-	fail "missing OCTEP blocked-NPU recovery script"
-[ -f "$OCTEP_MAILBOX_COMPAT_SCRIPT" ] ||
-	fail "missing OCTEP mailbox compatibility test"
-[ -f "$OCTEP_MAILBOX_COMPAT_SERVICE" ] ||
-	fail "missing OCTEP mailbox compatibility systemd unit"
 [ -f "$UNINSTALL_SCRIPT" ] || fail "missing Linux uninstall script"
-
-if [ -n "$NPU_SENSOR_SOURCE_DIR" ]; then
-	for sensor_file in \
-		bin/xgs-1us-sensors \
-		lib/libsbsp.so.1 \
-		lib/libgpiod.so.2
-	do
-		[ -r "$NPU_SENSOR_SOURCE_DIR/$sensor_file" ] ||
-			fail "missing or unreadable NPU sensor file: $NPU_SENSOR_SOURCE_DIR/$sensor_file"
-	done
-fi
+for f in "$SYSCTL_CONFIG" "$NAT_SCRIPT" "$NAT_LAN_SCRIPT" "$NAT_PORT4_SCRIPT" "$NAT_OFF_SCRIPT" \
+	"$NAT_SERVICE" "$KEA_CONFIG"; do
+	[ -f "$f" ] || fail "missing file in the checkout: $f"
+done
 
 if [ -z "$DESTDIR" ]; then
 	[ "$(id -u)" -eq 0 ] || fail "run as root, or set DESTDIR for a staged install"
@@ -194,10 +197,18 @@ if [ -z "$DESTDIR" ]; then
 		PACKAGE_MANAGER_KIND=apt
 	fi
 
+	step "checking requirements (kernel $KVER, headers, build tools, DKMS)"
+	say "kernel headers: /lib/modules/$KVER/build ok"
+	if command -v dkms >/dev/null 2>&1; then
+		say "dkms: $(command -v dkms) ($(dkms --version 2>/dev/null | head -n 1))"
+	else
+		say "dkms: not installed, will be installed"
+	fi
+
 	set --
 	if [ "$PACKAGE_MANAGER_KIND" = apt ]; then
 		command -v dkms >/dev/null 2>&1 || set -- "$@" dkms
-		command -v smcrouted >/dev/null 2>&1 || set -- "$@" smcroute
+		command -v iptables >/dev/null 2>&1 || set -- "$@" iptables
 		if ! command -v make >/dev/null 2>&1 || ! command -v gcc >/dev/null 2>&1 ||
 		   ! command -v ld >/dev/null 2>&1; then
 			set -- "$@" build-essential
@@ -208,7 +219,7 @@ if [ -z "$DESTDIR" ]; then
 		fi
 	else
 		command -v dkms >/dev/null 2>&1 || set -- "$@" dkms
-		command -v smcrouted >/dev/null 2>&1 || set -- "$@" smcroute
+		command -v iptables >/dev/null 2>&1 || set -- "$@" iptables
 		command -v make >/dev/null 2>&1 || set -- "$@" make
 		command -v gcc >/dev/null 2>&1 || set -- "$@" gcc
 		command -v ld >/dev/null 2>&1 || set -- "$@" binutils
@@ -220,15 +231,19 @@ if [ -z "$DESTDIR" ]; then
 	if [ "$#" -gt 0 ]; then
 		[ -n "$PACKAGE_MANAGER" ] ||
 			fail "dnf, yum, or apt-get is required to install missing kernel-module build tools: $*"
-		echo "xgs-linux-install: installing required packages: $*"
+		step "installing required packages: $*"
 		if [ "$PACKAGE_MANAGER_KIND" = apt ]; then
-			DEBIAN_FRONTEND=noninteractive "$PACKAGE_MANAGER" install -y \
-				--no-install-recommends "$@" ||
+			DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a "$PACKAGE_MANAGER" install -y \
+				--no-install-recommends \
+				-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold "$@" ||
 				fail "could not install the required packages: $*"
 		else
 			"$PACKAGE_MANAGER" install -y "$@" ||
 				fail "could not install the required packages: $*"
 		fi
+	else
+		step "required packages"
+		say "all required packages are already installed"
 	fi
 
 	command -v dkms >/dev/null 2>&1 ||
@@ -248,64 +263,39 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
 
+step "compiling the OCTEP module against $KDIR (about 1 minute)"
 install -d -m 0755 "$BUILD_DIR"
 cp "$SOURCE_DIR/Makefile" "$SOURCE_DIR/octep.c" "$BUILD_DIR/"
 make -C "$KDIR" M="$BUILD_DIR" W=1 modules
 MODULE="$BUILD_DIR/octep.ko"
 [ -f "$MODULE" ] || fail "kernel build did not produce octep.ko"
 verify_module "$MODULE"
+say "module built and verified"
+
+step "installing configuration, scripts and systemd units"
 
 install_config "$VFIO_CONFIG" "$DESTDIR/etc/modules-load.d/xgs-vfio.conf"
-install_data "$BRIDGE_STACK_CONFIG" \
-	"$DESTDIR/etc/modules-load.d/xgs-bridge-stack.conf"
+install_config "$SYSCTL_CONFIG" "$DESTDIR/etc/sysctl.d/90-xgs-octep-forwarding.conf"
+install_config "$SYSCTL_CONFIG" "$XGS_ROOT/sysctl.d/90-xgs-octep-forwarding.conf"
 install_config "$BLACKLIST_CONFIG" "$DESTDIR/etc/modprobe.d/xgs-octep.conf"
-install_config "$OCTEP_SYSCTL_CONFIG" \
-	"$DESTDIR/etc/sysctl.d/90-xgs-octep-forwarding.conf"
 install_config "$VFIO_CONFIG" "$XGS_ROOT/modules-load.d/xgs-vfio.conf"
-install_data "$BRIDGE_STACK_CONFIG" \
-	"$XGS_ROOT/modules-load.d/xgs-bridge-stack.conf"
 install_config "$BLACKLIST_CONFIG" "$XGS_ROOT/modprobe.d/xgs-octep.conf"
-install_data "$OCTEP_SYSCTL_CONFIG" \
-	"$XGS_ROOT/sysctl.d/90-xgs-octep-forwarding.conf"
 install_script "$SCRIPT_DIR/install.sh" "$XGS_ROOT/install.sh"
 install_script "$UNINSTALL_SCRIPT" "$XGS_ROOT/uninstall.sh"
 install_data "$SOURCE_DIR/Makefile" "$XGS_ROOT/octep/Makefile"
 install_data "$SOURCE_DIR/octep.c" "$XGS_ROOT/octep/octep.c"
 install_data "$SOURCE_DIR/dkms.conf" "$XGS_ROOT/octep/dkms.conf"
 install_script "$HEALTH_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-health.sh"
-install_script "$ACCEL_STATUS_SCRIPT" "$XGS_ROOT/scripts/xgs/accel-status.sh"
-install_script "$NAT_HELPER_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-nat.sh"
-install_config "$SCRIPT_DIR/kea/kea-dhcp4.conf" "$DESTDIR/etc/kea/kea-dhcp4.conf"
-# Operator-owned static leases for 10.4.4.0/28; never overwritten once it exists
-[ -e "$DESTDIR/etc/kea/xgs-reservations.json" ] ||
-	printf '[]\n' | install -D -m 0644 /dev/stdin "$DESTDIR/etc/kea/xgs-reservations.json"
-install_script "$SCRIPT_DIR/scripts/nat/nat-port4.sh" "$XGS_ROOT/scripts/nat/nat-port4.sh"
-install_script "$SCRIPT_DIR/scripts/nat/nat-off.sh" "$XGS_ROOT/scripts/nat/nat-off.sh"
-install_unit "$SCRIPT_DIR/systemd/xgs-nat.service" "$DESTDIR/usr/lib/systemd/system/xgs-nat.service"
 install_script "$RUN_SCRIPT" "$XGS_ROOT/scripts/xgs/npu-run.sh"
 install_script "$PLATFORM_SCRIPT" "$XGS_ROOT/scripts/octep/npu-platform.sh"
 install_script "$OCTEP_PORT_SETUP_SCRIPT" "$XGS_ROOT/scripts/octep/rpc-port-setup.sh"
-install_script "$OCTEP_OFFLOAD_ENABLE_SCRIPT" "$XGS_ROOT/scripts/octep/offload-enable.sh"
 install_script "$OCTEP_RING_TEST_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-ring-test.sh"
+install_script "$OCTEP_OFFLOAD_ENABLE_SCRIPT" "$XGS_ROOT/scripts/octep/offload-enable.sh"
+install_script "$OCTEP_OFFLOAD_CHECK_SCRIPT" "$XGS_ROOT/scripts/octep/offload-check.sh"
 install_script "$OCTEP_SDP_BRINGUP_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-bringup.sh"
-install_script "$OCTEP_SDP_RECOVERY_SCRIPT" "$XGS_ROOT/scripts/octep/sdp-recover-npu.sh"
 install_script "$MGMT_LINK_SCRIPT" "$XGS_ROOT/scripts/npuctl/mgmt-link.sh"
 install_unit "$HEALTH_SERVICE" "$XGS_ROOT/systemd/xgs-npu-health.service"
 install_unit "$HEALTH_TIMER" "$XGS_ROOT/systemd/xgs-npu-health.timer"
-if [ -n "$NPU_SENSOR_SOURCE_DIR" ]; then
-	install_file "$NPU_SENSOR_SOURCE_DIR/bin/xgs-1us-sensors" \
-		"$XGS_ROOT/npu-sensor/bin/xgs-1us-sensors" 0644
-	install_file "$NPU_SENSOR_SOURCE_DIR/lib/libsbsp.so.1" \
-		"$XGS_ROOT/npu-sensor/lib/libsbsp.so.1" 0644
-	install_file "$NPU_SENSOR_SOURCE_DIR/lib/libgpiod.so.2" \
-		"$XGS_ROOT/npu-sensor/lib/libgpiod.so.2" 0644
-	sensor_config="$DESTDIR/etc/default/xgs-npu-health"
-	if [ -e "$sensor_config" ]; then
-		echo "xgs-linux-install: preserving existing sensor config $sensor_config"
-	else
-		install -D -m 0644 "$HEALTH_DEFAULT" "$sensor_config"
-	fi
-fi
 install_unit "$OCTEP_SDP_BRINGUP_SERVICE" \
 	"$XGS_ROOT/systemd/xgs-octep-sdp-bringup.service"
 install_script "$OCTEP_SDP_STATUS_SCRIPT" \
@@ -314,10 +304,17 @@ install_unit "$OCTEP_SDP_STATUS_SERVICE" \
 	"$XGS_ROOT/systemd/xgs-octep-sdp-status.service"
 install_unit "$OCTEP_SDP_STATUS_TIMER" \
 	"$XGS_ROOT/systemd/xgs-octep-sdp-status.timer"
-install_script "$OCTEP_MAILBOX_COMPAT_SCRIPT" \
-	"$XGS_ROOT/scripts/tests/octep-tx2-mailbox-compat-test.sh"
-install_unit "$OCTEP_MAILBOX_COMPAT_SERVICE" \
-	"$XGS_ROOT/systemd/xgs-octep-mailbox-compat.service"
+install_script "$NAT_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-nat.sh"
+install_script "$NAT_LAN_SCRIPT" "$XGS_ROOT/scripts/nat/xgs-lan.sh"
+install_script "$NAT_PORT4_SCRIPT" "$XGS_ROOT/scripts/nat/nat-port4.sh"
+install_script "$NAT_OFF_SCRIPT" "$XGS_ROOT/scripts/nat/nat-off.sh"
+install_script "$SCRIPT_DIR/scripts/nat/xgs-hardening.sh" "$XGS_ROOT/scripts/nat/xgs-hardening.sh"
+install_script "$SCRIPT_DIR/scripts/nat/xgs-ufw-admin.sh" "$XGS_ROOT/scripts/nat/xgs-ufw-admin.sh"
+install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update.sh"
+install_script "$SCRIPT_DIR/scripts/xgs/xgs-auto-update-ctl.sh" "$XGS_ROOT/scripts/xgs/xgs-auto-update-ctl.sh"
+install_data "$SCRIPT_DIR/cron/xgs-auto-update" "$DESTDIR/etc/cron.d/xgs-auto-update"
+install_unit "$NAT_SERVICE" "$DESTDIR/usr/lib/systemd/system/xgs-nat.service"
+install_unit "$SCRIPT_DIR/systemd/xgs-hardening.service" "$DESTDIR/usr/lib/systemd/system/xgs-hardening.service"
 install_unit "$HEALTH_SERVICE" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.service"
 install_unit "$HEALTH_TIMER" "$DESTDIR/usr/lib/systemd/system/xgs-npu-health.timer"
 install_unit "$OCTEP_SDP_BRINGUP_SERVICE" \
@@ -326,8 +323,6 @@ install_unit "$OCTEP_SDP_STATUS_SERVICE" \
 	"$DESTDIR/usr/lib/systemd/system/xgs-octep-sdp-status.service"
 install_unit "$OCTEP_SDP_STATUS_TIMER" \
 	"$DESTDIR/usr/lib/systemd/system/xgs-octep-sdp-status.timer"
-install_unit "$OCTEP_MAILBOX_COMPAT_SERVICE" \
-	"$DESTDIR/usr/lib/systemd/system/xgs-octep-mailbox-compat.service"
 
 DKMS_SOURCE="$DESTDIR/usr/src/$DKMS_NAME-$DKMS_VERSION"
 DKMS_SOURCE_CHANGED=0
@@ -353,6 +348,7 @@ if [ -n "$DESTDIR" ]; then
 	exit 0
 fi
 
+	step "registering and building the DKMS module (slow: may rebuild initramfs; please wait)"
 	DKMS_STATUS=$(dkms status -m "$DKMS_NAME" -v "$DKMS_VERSION" -k "$KVER" 2>/dev/null || true)
 	if ! printf '%s\n' "$DKMS_STATUS" | grep -Fq ': installed' ||
 	   [ "$DKMS_SOURCE_CHANGED" -eq 1 ]; then
@@ -360,8 +356,9 @@ fi
 			grep -Fq "$DKMS_NAME/$DKMS_VERSION"; then
 			dkms add -m "$DKMS_NAME" -v "$DKMS_VERSION"
 		fi
-		echo "xgs-linux-install: building DKMS module; configured hooks may rebuild initramfs"
+		say "dkms build running"
 		dkms build --force -m "$DKMS_NAME" -v "$DKMS_VERSION" -k "$KVER"
+		say "dkms install running (initramfs update can take a minute)"
 		dkms install --force -m "$DKMS_NAME" -v "$DKMS_VERSION" -k "$KVER"
 	else
 		echo "xgs-linux-install: OCTEP is already installed for $KVER; skipping DKMS rebuild"
@@ -375,72 +372,198 @@ INSTALLED_VERMAGIC=$(modinfo -k "$KVER" -F vermagic octep) ||
 	fail "cannot read installed octep vermagic"
 [ "${INSTALLED_VERMAGIC%% *}" = "$KVER" ] ||
 	fail "installed octep module does not match kernel $KVER"
-# A hand-copied unsigned or stripped module fails to load with a bare EINVAL.
-[ -n "$(modinfo -k "$KVER" -F signer octep)" ] ||
-	fail "resolved octep module is unsigned; reinstall through DKMS (--replace-managed)"
-if grep -q '^octep ' /proc/modules 2>/dev/null; then
-	echo "xgs-linux-install: a running octep is the previous build; run 'sudo rmmod octep' and the status timer reloads the new one within about 30 seconds"
-fi
 
+step "loading VFIO modules"
 for module in vfio vfio_iommu_type1 vfio-pci; do
 	modprobe "$module"
 done
 
 require_command systemctl
+step "enabling OCTEP systemd units"
 systemctl daemon-reload
 systemctl enable --quiet xgs-octep-sdp-bringup.service
-if systemctl cat smcroute.service >/dev/null 2>&1; then
-	systemctl enable --quiet smcroute.service
-	# Start only; a restart toggles allmulticast on every port and can disturb live traffic. Boot and reload refresh it in rpc-port-setup.sh.
-	systemctl start smcroute.service || echo "xgs-linux-install: smcroute.service failed to start" >&2
-fi
-systemctl enable --quiet xgs-octep-mailbox-compat.service
 systemctl enable --quiet xgs-npu-health.service
 systemctl enable --quiet xgs-npu-health.timer
-systemctl enable --quiet xgs-nat.service
-# DHCP for the LAN ports (config: /etc/kea/kea-dhcp4.conf); needs the Kea DHCPv4 server
-# (Fedora: kea; Debian: kea-dhcp4-server)
-# Replace the earlier dnsmasq-based DHCP, which would otherwise hold UDP 67
-if [ -e "$DESTDIR/etc/dnsmasq.d/xgs-lan.conf" ]; then
-	rm -f "$DESTDIR/etc/dnsmasq.d/xgs-lan.conf"
-	systemctl try-restart dnsmasq.service >/dev/null 2>&1
+systemctl start --quiet xgs-npu-health.timer
+systemctl enable --quiet xgs-octep-sdp-status.timer
+systemctl start --quiet xgs-octep-sdp-status.timer
+
+step "installing DHCP (Kea) for the LAN ports"
+if ! systemctl cat kea-dhcp4.service >/dev/null 2>&1 &&
+   ! systemctl cat kea-dhcp4-server.service >/dev/null 2>&1; then
+	if [ "$PACKAGE_MANAGER_KIND" = apt ]; then
+		kea_pkg=kea-dhcp4-server
+	else
+		kea_pkg=kea
+	fi
+	say "installing $kea_pkg"
+	if [ "$PACKAGE_MANAGER_KIND" = apt ]; then
+		DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a "$PACKAGE_MANAGER" install -y \
+			--no-install-recommends \
+			-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
+			"$kea_pkg" || say "WARNING: could not install $kea_pkg; LAN ports will not serve DHCP"
+	else
+		"$PACKAGE_MANAGER" install -y "$kea_pkg" ||
+			say "WARNING: could not install $kea_pkg; LAN ports will not serve DHCP"
+	fi
 fi
 kea_unit=
 for u in kea-dhcp4.service kea-dhcp4-server.service; do
 	if systemctl cat "$u" >/dev/null 2>&1; then kea_unit=$u; break; fi
 done
-if [ -n "$kea_unit" ]; then
-	systemctl enable --quiet "$kea_unit"
-	systemctl restart "$kea_unit" ||
-		echo "xgs-linux-install: $kea_unit failed to start; check /etc/kea/kea-dhcp4.conf" >&2
-	# ufw: accept inbound from the LAN octeps (DHCP, DNS, ping, ...) and the
-	# management port; the WAN (octep1) keeps ufw's default policy
-	if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'; then
-		for i in 0 2 3 4 5 6 7 8 9; do
-			ufw allow in on octep$i >/dev/null
-		done
-		ufw allow in on enp2s0 >/dev/null
-	fi
-else
-	echo "xgs-linux-install: Kea DHCPv4 is not installed (kea / kea-dhcp4-server); LAN ports will not serve DHCP until it is" >&2
+if [ -e /etc/dnsmasq.d/xgs-lan.conf ]; then
+	rm -f /etc/dnsmasq.d/xgs-lan.conf
+	systemctl try-restart dnsmasq.service >/dev/null 2>&1 || true
 fi
-systemctl start --quiet xgs-npu-health.timer
-systemctl enable --quiet xgs-octep-sdp-status.timer
-systemctl start --quiet xgs-octep-sdp-status.timer
+if [ -n "$kea_unit" ]; then
+	# The distro package ships its own kea-dhcp4.conf; keep it once as .dist
+	if [ -e /etc/kea/kea-dhcp4.conf ] && ! cmp -s "$KEA_CONFIG" /etc/kea/kea-dhcp4.conf &&
+	   [ ! -e /etc/kea/kea-dhcp4.conf.dist ]; then
+		cp -p /etc/kea/kea-dhcp4.conf /etc/kea/kea-dhcp4.conf.dist
+		say "kept the distro Kea config as /etc/kea/kea-dhcp4.conf.dist"
+	fi
+	install -D -m 0644 "$KEA_CONFIG" /etc/kea/kea-dhcp4.conf
+	# Operator-owned static leases; never overwritten once it exists
+	[ -e /etc/kea/xgs-reservations.json ] ||
+		printf '[]\n' | install -D -m 0644 /dev/stdin /etc/kea/xgs-reservations.json
+	systemctl enable --quiet "$kea_unit"
+	say "starting $kea_unit (up to 60 s)"
+	run_timeout 60 systemctl restart "$kea_unit" ||
+		say "WARNING: $kea_unit did not start now (LAN ports appear after bring-up); check: journalctl -u $kea_unit"
+else
+	say "WARNING: no Kea service found; LAN ports will not serve DHCP"
+fi
 
+step "NAT and firewall (ufw)"
+systemctl enable --quiet xgs-nat.service
+# Optional conntrack tuning and packet sanity filtering: installed always, enabled only on request.
+if [ "${XGS_HARDENING:-0}" = 1 ]; then
+	systemctl enable --quiet xgs-hardening.service
+	say "xgs-hardening.service enabled (conntrack tuning, mangle sanity filter)"
+fi
+# Unattended updates at 05:00 and 13:00 (/etc/cron.d/xgs-auto-update) need a cron daemon
+# (Fedora: cronie/crond; Debian/Mint: cron). Kernel packages are held back.
+cron_unit=
+find_cron_unit() {
+	cron_unit=
+	for u in crond.service cron.service; do
+		if systemctl cat "$u" >/dev/null 2>&1; then cron_unit=$u; break; fi
+	done
+}
+step "Unattended updates (cron)"
+find_cron_unit
+if [ -z "$cron_unit" ]; then
+	if command -v dnf >/dev/null 2>&1; then
+		say "no cron daemon found; installing cronie (dnf)"
+		dnf -y install cronie >/dev/null 2>&1 || true
+	elif command -v apt-get >/dev/null 2>&1; then
+		say "no cron daemon found; installing cron (apt)"
+		DEBIAN_FRONTEND=noninteractive apt-get -y install cron >/dev/null 2>&1 || true
+	elif command -v pacman >/dev/null 2>&1; then
+		say "no cron daemon found; installing cronie (pacman)"
+		pacman -S --needed --noconfirm cronie >/dev/null 2>&1 || true
+	else
+		echo "xgs-linux-install: no dnf, apt-get or pacman; skipping cron install (continuing)" >&2
+	fi
+	find_cron_unit
+else
+	say "cron daemon present: $cron_unit"
+fi
+if [ -n "$cron_unit" ]; then
+	systemctl enable --quiet --now "$cron_unit" || echo "xgs-linux-install: could not start $cron_unit" >&2
+	say "unattended updates scheduled 05:00 and 13:00 (disable: $XGS_ROOT/scripts/xgs/xgs-auto-update-ctl.sh disable)"
+else
+	echo "xgs-linux-install: no cron daemon (cronie/cron); unattended updates will not run until one is installed" >&2
+fi
+# CPU microcode comes from the distro (best effort; Debian needs non-free-firmware for these).
+# XGS_SKIP_MICROCODE=1 skips it.
+if [ "${XGS_SKIP_MICROCODE:-0}" != 1 ]; then
+	ucode_pkg=
+	case $(grep -m1 '^vendor_id' /proc/cpuinfo 2>/dev/null) in
+	*AuthenticAMD*) ucode_pkg_dnf=amd-ucode-firmware; ucode_pkg_apt=amd64-microcode; ucode_pkg_pacman=amd-ucode ;;
+	*GenuineIntel*) ucode_pkg_dnf=microcode_ctl; ucode_pkg_apt=intel-microcode; ucode_pkg_pacman=intel-ucode ;;
+	*) ucode_pkg_dnf=; ucode_pkg_apt=; ucode_pkg_pacman= ;;
+	esac
+	if command -v dnf >/dev/null 2>&1; then
+		ucode_pkg=$ucode_pkg_dnf
+		[ -z "$ucode_pkg" ] || rpm -q "$ucode_pkg" >/dev/null 2>&1 || dnf -y install "$ucode_pkg" >/dev/null 2>&1 || ucode_pkg="!$ucode_pkg"
+	elif command -v apt-get >/dev/null 2>&1; then
+		ucode_pkg=$ucode_pkg_apt
+		[ -z "$ucode_pkg" ] || dpkg -s "$ucode_pkg" >/dev/null 2>&1 || DEBIAN_FRONTEND=noninteractive apt-get -y install "$ucode_pkg" >/dev/null 2>&1 || ucode_pkg="!$ucode_pkg"
+	elif command -v pacman >/dev/null 2>&1; then
+		ucode_pkg=$ucode_pkg_pacman
+		[ -z "$ucode_pkg" ] || pacman -Q "$ucode_pkg" >/dev/null 2>&1 || pacman -S --needed --noconfirm "$ucode_pkg" >/dev/null 2>&1 || ucode_pkg="!$ucode_pkg"
+	fi
+	case $ucode_pkg in
+	'') ;;
+	!*) echo "xgs-linux-install: could not install CPU microcode package ${ucode_pkg#!}; install it manually" >&2 ;;
+	*) say "CPU microcode package present: $ucode_pkg" ;;
+	esac
+fi
+say "xgs-nat.service enabled: NAT/policy route out Port 2 (octep1) starts at boot"
+if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q '^Status: active'; then
+	# Default: only DHCP (udp 67) is allowed in on the LAN octeps; allow SSH etc. per trusted host yourself,
+	# as docs/install-requirements.md describes. XGS_UFW_LAN_DHCP_ONLY=0 opens all inbound there (testing/assessment).
+	say "ufw is active: allowing DHCP on the LAN octeps and all inbound on the management port"
+	for i in 0 2 3 4 5 6 7 8 9; do
+		if [ "${XGS_UFW_LAN_DHCP_ONLY:-1}" = 1 ]; then
+			ufw allow in on octep$i proto udp to any port 67 >/dev/null && say "ufw: allow DHCP in on octep$i"
+		else
+			ufw allow in on octep$i >/dev/null && say "ufw: allow in on octep$i"
+		fi
+	done
+	ufw allow in on enp2s0 >/dev/null && say "ufw: allow in on enp2s0"
+	# Forwarded LAN traffic: ufw's FORWARD policy is drop by default
+	if grep -q '^DEFAULT_FORWARD_POLICY="DROP"' /etc/default/ufw 2>/dev/null; then
+		for i in 0 2 3 4 5 6 7 8 9; do
+			ufw route allow in on octep$i out on octep1 >/dev/null &&
+				say "ufw: route octep$i -> octep1"
+		done
+	fi
+	# The NPU is a separate Linux system with PCIe DMA into the host: on its link only the NPU address
+	# may reach the host's own link address; nothing else is accepted and nothing is forwarded. The link
+	# is the netdev the driver registers on the NPU's PCI function (not octepN); XGS_NPU_LINK_IF overrides.
+	# XGS_UFW_NPU_ISOLATE=0 skips this; XGS_NPU_PORTS="22 ..." limits it to those tcp ports.
+	if [ "${XGS_UFW_NPU_ISOLATE:-1}" = 1 ]; then
+		npu_host=${NPU_HOST_ADDR:-169.254.254.1}
+		npu_addr=${NPU_ADDR:-169.254.254.2}
+		npu_if=${XGS_NPU_LINK_IF:-}
+		if [ -z "$npu_if" ]; then
+			for d in /sys/bus/pci/devices/${NPU_PCI:-0000:01:00.0}/net/*; do
+				n=${d##*/}
+				case $n in octep*|'*') ;; *) npu_if=$n; break ;; esac
+			done
+		fi
+		if [ -z "$npu_if" ]; then
+			say "ufw: NPU link interface not found (set XGS_NPU_LINK_IF); NPU isolation rules skipped"
+		else
+			ufw route insert 1 deny in on "$npu_if" >/dev/null && say "ufw: no forwarding from $npu_if"
+			ufw insert 1 deny in on "$npu_if" >/dev/null
+			if [ -n "${XGS_NPU_PORTS:-}" ]; then
+				for p in $XGS_NPU_PORTS; do
+					ufw insert 1 allow in on "$npu_if" proto tcp from "$npu_addr" to "$npu_host" port "$p" >/dev/null
+				done
+			else
+				ufw insert 1 allow in on "$npu_if" from "$npu_addr" to "$npu_host" >/dev/null
+			fi
+			say "ufw: $npu_if accepts only $npu_addr -> $npu_host"
+		fi
+	fi
+	# The NPU's ssh private key must not be readable by other users (ssh also refuses it otherwise)
+	[ -f /etc/keys/mvmgt.x86 ] && chmod 600 /etc/keys/mvmgt.x86
+else
+	say "ufw not active: no firewall rules added"
+fi
+
+echo ""
+echo "xgs-linux-install: DONE. Summary:"
+echo "xgs-linux-install: default NAT: all LAN ports routed via Port 2 (octep1); optional: $XGS_ROOT/scripts/nat/nat-port4.sh or nat-off.sh"
 echo "xgs-linux-install: installed OCTEP for $KVER and enabled DKMS kernel-update builds"
 echo "xgs-linux-install: loaded VFIO modules only; octep was not loaded or bound"
 echo "xgs-linux-install: enabled boot-time OCTEP load, SDP ring bring-up, and front-port setup"
-echo "xgs-linux-install: enabled a read-only mailbox compatibility probe at boot"
 echo "xgs-linux-install: enabled 30-second status checks and retries until OCTEP bring-up succeeds"
-echo "xgs-linux-install: enabled guarded automatic recovery for the known blocked SDP handshake state"
-echo "xgs-linux-install: enabled read-only NPU health reports every 5 seconds"
-if [ -n "$NPU_SENSOR_SOURCE_DIR" ]; then
-	echo "xgs-linux-install: installed NPU temperature sensor files outside the source tree"
-fi
+echo "xgs-linux-install: enabled read-only PCI and serial-console health collection at boot and every five minutes"
 echo "xgs-linux-install: scripts and controls installed under /usr/local/xgs/linux"
 echo "xgs-linux-install: use sudo /usr/local/xgs/linux/scripts/octep/sdp-bringup.sh to manually arm rings"
 echo "xgs-linux-install: use sudo /usr/local/xgs/linux/scripts/octep/sdp-ring-test.sh for a guarded ring reload test"
 echo "xgs-linux-install: DKMS initramfs behavior follows system configuration; bootloader settings were not changed"
-
-echo "xgs-linux-install: default NAT: all LAN ports routed via Port 2 (octep1) WAN; optional: $XGS_ROOT/scripts/nat/nat-port4.sh or nat-off.sh"

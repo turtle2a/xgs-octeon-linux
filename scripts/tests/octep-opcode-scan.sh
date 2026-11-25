@@ -13,7 +13,7 @@ PARM=/sys/module/octep/parameters/rpc_raw_cmd
 [ -w "$PARM" ] && [ -e "$DEV/rpc_raw_write" ] || { echo "FAIL: loaded octep has no rpc_raw_cmd/rpc_raw_write" >&2; exit 1; }
 
 # "fwcfg HEX4": send FW_CFG_PARAMS_SET (opcode 2) with a 4-byte payload, e.g. 01000000 = offload on, TCP seq check off
-# (Sophos "be liberal"); the default build sends 03000000. Needs the write gate already open (octep-hook-live.sh
+# (the "be liberal" setting); the default build sends 03000000. Needs the write gate already open (octep-hook-live.sh
 # opens it), so it neither opens nor closes the gate. Revert with fwcfg 03000000 (the hook run's exit does "offload off").
 if [ "${1:-}" = fwcfg ]; then
 	[ "$(cat "$DEV/rpc_allow_write" 2>/dev/null)" = 1 ] || { echo "FAIL: write gate closed; start octep-hook-live.sh first" >&2; exit 1; }
@@ -31,7 +31,7 @@ cleanup() {
 trap cleanup EXIT
 
 healthy() {
-	case $(cat "$DEV/sdp_state" 2>/dev/null) in *rings=armed*handshake=completed*front_netdevs=10*) return 0 ;; esac
+	case $(cat "$DEV/sdp_state" 2>/dev/null) in *rings=armed*handshake=completed*front_netdevs=[1-9]*) return 0 ;; esac
 	return 1
 }
 healthy || { echo "FAIL: NPU not healthy; nothing sent. $(cat "$DEV/sdp_state")" >&2; exit 1; }

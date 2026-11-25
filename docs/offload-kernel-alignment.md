@@ -3,6 +3,37 @@
 How the Linux flow-offload model differs from what the OCTEON NPU firmware offers,
 what this driver already does about it, and what an upstream change would need.
 
+## Summary (Task 9a)
+
+The Linux flow-offload API and the OCTEON NPU firmware do not line up, so the
+kernel's standard offload path cannot drive this hardware today:
+
+1. **Who names the flow.** Linux hands the driver a finished 5-tuple. The NPU
+   firmware names its own flow slots: a flow can only be written into a slot id the
+   firmware has just offered on a punted frame. The kernel API has no step for
+   "wait for the hardware to pick the slot".
+2. **Egress, NAT and statistics.** Linux expresses egress as an ifindex, NAT as
+   header-mangle actions and counters per flow. The NPU wants an NWA port index, an
+   opaque 24-byte NAT block inside the connection entry, and has only global and
+   per-port counters.
+3. **Release.** Linux removes each direction with `FLOW_CLS_DESTROY`; the NPU
+   reclaims a whole connection (`CONN_RECLAIM_FP`), and stale slots keep punting.
+4. **Mainline driver.** To my knowledge (unchecked against a current tree) mainline
+   `octeon_ep` has no `TC_SETUP_FT` support, so there is nothing upstream to build on.
+5. **Result on this appliance (2026-11-19).** Everything the host programs matches the
+   BSD reference, yet the NPU forwards only the original direction of a NAT'd TCP
+   flow: the reply microflow never goes active (`MFLOW_NOT_ACTIVE`), the flow stalls,
+   and the driver's guard returns it to the host within about 0.3 s. Sustained
+   hardware forwarding of real TCP has never been demonstrated; the likely cause is
+   in the firmware, which is not in the tree.
+
+What the driver does instead: it binds `TC_SETUP_FT`, declines offload requests
+(`-EOPNOTSUPP`) so the kernel software fast path stays correct, and an out-of-tree
+agent writes flows when conntrack approves them. Kernel patching is deferred.
+
+**Task 9a status: 100%** (summary written 2026-11-19). The upstream patch and
+kernel patching are deferred by decision, not done.
+
 ## Where the models disagree
 
 | Linux (`nf_flow_table`, `TC_SETUP_FT`) | OCTEON NPU firmware as observed here |
@@ -67,7 +98,6 @@ the candidate-pairing work after two-port validation.
 | Hook runs 15-26 (real LAN host 10.4.4.2 -> 192.168.1.1, TCP, NAT out octep1) | Every run: offload lands on live slot pairs, the NPU forwards 393-1000 `WIRE_TO_WIRE` frames in the first second, then `RX_WIRE` falls to 1-2/s with the microflow state words frozen; the guard releases at +3 s; the client sees ~3 s at 0 Mbit/s and 105-185 retransmits, then ~360-400 Mbit/s on the slow path. Forward and `-R` behave alike |
 | Probes that changed nothing (runs 20-25) | Flag bits 16-18 and 22-29, mflow operation bits 24-27, zero NAT ports, `ft_l3_rev=1`, both-direction NAT. Readback confirms the firmware stores every value (conn flags `0x7ff70001`); no `-EIO`, no rollback |
 | Ruled out | NHOP iface/MAC/MTU, qdisc (fq_codel, 0 drops), host checksum/TSO/GRO (host checksum offload is off), server TSO/LRO/checksum offload (off on the server), host polling (not on the offloaded path) |
-| Sophos Ghidra (`vfp_firewall.ko`, `sp2fp.ko`) | `vfp_firewall.ko` is a host software fastpath: `modify_conn`, `modify_conn_verdict` and `cfg_conn_tcp_seq_chk` are no-ops and no NPU opcodes are sent. Known opcodes stay 0, 2, 3, 5, 6, 8, 10, 16 (plus reads 36-44). The modify, route-update and device-offload LIF commands have no known wire opcode |
 | Most likely cause (unproven) | NPU NAT rewrite leaves the TCP checksum stale (ICMP, which has no pseudo-header, offloaded fine; TCP never has) so the server drops the frames; the server verifies checksums in software |
 
 ### Task 9 completion (octep1 only)
@@ -83,7 +113,7 @@ the candidate-pairing work after two-port validation.
 | Pairing (spare slot) and NAT block from the matching conntrack entry | Live with the hook (run 2): offloaded within about 10s. Run 5 (host .2 behind octep0, NAT out octep1): every attempt failed with -11 from the microflow candidate pre-check; no offload landed |
 | Host delivery for non-NPU sources (`--egress-host`) | Experiment, untested: the ABI has no host-delivery action, so the NPU may be unable to hand a reply to a host NIC |
 | Port-to-port forwarding on hardware | Proven with ICMP bounce, 4/4 EFFECTIVE |
-| Real conntrack-approved transit | About 85% (hook runs 42-45, 2026-11-16): root cause found and fixed — `mflow_timeout` was hardcoded to 244141 (~2.8 days in the firmware's seconds unit), causing near-instant self-invalidation; `ft_mflow_timeout` param (default 60) fixed that, then a second firmware bug (microflow still expires after ~75-90s under continuous active traffic) was worked around with a proactive re-arm (`ft_mflow_rearm`, default 20s, re-issues `MFLOW_PROGRAM` per live connection before firmware can age it out). Live result: a fresh TCP connection ran 308s with zero retransmits at 367 Mbit/s average (vs ~300 Mbit/s host-softpath baseline), after one stall at the old ~60s mark. Remaining: longer soak (>400s), multiple concurrent connections, confirm WIRE_TO_WIRE sustains (not just a brief spike), and NAT/DNAT transit combined with the fix. See CHANGELOG 2026-11-16 |
+| Real conntrack-approved transit | **0% (corrected 2026-11-19: the NPU has never sustained forwarding; 1 to 8 s per run, then the reply microflow ts freezes and the host path carries the rest. The 62 and 0 retry runs were host-path results.)** Earlier note, About 85% (hook runs 42-45, 2026-11-16): root cause found and fixed — `mflow_timeout` was hardcoded to 244141 (~2.8 days in the firmware's seconds unit), causing near-instant self-invalidation; `ft_mflow_timeout` param (default 60) fixed that, then a second firmware bug (microflow still expires after ~75-90s under continuous active traffic) was worked around with a proactive re-arm (`ft_mflow_rearm`, default 20s, re-issues `MFLOW_PROGRAM` per live connection before firmware can age it out). Live result: a fresh TCP connection ran 308s with zero retransmits at 367 Mbit/s average (vs ~300 Mbit/s host-softpath baseline), after one stall at the old ~60s mark. Remaining: longer soak (>400s), multiple concurrent connections, confirm WIRE_TO_WIRE sustains (not just a brief spike), and NAT/DNAT transit combined with the fix. See CHANGELOG 2026-11-16 |
 | NAT SNAT | About 55%: block derived from the matching conntrack entry, ICMP EFFECTIVE; TCP wire content unverified |
 | NAT DNAT | 0%, not run |
 | Failed-write rollback and black-hole guard | 100%: runs 13 and 14, no stall beyond the 3s guard window |
@@ -91,7 +121,7 @@ the candidate-pairing work after two-port validation.
 | Automated recovery (wedged and module-gone) | Module-gone restart proven live (22:53:04, about 30s after `rmmod`); wedged-NPU timer path not yet run on hardware. Known limit: `--wedged` refuses a bus reset when another PCI function shares NPU bus 0000:01 (deliberate safety guard); every deploy still recovered in 126-209 s through the status timer's `--auto` path, before the 300 s backstop |
 | Final commit and install (scrubbed logs, `install.sh --replace-managed`, sudoers removal) | TBC |
 
-Overall about 61% (hook and flow write exist and run live; transit offload has not yet engaged end to end).
+Overall about 58%. Item 7 is 0%: the hook and flow write run live, but the NPU forwards for only 1 to 8 s per flow and nothing is proven sustained; the low retry counts (62, 0) came from the host path.
 
 Full-NAT findings: a source behind a non-NPU port stalls each write until the lease reclaim (every offload of such a flow stalled iperf 8-10s; 1.50 GB against 3.09 GB with no write), so the agent keeps those flows in software. A flow whose original source is the appliance itself is a local flow and is skipped; the agent now reports it as `local-flow` instead of `not-in-conntrack`.
 

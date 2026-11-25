@@ -28,9 +28,17 @@ allow_npu_input() {
 		echo "nft chain 'inet filter input' is unavailable; configure the host firewall for $NPU_ADDR on $LINK" >&2
 		return 1
 	}
+	# Default: the NPU may only answer host-initiated connections (ssh). NPU_INPUT=all restores the old
+	# unrestricted accept from the NPU address.
+	if [ "${NPU_INPUT:-replies}" = all ]; then
+		rule="accept"
+	else
+		rule="ct state established,related accept"
+	fi
 	if ! nft -a list chain inet filter input |
-		grep -F "iifname \"$LINK\" ip saddr $NPU_ADDR accept" >/dev/null; then
-		nft insert rule inet filter input iifname "$LINK" ip saddr "$NPU_ADDR" accept
+		grep -F "iifname \"$LINK\" ip saddr $NPU_ADDR $rule" >/dev/null; then
+		[ "$rule" = accept ] || nft insert rule inet filter input iifname "$LINK" ip saddr "$NPU_ADDR" drop
+		nft insert rule inet filter input iifname "$LINK" ip saddr "$NPU_ADDR" $rule
 	fi
 }
 

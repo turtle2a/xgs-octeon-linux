@@ -293,6 +293,15 @@ def clear_pair(spec):
             print(f"  clear {side} slot {spec[side]['id']} failed: {exc}")
 
 
+def reclaim(conn_idx):
+    """Reclaim a conn; EALREADY/ESTALE mean the NPU already released it."""
+    try:
+        wr("rpc_conn_reclaim", f"{conn_idx} 1")
+    except OSError as exc:
+        return f"already released by NPU ({exc.strerror})"
+    return rd("rpc_conn_reclaim")[:60]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seconds", type=int, default=40)
@@ -343,9 +352,8 @@ def main():
             for conn_idx, pair in list(active.items()):
                 gone = not set(pair["keys"]) <= allowed
                 if gone or (args.lease > 0 and time.time() - pair["t"] > args.lease):
-                    wr("rpc_conn_reclaim", f"{conn_idx} 1")
-                    print(f"reclaim conn {conn_idx} ({'conntrack gone' if gone else 'lease'}):",
-                          rd("rpc_conn_reclaim")[:60])
+                    note = reclaim(conn_idx)
+                    print(f"reclaim conn {conn_idx} ({'conntrack gone' if gone else 'lease'}):", note)
                     pair["done"] = commission.counters()
                     clear_pair(pair["spec"])
                     del active[conn_idx]
@@ -364,7 +372,7 @@ def main():
                 continue
             ids = sorted(cands, key=lambda c: (-busy.get(c, 0), int(c)))[:2]
             if len(ids) == 1:
-                spare = spare_slot(set(ids))
+                spare = spare_slot(set(ids) | {c for c, n in busy.items() if n > 0})
                 if spare:
                     cands[spare[0]] = spare[1]
                     ids.append(spare[0])
@@ -421,7 +429,7 @@ def main():
         for proc in procs:
             proc.terminate()
         for conn_idx in active:
-            wr("rpc_conn_reclaim", f"{conn_idx} 1")
+            reclaim(conn_idx)
         for name, value in (("rpc_allow_write", 0), ("offload", "off")):
             wr(name, value)
         print("gate:", rd("offload"))

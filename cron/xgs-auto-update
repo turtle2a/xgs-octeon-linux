@@ -1,0 +1,5 @@
+# XGS unattended system updates at 05:00 and 13:00. No prompts, no reboot, kernels included (DKMS rebuilds octep).
+# Disable: sudo /usr/local/xgs/linux/scripts/xgs/xgs-auto-update-ctl.sh disable
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0 5,13 * * * root /usr/local/xgs/linux/scripts/xgs/xgs-auto-update.sh

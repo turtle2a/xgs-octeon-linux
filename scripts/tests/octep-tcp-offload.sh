@@ -13,6 +13,8 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 LOG="$ROOT/testlogs/task9-tcp-$(date -u +%Y%m%dT%H%MZ).log"
 IP=$(mktemp)
 trap 'rm -f "$IP"' EXIT
+ES=$(dirname "$0")/../octep/offload-end-summary.sh
+ES_SNAP=$(mktemp 2>/dev/null) && [ -x "$ES" ] && "$ES" snap "$ES_SNAP"
 
 [ "$(id -u)" -eq 0 ] || { echo "SUDO REQUIRED: sudo $0 $IFACE $TARGET $SECS $ACTION" >&2; exit 1; }
 command -v iperf3 >/dev/null || { echo "iperf3 missing" >&2; exit 1; }
@@ -34,3 +36,5 @@ echo "== summary"
 echo "EFFECTIVE:   $(grep -c ': EFFECTIVE' "$LOG")"
 echo "INEFFECTIVE: $(grep -c ': INEFFECTIVE' "$LOG")"
 echo "log: $LOG"
+[ -x "$ES" ] && "$ES" report "$ES_SNAP"
+rm -f "$ES_SNAP"

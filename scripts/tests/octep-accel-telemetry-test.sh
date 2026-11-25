@@ -42,7 +42,7 @@ PORT_TAG=${2:-33280}
 NETDEV=${3:-octep1}
 DURATION=${4:-60}
 PF_BDF=${OCTEP_PF_BDF:-}
-LOG_DIR=${OCTEP_TEST_LOG_DIR:-"$REPO_DIR/testlogs/ghidra"}
+LOG_DIR=${OCTEP_TEST_LOG_DIR:-"$REPO_DIR/testlogs/accel"}
 LOG_FILE=${OCTEP_TEST_LOG:-"$LOG_DIR/octep-accel-telemetry-$(date -u '+%Y%m%dT%H%M%SZ').log"}
 NPU_TEMP_POLL_INTERVAL=3
 NPU_LOAD_POLL_INTERVAL=1
@@ -54,7 +54,7 @@ usage() {
 	echo "Usage: sudo $0 <iperf3-server> [port-tag [netdev [seconds]]]" >&2
 	echo "Defaults: port-tag=33280 netdev=octep1 seconds=60" >&2
 	echo "Duration range: 9-80 seconds; default 60 gives repeated thermal samples" >&2
-	echo "Extracted Sophos sensor binaries use XGS_NPU_SENSOR_BIN, XGS_NPU_SENSOR_LOADER, and XGS_NPU_SENSOR_LIBDIR" >&2
+	echo "External sensor binaries use XGS_NPU_SENSOR_BIN, XGS_NPU_SENSOR_LOADER, and XGS_NPU_SENSOR_LIBDIR" >&2
 }
 
 if [ "$#" -gt 4 ]; then

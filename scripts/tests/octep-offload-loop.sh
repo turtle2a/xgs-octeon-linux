@@ -18,6 +18,8 @@ stat() { sed -n 's/.*[ ^]\(rx_frames=[0-9]*\).*metadata_valid=\([0-9]*\).*/\1 md
 mdcount() { grep -o 'metadata_valid=[0-9]*' "$PF/rx_flow" | head -1 | cut -d= -f2; }
 
 trap 'echo off >"$PF/offload"; echo "gate: $(cat "$PF/offload")"' EXIT
+ES=$(dirname "$0")/../octep/offload-end-summary.sh
+ES_SNAP=$(mktemp 2>/dev/null) && [ -x "$ES" ] && "$ES" snap "$ES_SNAP"
 
 before=$(mdcount)
 echo on >"$PF/offload"
@@ -47,3 +49,5 @@ after=$(mdcount)
 echo "metadata_valid: $before -> $after"
 head -1 "$PF/rx_flow" | cut -c1-330
 cut -c1-300 "$PF/flow_stats"
+[ -x "$ES" ] && "$ES" report "$ES_SNAP"
+rm -f "$ES_SNAP"

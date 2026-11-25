@@ -16,6 +16,8 @@ LOG="$ROOT/testlogs/task9-natoffload-$(date -u +%Y%m%dT%H%MZ).log"
 TABLE=xgs_natt
 PROTO=${PROTO:-icmp}
 [ "$PROTO" = icmp ] && ALLOW_LOCAL=1
+ES=$(dirname "$0")/../octep/offload-end-summary.sh
+ES_SNAP=$(mktemp 2>/dev/null) && [ -x "$ES" ] && "$ES" snap "$ES_SNAP"
 
 [ "$(id -u)" -eq 0 ] || { echo "SUDO REQUIRED: sudo $0 $IFACE $TARGET $SNAT_IP $FAKE_IP $SECS" >&2; exit 1; }
 cleanup() { nft delete table ip $TABLE 2>/dev/null; [ -n "$FAKE_IP" ] && ip route del "$FAKE_IP/32" 2>/dev/null; }
@@ -76,3 +78,5 @@ echo "NAT blocks derived: $(grep -c 'nat from conntrack' "$LOG")"
 echo "EFFECTIVE:   $(grep -c ': EFFECTIVE' "$LOG")"
 echo "INEFFECTIVE: $(grep -c ': INEFFECTIVE' "$LOG")"
 echo "log: $LOG"
+[ -x "$ES" ] && "$ES" report "$ES_SNAP"
+rm -f "$ES_SNAP"
