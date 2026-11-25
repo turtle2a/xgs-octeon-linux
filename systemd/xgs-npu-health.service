@@ -5,7 +5,6 @@ After=systemd-udev-settle.service xgs-octep-sdp-bringup.service
 
 [Service]
 Type=oneshot
-EnvironmentFile=-/etc/default/xgs-npu-health
 ExecStart=/usr/local/xgs/linux/scripts/xgs/npu-health.sh collect
 TimeoutStartSec=45s
 StateDirectory=os-xgs-npu

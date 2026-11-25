@@ -10,14 +10,30 @@ elif [ -x "$SCRIPT_DIR/../xgs/npu-run.sh" ]; then
 else
 	NPU_RUN=/usr/local/xgs/linux/scripts/xgs/npu-run.sh
 fi
+NPU_PCI=${NPU_PCI:-0000:01:00.0}
 LINK=${NPU_MGMT_IF:-}
+if [ -z "$LINK" ]; then
+	# The NPU link is the netdev on the NPU's own PCI function (not the octep front ports).
+	for d in /sys/bus/pci/devices/"$NPU_PCI"/net/*; do
+		[ -e "$d" ] || continue
+		case ${d##*/} in octep*) continue ;; esac
+		LINK=${d##*/}
+		break
+	done
+fi
 HOST_ADDR=${NPU_HOST_ADDR:-169.254.254.1}
 NPU_ADDR=${NPU_ADDR:-169.254.254.2}
 PREFIX_LEN=${NPU_PREFIX_LEN:-30}
-KEY=${NPU_SSH_KEY:-/etc/keys/mvmgt.x86}
+if [ -n "${NPU_SSH_KEY:-}" ]; then
+	KEY=$NPU_SSH_KEY
+elif [ -f /etc/keys/mvmgt.x86 ]; then
+	KEY=/etc/keys/mvmgt.x86
+else
+	KEY="${HOME}/.ssh/id_ed25519_npu"
+fi
 
 require_link() {
-	[ -n "$LINK" ] || { echo "set NPU_MGMT_IF to the host management-link interface" >&2; return 1; }
+	[ -n "$LINK" ] || { echo "no NPU link netdev found; set NPU_MGMT_IF" >&2; return 1; }
 	ip link show dev "$LINK" >/dev/null 2>&1 ||
 		{ echo "no management-link interface: $LINK" >&2; return 1; }
 }
@@ -46,7 +62,8 @@ host_up() {
 	require_link
 	ip addr replace "$HOST_ADDR/$PREFIX_LEN" dev "$LINK"
 	ip link set dev "$LINK" up
-	allow_npu_input
+	# With ufw the host firewall rules come from install.sh; the nft rule is only for plain nftables hosts.
+	allow_npu_input || echo "note: nft rule not added; make sure the host firewall allows $NPU_ADDR on $LINK" >&2
 }
 
 case ${1:-status} in
@@ -60,7 +77,7 @@ coprocessor)
 	;;
 status)
 	if [ -z "$LINK" ] || ! ip link show dev "$LINK" >/dev/null 2>&1; then
-		echo "management-link interface unavailable; set NPU_MGMT_IF after the driver creates it"
+		echo "management-link interface unavailable; NPU link netdev not found; set NPU_MGMT_IF"
 		exit 0
 	fi
 	ip -brief address show dev "$LINK"
@@ -75,7 +92,7 @@ ssh)
 	require_link
 	shift
 	exec ssh -i "$KEY" -b "$HOST_ADDR" -o BatchMode=yes -o ConnectTimeout=8 \
-		"root@$NPU_ADDR" "$@"
+		-o StrictHostKeyChecking=accept-new "root@$NPU_ADDR" "$@"
 	;;
 trust)
 	require_link

@@ -53,3 +53,7 @@ For XGS 2300 and XGS 3300 appliances, have a USB-to-serial cable available
 for console access through the micro-USB port. Some other XGS appliances may
 provide a monitor output such as HDMI or DisplayPort instead; check the
 specific model's available console connections.
+
+On BSD, the corresponding boot settings are placed in `/boot/loader.conf`;
+the syntax differs slightly. The GRUB file and regeneration commands above
+apply to Linux only.

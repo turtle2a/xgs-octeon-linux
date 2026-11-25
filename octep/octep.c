@@ -451,10 +451,10 @@ module_param_named(ft_bridge, octep_ft_bridge, bool, 0644);
 MODULE_PARM_DESC(ft_bridge,
 		 "Mark conntrack-triggered flows whose two ports share a bridge as bridged: no TTL or MAC rewrite (default N)");
 
-static unsigned int octep_dp_poll_us;
+static unsigned int octep_dp_poll_us = 200;
 module_param_named(dp_poll_us, octep_dp_poll_us, uint, 0644);
 MODULE_PARM_DESC(dp_poll_us,
-		 "Data-path RX/TX completion by a timer-driven NAPI poll every N microseconds (50..100000) instead of the 2 ms delayed work; latched at sdp_start (default 0 = delayed work)");
+		 "Data-path RX/TX completion by a timer-driven NAPI poll every N microseconds (50..100000) instead of the 2 ms delayed work; latched at sdp_start (default 200, 0 = delayed work)");
 
 #define OCTEP_DP_NAPI_WEIGHT	96
 #define OCTEP_FT_FEAT(p)	(READ_ONCE(octep_ft_parity) || READ_ONCE(p))

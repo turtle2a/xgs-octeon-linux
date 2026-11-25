@@ -4,8 +4,7 @@ set -eu
 
 HOST_ADDR=${NPU_HOST_ADDR:-169.254.254.1}
 NPU_ADDR=${NPU_ADDR:-169.254.254.2}
-SSH_KEY=${NPU_SSH_KEY:-/etc/keys/mvmgt.x86}
-# The tested Linux console is ttyS2; override if this board enumerates it differently.
+# The FreeBSD cuau2 commonly maps to Linux ttyS2; override if this board enumerates it differently.
 CONSOLE=${NPU_CONSOLE:-/dev/ttyS2}
 
 case ${1:-} in
@@ -17,9 +16,9 @@ CMD=${2:-}
 
 if [ -n "${NPU_MGMT_IF:-}" ] && command -v ssh >/dev/null 2>&1 &&
    ip link show dev "$NPU_MGMT_IF" >/dev/null 2>&1 &&
-   timeout 5 ssh -i "$SSH_KEY" -b "$HOST_ADDR" -o BatchMode=yes -o ConnectTimeout=3 \
+   timeout 5 ssh -b "$HOST_ADDR" -o BatchMode=yes -o ConnectTimeout=3 \
        -o StrictHostKeyChecking=accept-new "root@$NPU_ADDR" true >/dev/null 2>&1; then
-	exec timeout "$((SECS + 10))" ssh -i "$SSH_KEY" -b "$HOST_ADDR" -o BatchMode=yes \
+	exec timeout "$((SECS + 10))" ssh -b "$HOST_ADDR" -o BatchMode=yes \
 		-o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new \
 		"root@$NPU_ADDR" "$CMD"
 fi
@@ -37,8 +36,8 @@ command -v flock >/dev/null 2>&1 || { echo "flock is required" >&2; exit 1; }
 LOCK=${NPU_CONSOLE_LOCK:-/run/lock/xgs-npu-console.lock}
 TMP=$(mktemp "${TMPDIR:-/tmp}/xgs-npu-run.XXXXXX")
 exec 9>"$LOCK"
-flock -w "${NPU_CONSOLE_LOCK_WAIT:-5}" 9 || { rm -f "$TMP"; echo "coprocessor console is busy" >&2; exit 75; }
-clean() { tr -d '\000\r' < "$TMP" | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g'; }
+flock -w 5 9 || { rm -f "$TMP"; echo "coprocessor console is busy" >&2; exit 75; }
+clean() { tr -d '\r' < "$TMP" | sed -E 's/\x1b\[[0-9;?]*[a-zA-Z]//g'; }
 reader=
 cleanup() {
 	if [ -n "$reader" ]; then

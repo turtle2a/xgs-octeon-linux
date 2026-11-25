@@ -1,4 +1,0 @@
-NPU_MGMT_IF=mvmgmt0
-XGS_NPU_SENSOR_BIN=/usr/local/xgs/linux/npu-sensor/bin/xgs-1us-sensors
-XGS_NPU_SENSOR_LOADER=/lib64/ld-linux-x86-64.so.2
-XGS_NPU_SENSOR_LIBDIR=/usr/local/xgs/linux/npu-sensor/lib
