@@ -7,6 +7,7 @@
  * writes; neither is activated as a side effect of PCI probe.
  */
 
+#include <linux/version.h>
 #include <linux/bitops.h>
 #include <linux/build_bug.h>
 #include <linux/dma-mapping.h>
@@ -2700,8 +2701,14 @@ static void octep_dp_poll_resume(struct octep *octep)
 				netif_napi_add_weight(octep->dp_napi_dev, &octep->dp_napi,
 						      octep_dp_napi_poll,
 						      OCTEP_DP_NAPI_WEIGHT);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
 				hrtimer_setup(&octep->dp_hrt, octep_dp_hrt_fn,
 					      CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+#else
+				hrtimer_init(&octep->dp_hrt, CLOCK_MONOTONIC,
+					     HRTIMER_MODE_REL);
+				octep->dp_hrt.function = octep_dp_hrt_fn;
+#endif
 			}
 		}
 		if (octep->dp_napi_dev) {
