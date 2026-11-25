@@ -29,7 +29,7 @@ Scores: confidence is the reviewer's, out of 10.
 | Auto-update (apt/dnf/pacman) | Good; items 6, 7 |
 | Installer modes and ownership | Good; run from a root-owned copy |
 | Firewall / NAT / exposure of host services | Weak (items 3, 4) |
-| Secrets and PII in repo | Good; logs and Ghidra output are untracked, keep them out of release archives |
+| Secrets and PII in repo | Good; logs and analysis output are untracked, keep them out of release archives |
 
 ## Test spec (per fix)
 
