@@ -215,6 +215,31 @@ To keep NAT off across reboots run `sudo touch /etc/xgs-nat-off`. Overrides
   are not restarted automatically.
 - `install.sh` installs and enables `cronie` (dnf) or `cron` (apt) if missing.
 
+## Performance Testing and Scripts
+
+Scripts in `scripts/tests/`. All need root on the appliance unless noted; check that offload is on first (`offload` sysfs shows `requested=on`).
+
+| Script | What it does |
+|---|---|
+| `octep-offload-check.sh [secs] [LAN] [WAN]` | One-command offload check: runs the live hook, then prints a one-page verdict (AGREE/DISAGREE). Start iperf3 from the LAN client when it says READY. |
+| `octep-offload-check_octep0_1.sh [secs]` | The same check preset for octep0 (LAN) and octep1 (WAN), 30 s. |
+| `octep-offload-check_octep2_to_11.sh [secs] [n]` | The same check for the other port pairs (2,3) to (10,11); missing pairs are skipped. Set `IPERF_CMD` per pair. |
+| `offload_check_live_with_cutin_at10.sh` | The check with a staged cut-in: flows forward on the host first, then flip to the NPU after 10 s. |
+| `octep-offload-last.sh [tag]` | Re-prints the last run's summary; runs nothing. |
+| `octep-hook-live.sh` | Live in-kernel flowtable hook test on a LAN/WAN pair; shows the hook's dmesg lines, then tears down. |
+| `octep-iperf-gate.sh` | iperf3 throughput with the offload gate off, on (no flow written) and off again, on one port. |
+| `octep-tcp-offload.sh` | iperf3 through one port with the offload agent running; compares per-interval throughput. |
+| `octep-nat-offload.sh` | NAT offload on one port (SNAT, optional DNAT); the NAT block is derived from conntrack. |
+| `octep-offload-commission.py` | One bounded flow-create cycle on one port; verifies the readback and closes the gate. |
+| `octep-offload-loop.sh` | Read-only commissioning cycle: drives traffic and reads each live microflow. |
+| `octep-frame-ident.py LAN.pcap WAN.pcap` | Classifies one flow's TCP segments from router-side captures (host-forwarded, host-dropped, NPU wire-to-wire). |
+| `octep-opcode-scan.sh` | Idle scan of unassigned RPC opcodes to find commands the firmware answers. |
+| `octep-accel-telemetry-test.sh` | Reads NPU uptime, load and temperature sensors over the management link. |
+| `octep-fastdeploy.sh [octep.ko]` | Swaps in a locally built module, reloads, and rolls back if bring-up fails. |
+| `xgs-auto-update-test.sh` | Stub-based test of the auto-update script and installer cron block; changes nothing. |
+
+Typical run: `sudo ./scripts/tests/octep-offload-check_octep0_1.sh 30`, then `iperf3 -B <lan-client-ip> -c <wan-server-ip> -t 30` from the LAN client.
+
 ## Pre-Upload Test Record
 
 Running the uninstaller is optional and is not required to upload the source.
