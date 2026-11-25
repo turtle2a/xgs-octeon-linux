@@ -232,7 +232,7 @@ docs/             install, boot loader and offload notes
 ```
 
 Test scripts live in `scripts/tests/`. A one-line summary of each is in
-[performance-testing-and-scripts/README.md](performance-testing-and-scripts/README.md).
+[Performance Testing and Scripts/README.md](Performance%20Testing%20and%20Scripts/README.md).
 
 ## Pre-Upload Test Record
 
