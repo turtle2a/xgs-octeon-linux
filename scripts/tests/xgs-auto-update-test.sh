@@ -46,14 +46,19 @@ runupd $D; ! grep -q -- "--exclude" $D/calls && grep -q -- " -y " $D/calls && ok
 D=$T/dnf2; mkbin $D; stub $D dnf
 runupd $D "DNF_EXCLUDE=kernel*"; grep -q -- "--exclude=kernel\*" $D/calls && ok "dnf conf can hold kernel" || bad "dnf conf hold"
 
-# apt: kernel packages included by default
+# apt: no boot gate there, so kernel packages are held back by default; XGS_ALLOW_KERNEL_UPDATE=1 lifts it
 D=$T/apt; mkbin $D; stub $D apt-get 0 'case " $* " in *" -s "*) printf "Inst bash [1]\nInst linux-image-6.1 [1]\nInst curl [1]\n";; esac'
 runupd $D
-grep -q "install --only-upgrade bash linux-image-6.1 curl" $D/calls && ok "apt includes kernel" || bad "apt kernel included"
+grep -q "install --only-upgrade bash curl" $D/calls && ! grep "only-upgrade" $D/calls | grep -q "linux-image" && ok "apt holds kernel by default" || bad "apt kernel held"
+D=$T/apt2; mkbin $D; stub $D apt-get 0 'case " $* " in *" -s "*) printf "Inst bash [1]\nInst linux-image-6.1 [1]\nInst curl [1]\n";; esac'
+runupd $D XGS_ALLOW_KERNEL_UPDATE=1
+grep -q "install --only-upgrade bash linux-image-6.1 curl" $D/calls && ok "apt kernel update allowed on request" || bad "apt kernel allowed"
 
-# pacman: full sync, nothing ignored by default
+# pacman: full sync, kernels ignored by default, allowed on request
 D=$T/pac; mkbin $D; stub $D pacman
-runupd $D; grep -q "pacman -Syu --noconfirm" $D/calls && ! grep -q -- "--ignore" $D/calls && ok "pacman -Syu, no ignore" || bad "pacman args"
+runupd $D; grep -q "pacman -Syu --noconfirm" $D/calls && grep -q -- "--ignore linux,linux-headers" $D/calls && ok "pacman -Syu, kernels ignored" || bad "pacman args"
+D=$T/pac2; mkbin $D; stub $D pacman
+runupd $D XGS_ALLOW_KERNEL_UPDATE=1; grep -q "pacman -Syu --noconfirm" $D/calls && ! grep -q -- "--ignore" $D/calls && ok "pacman kernel update allowed on request" || bad "pacman allow"
 
 # induced: no package manager -> exit 1, logged
 D=$T/none; mkbin $D

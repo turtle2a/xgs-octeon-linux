@@ -365,6 +365,21 @@ fi
 		echo "xgs-linux-install: OCTEP is already installed for $KVER; skipping DKMS rebuild"
 fi
 
+# Drop superseded registrations so a new kernel never auto-builds stale source. A version is
+# removed only when no kernel has it installed, because "dkms remove" deletes the module file
+# of every kernel it is installed for.
+for OLD_VER in $(dkms status -m "$DKMS_NAME" 2>/dev/null |
+	sed -E 's#^[^/,]+[/,] ?([^,: ]+).*#\1#' | sort -u); do
+	[ "$OLD_VER" != "$DKMS_VERSION" ] || continue
+	if dkms status -m "$DKMS_NAME" -v "$OLD_VER" 2>/dev/null | grep -Fq ': installed'; then
+		echo "xgs-linux-install: keeping $DKMS_NAME/$OLD_VER (still installed for an older kernel)"
+	else
+		dkms remove -m "$DKMS_NAME" -v "$OLD_VER" --all >/dev/null 2>&1 &&
+			echo "xgs-linux-install: removed unused $DKMS_NAME/$OLD_VER" ||
+			echo "xgs-linux-install: could not remove $DKMS_NAME/$OLD_VER (continuing)"
+	fi
+done
+
 INSTALLED_ALIASES=$(modinfo -k "$KVER" -F alias octep) ||
 	fail "DKMS did not install octep for kernel $KVER"
 printf '%s\n' "$INSTALLED_ALIASES" | grep -Fqx "$EXPECTED_ALIAS" ||

@@ -85,11 +85,11 @@ stop_and_disable_unit xgs-hardening.service
 stop_and_disable_unit xgs-nat.service
 
 DKMS_STATUS=$(dkms status) || fail "could not query DKMS registrations"
-if printf '%s\n' "$DKMS_STATUS" |
-	grep -Eq "^${DKMS_NAME}/${DKMS_VERSION}([,: ]|$)"; then
-	dkms remove -m "$DKMS_NAME" -v "$DKMS_VERSION" --all ||
-		fail "could not remove the OCTEP DKMS module"
-fi
+for DKMS_VER in $(printf '%s\n' "$DKMS_STATUS" |
+	sed -nE "s#^${DKMS_NAME}[/,] ?([^,: ]+).*#\1#p" | sort -u); do
+	dkms remove -m "$DKMS_NAME" -v "$DKMS_VER" --all ||
+		fail "could not remove the OCTEP DKMS module $DKMS_VER"
+done
 
 remove_if_unchanged "$SCRIPT_DIR/systemd/xgs-npu-health.service" \
 	/usr/lib/systemd/system/xgs-npu-health.service

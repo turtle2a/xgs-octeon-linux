@@ -64,6 +64,11 @@ installing the driver. Do not continue if this file is missing. The installer
 can install missing build tools, but it does not install the matching kernel
 development files.
 
+**After install, keep the development files current.** DKMS rebuilds the driver for every
+new kernel, but only if the matching `kernel-devel` or `linux-headers` package is installed
+for that kernel. Install it together with each kernel update, and see "Automatic system
+updates" in the README for the update safeguards.
+
 Upstream Linux kernel 7.3.3 from kernel.org was used during development because
 it contained upstream patches and Marvell-specific libraries. That exact
 kernel version is not required. Kernel 7.2.10 was also compiled and used as a

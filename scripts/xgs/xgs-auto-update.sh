@@ -8,7 +8,8 @@
 #   DRY_RUN=1 sudo xgs-auto-update.sh   show what would be installed, change nothing
 # Disable/enable: xgs-auto-update-ctl.sh disable|enable (creates /etc/xgs-auto-update-off).
 # Optional overrides in /etc/xgs-auto-update.conf: DNF_EXCLUDE, APT_SKIP, PACMAN_IGNORE (set them to hold kernels back again,
-# e.g. DNF_EXCLUDE='kernel*').
+# e.g. DNF_EXCLUDE='kernel*'). apt and pacman hold kernel packages by default (no boot gate there);
+# XGS_ALLOW_KERNEL_UPDATE=1 lifts that.
 set -u
 LOG=${XGS_UPDATE_LOG:-/var/log/xgs-auto-update.log}
 LOCK=${XGS_UPDATE_LOCK:-/run/xgs-auto-update.lock}
@@ -16,6 +17,15 @@ DNF_EXCLUDE=${DNF_EXCLUDE:-}
 PACMAN_IGNORE=${PACMAN_IGNORE:-}
 APT_SKIP=${APT_SKIP:-}
 [ -r /etc/xgs-auto-update.conf ] && . /etc/xgs-auto-update.conf
+
+# Only the dnf path has a boot gate. apt and pacman hold kernel packages back unless
+# XGS_ALLOW_KERNEL_UPDATE=1 is set (in /etc/xgs-auto-update.conf), so the next boot cannot
+# land on a kernel without the octep module.
+if [ "${XGS_ALLOW_KERNEL_UPDATE:-0}" != 1 ]; then
+	APT_KERNEL_RE='^linux-(image|headers|modules|generic|virtual|signed)'
+	APT_SKIP=${APT_SKIP:+$APT_SKIP|}$APT_KERNEL_RE
+	PACMAN_IGNORE=${PACMAN_IGNORE:+$PACMAN_IGNORE,}linux,linux-headers,linux-lts,linux-lts-headers,linux-zen,linux-zen-headers,linux-hardened,linux-hardened-headers
+fi
 
 [ -e /etc/xgs-auto-update-off ] && exit 0
 [ "$(id -u)" -eq 0 ] || { echo "xgs-auto-update: must run as root" >&2; exit 1; }
@@ -74,6 +84,10 @@ fi
 
 if [ "$DRY" != 1 ] && command -v dkms >/dev/null 2>&1; then
 	dkms status 2>/dev/null | grep -i octep | while read -r l; do log "dkms: $l"; done
+fi
+# Boot gate: never let the next boot default to a kernel without a matching octep module.
+if [ "$DRY" != 1 ] && [ -x "$(dirname "$0")/xgs-boot-gate.sh" ]; then
+	"$(dirname "$0")/xgs-boot-gate.sh" || log "boot gate: could not pin the default boot entry"
 fi
 [ -e /var/run/reboot-required ] && log "reboot required (not performed)"
 log "finished rc=$rc"

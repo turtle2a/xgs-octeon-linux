@@ -202,15 +202,35 @@ To keep NAT off across reboots run `sudo touch /etc/xgs-nat-off`. Overrides
 `xgs-auto-update.sh` as root at **05:00 and 13:00** daily. It works on Fedora
 (`dnf`), Debian/Ubuntu/Mint (`apt`) and Arch (`pacman`), never prompts, and never reboots.
 
-- **Kernel is held back** (`kernel*` on dnf; `linux-image`, `linux-headers`
-  and similar on apt) because the OCTEP driver is built for the running
-  kernel. If a reboot is needed, only `reboot required` is logged.
+- **Kernels on Fedora (`dnf`)** are updated with everything else. DKMS builds, signs and
+  installs the OCTEP module for the new kernel, and after every run the boot gate
+  (`xgs-boot-gate.sh`) checks that the newest kernel has a matching `octep` module. If it
+  does not, the default boot entry is pinned to the running kernel, so a reboot never lands
+  on a kernel without the driver. Hold kernels instead with `DNF_EXCLUDE='kernel*'`.
+- **Kernels on Debian/Ubuntu/Mint (`apt`) and Arch (`pacman`)** are held back by default
+  (`linux-image`, `linux-headers` and similar on apt; `linux*` on pacman), because there is no
+  boot gate on those systems. Set `XGS_ALLOW_KERNEL_UPDATE=1` in `/etc/xgs-auto-update.conf`
+  to allow them.
+- The updater never reboots; if a reboot is needed, only `reboot required` is logged.
 - Log: `/var/log/xgs-auto-update.log`. A lock prevents overlapping runs.
 - Preview without changing anything: `sudo DRY_RUN=1 /usr/local/xgs/linux/scripts/xgs/xgs-auto-update.sh`
 - Switch off or on: `sudo /usr/local/xgs/linux/scripts/xgs/xgs-auto-update-ctl.sh disable|enable|status`
   (creates or removes `/etc/xgs-auto-update-off`).
-- Overrides in `/etc/xgs-auto-update.conf`: `DNF_EXCLUDE`, `APT_SKIP`, `PACMAN_IGNORE`.
-- On Arch, `pacman -Syu` ignores `linux*` kernels (`PACMAN_IGNORE`); only full syncs are run, never partial.
+- Overrides in `/etc/xgs-auto-update.conf`: `DNF_EXCLUDE`, `APT_SKIP`, `PACMAN_IGNORE`,
+  `XGS_ALLOW_KERNEL_UPDATE`. Only full `pacman -Syu` syncs are run, never partial.
+
+### Kernel updates and the OCTEP driver
+
+- **No need to run `install.sh` again** for a kernel update; DKMS rebuilds the module for each
+  new kernel. Run `install.sh` again only after updating this project.
+- **Matching kernel headers must be installed for every new kernel** (`kernel-devel` on Fedora,
+  `linux-headers` on Debian/Mint), otherwise DKMS cannot build the module for it.
+- **Reboot to use the new kernel.** Before you do, check
+  `dkms status -m xgs-octep` shows `installed` for it and
+  `modinfo -k <new kernel> -F vermagic octep` matches that kernel.
+- **Secure Boot:** the DKMS signing key must be enrolled (MOK), or the new module will not load.
+- If a new kernel misbehaves, boot the previous one from the boot menu; the older kernel and its
+  module stay installed.
 - On Debian-based systems `needrestart` runs in list-only mode, so services
   are not restarted automatically.
 - `install.sh` installs and enables `cronie` (dnf) or `cron` (apt) if missing.
