@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Turn the XGS unattended updates (cron 05:00 and 13:00) off or on.
 #   sudo xgs-auto-update-ctl.sh disable | enable | status
 # The off switch is /etc/xgs-auto-update-off, so it survives reinstalls and upgrades.

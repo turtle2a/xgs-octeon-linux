@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Same live check as octep-offload-check.sh, but with the staged cut-in: flows are created
 # staged while the host keeps forwarding, then flipped to forward 10 s later (ft_cutin=1,
 # ft_cutin_ms=10000). ft_cutin_ms is restored on exit; the hook resets ft_cutin to 0 on its

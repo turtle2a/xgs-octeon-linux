@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Unattended system update for XGS appliances (Fedora: dnf, Debian/Mint: apt, Arch: pacman).
 # Run from /etc/cron.d/xgs-auto-update at 05:00 and 13:00. Never prompts, never reboots.
 # Kernel packages are updated too; DKMS rebuilds the out-of-tree OCTEP driver for the new kernel

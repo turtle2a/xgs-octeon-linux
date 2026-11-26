@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 """Classify the client's TCP data segments of one offloaded iperf3 flow from the router-side captures.
 
 Usage: octep-frame-ident.py LAN.pcap WAN.pcap [bin_ms]

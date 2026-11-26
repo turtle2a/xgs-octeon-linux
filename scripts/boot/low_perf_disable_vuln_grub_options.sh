@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Standalone (needs no installer and does not re-add anything): secure, low performance boot mode.
 # Run after install.sh and a reboot if you do NOT want the vendor-style boot options that leave CPU
 # side channels (spectre_v2, SRSO) and NPU DMA less restricted. Removes:

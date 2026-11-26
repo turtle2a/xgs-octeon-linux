@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Optional conntrack tuning and packet sanity filtering for the XGS router.
 # Independent of xgs-nat.sh. Usage: xgs-hardening.sh start|stop|status
 # Every value below can be overridden in /etc/xgs-hardening.conf.

@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Runtime test: move the NPU's IOMMU group from identity (iommu=pt) to a translated DMA domain.
 #   octep-iommu-strict-test.sh status   read-only baseline
 #   octep-iommu-strict-test.sh enable   unbind octep, set group type DMA, rebind, re-run bring-up

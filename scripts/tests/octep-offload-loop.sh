@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # One offload commissioning cycle (read-only): open the gate, drive traffic via
 # the octep3 binding (the only one that has produced candidates), wait for new firmware candidates, and read each
 # microflow while it is still live. The gate is always closed on exit.

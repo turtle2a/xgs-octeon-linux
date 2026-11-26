@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Idle opcode scan: sends each unassigned low RPC opcode once with a payload of 0xff bytes (out-of-range
 # indices, so a recognised command should refuse it) through rpc_raw_write, and records the NPU return
 # code. A return code that differs from the unknown-opcode baseline marks a command the firmware implements.

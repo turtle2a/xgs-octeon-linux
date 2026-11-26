@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 """Build NHOP_PROGRAM and FLOW_CREATE_FP payloads for rpc_flow_write.
 
 Output only: nothing is sent. Each line is "<command> <hex>", the format the

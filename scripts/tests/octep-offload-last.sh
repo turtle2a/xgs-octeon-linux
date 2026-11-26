@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Re-read the last completed offload run (no test is run, nothing is changed): prints the same
 # one-page summary that octep-offload-check.sh ends with.
 #   octep-offload-last.sh [run-tag]      (tag = takeover-YYYYMMDD-HHMMSS; default: last completed run)

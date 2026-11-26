@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Blind, simple NAT. Default: everything leaving faceplate port 2 (octep1) is masqueraded.
 # Faceplate port N = interface octep(N-1).
 #   sudo xgs-nat.sh start    default NAT out octep1

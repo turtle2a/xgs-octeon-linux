@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Tests for the NAT security rules (xgs-nat.sh) and the optional hardening (xgs-hardening.sh).
 #   xgs-hardening-test.sh          stub test; fake iptables/ip/sysctl, changes nothing, no root needed
 #   sudo xgs-hardening-test.sh --live   also checks the running router (read-only)

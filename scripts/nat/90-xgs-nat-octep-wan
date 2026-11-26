@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # NetworkManager dispatcher: re-apply the LAN NAT policy route whenever the
 # WAN port (octep1) gets an address. A module reload or NPU reset re-creates the
 # netdev and the kernel drops its routes, including the table 100 default.

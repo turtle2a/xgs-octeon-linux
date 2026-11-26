@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Optional: limit admin services (ssh, RDP) to a trusted subnet with ufw. The installer does not run it.
 # Prints what it would do; changes nothing until --apply. Existing rules are never deleted, so a
 # session you are using cannot be cut off: review the "broad allows" it lists and remove them yourself

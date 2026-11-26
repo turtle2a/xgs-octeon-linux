@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Merge the boot options in docs/boot-loader-requirements.md into /etc/default/grub.
 #
 #   xgs-grub-required.sh [--check]

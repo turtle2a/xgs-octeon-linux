@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Gives the OCTEP LAN ports their router addresses (octep0 = 10.4.4.10/28,
 # octepN = 10.4.(10+N).10/28) so Kea can serve DHCP on them. Uses
 # NetworkManager profiles when nmcli exists, otherwise plain "ip addr".

@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Read-only check of NPU flow-offload capability and state. Changes nothing.
 # Prints OFFLOAD: ENABLED (exit 0) only when every item is on; otherwise OFFLOAD: NOT ENABLED
 # (exit 1). Run before every test; do not start traffic unless it says ENABLED.

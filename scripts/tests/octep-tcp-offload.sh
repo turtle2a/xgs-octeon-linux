@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # TCP offload test: iperf3 from the appliance through an OCTEP port while the
 # offload agent runs. Compares throughput per interval and counts agent verdicts.
 #   sudo scripts/tests/octep-tcp-offload.sh [IFACE] [TARGET] [SECONDS] [ACTION] [iperf3 extra args]

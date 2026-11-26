@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Opt-in: turn on NPU flow offload after the rings are armed and rpc-port-setup.sh has finished.
 # Run by hand or add it as an ExecStartPost of the bring-up unit. Offload is off by default.
 # Once invoked it exits non-zero unless every gate reads on, so a unit using it fails loudly.

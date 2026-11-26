@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # iperf3 throughput with the offload gate off, on (no flow written) and off again,
 # bound to one octep port. Needs root for the gate. The gate is always closed on exit.
 #   octep-iperf-gate.sh [server] [seconds]

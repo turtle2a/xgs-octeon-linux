@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Fast live deploy of a locally built octep.ko with validation and rollback.
 # Usage (root): octep-fastdeploy.sh [path/to/octep.ko]
 # Swaps the installed module, reloads it, waits for the front-port links and

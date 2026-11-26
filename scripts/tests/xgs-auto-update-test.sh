@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Stub-based test of xgs-auto-update.sh and the installer's cron block, including induced
 # failures (no package manager, failing installs, disabled marker). Needs `unshare -r`; changes nothing.
 set -u

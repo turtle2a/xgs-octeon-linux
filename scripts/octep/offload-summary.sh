@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # One-page summary of an octep-hook-live.sh run for review: gate, allocation (driver claim vs NPU
 # readback vs NPU flow_stats), takeover state and proof, NPU load, per-second pcap counts around the
 # offload, and a CROSS-CHECK verdict. Read-only; no sudo needed.

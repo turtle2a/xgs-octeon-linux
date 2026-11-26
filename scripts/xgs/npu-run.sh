@@ -1,5 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 set -eu
 
 HOST_ADDR=${NPU_HOST_ADDR:-169.254.254.1}

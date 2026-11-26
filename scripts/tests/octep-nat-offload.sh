@@ -1,4 +1,6 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # NAT offload test on one port: the agent must derive the NAT block from conntrack.
 # Phase 1 SNAT: host ICMP to TARGET is source-NATed to SNAT_IP (a local address).
 # Phase 2 DNAT (only if FAKE_IP is given): host traffic to FAKE_IP is destination-NATed to TARGET.

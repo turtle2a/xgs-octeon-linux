@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Offload check for the octep0 (LAN) / octep1 (WAN) pair with the test parameters preset:
 # 30 s window, LAN=octep0, WAN=octep1. Optional first argument overrides the seconds.
 # Needs root. See octep-offload-check.sh for the full description and exit codes.

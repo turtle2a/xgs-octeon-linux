@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 """Bench offload agent for one octep port (needs root).
 
 Opens the offload gate, takes live firmware candidates and offloads a pair only

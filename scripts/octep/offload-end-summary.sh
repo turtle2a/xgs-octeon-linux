@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Read-only end-of-run summary shared by the offload test scripts: NPU counter deltas
 # (RX_WIRE, WIRE_TO_WIRE, ...), offload/cut-in settings, frozen-reply events and a PASS/FAIL line.
 #   offload-end-summary.sh snap FILE      record counters and time at the start of a run

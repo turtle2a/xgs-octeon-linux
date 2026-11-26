@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Offload check for every octep port pair not covered by octep-offload-check_octep0_1.sh:
 # (octep2,octep3) (octep4,octep5) (octep6,octep7) (octep8,octep9) (octep10,octep11),
 # LAN first, WAN second. Pairs whose interfaces do not both exist are skipped.

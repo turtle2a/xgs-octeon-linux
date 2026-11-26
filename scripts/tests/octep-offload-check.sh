@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # One-command offload check: runs the live hook for a window, then prints the one-page run
 # summary (gate, allocation, NPU readback, takeover proof, NPU load, per-second pcap counts,
 # CROSS-CHECK verdict). Prompts first; start a NEW iperf3 from a client behind the LAN port when

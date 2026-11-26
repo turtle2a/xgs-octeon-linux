@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (c) 2026 turtle2a <354865938+turtle2a@users.noreply.github.com>
 # Live test of the in-kernel flowtable hook (flow_offload=1). Never reloads octep;
 # opens the write gate, binds a throwaway nft flowtable on the LAN and WAN octep ports, waits for
 # traffic from a host behind the LAN port, then shows the hook's dmesg lines and tears everything down.
