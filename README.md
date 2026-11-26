@@ -283,9 +283,8 @@ the SPDX identifier `GPL-2.0-or-later`.
 
 ## Third-party code
 
-The following file carries portions derived from
-[os-xgs-npu](https://github.com/AbdelmonemAwad/os-xgs-npu), which is
-BSD-2-Clause licensed. The notice is at the top of the file and the licence
-text is in [LICENSES/BSD-2-Clause-os-xgs-npu.txt](LICENSES/BSD-2-Clause-os-xgs-npu.txt):
-
-- `octep/octep.c`
+Portions of `octep/octep.c` (the network agent window layout and the RPC
+descriptor ring offset and size) are derived from
+[os-xgs-npu](https://github.com/AbdelmonemAwad/os-xgs-npu),
+Copyright (c) 2026 Abdelmonem Awad, BSD-2-Clause. The licence text is in
+[LICENSES/BSD-2-Clause-os-xgs-npu.txt](LICENSES/BSD-2-Clause-os-xgs-npu.txt).
