@@ -1,4 +1,9 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later AND BSD-2-Clause
+/*
+ * Portions derived from os-xgs-npu (https://github.com/AbdelmonemAwad/os-xgs-npu)
+ * Copyright (c) 2026 Abdelmonem Awad <eg2@live.com>, BSD-2-Clause
+ * Licence text: LICENSES/BSD-2-Clause-os-xgs-npu.txt
+ */
 /*
  * Linux PCI core for the OCTEON TX CN83XX endpoint (177d:a300).
  *
@@ -266,7 +271,7 @@ MODULE_PARM_DESC(ft_mflow_rearm,
 
 /*
  * Connection verdict (flags bits 22:21): 0 send to IPS, 1 drop, 2 cut-through forward, per the
- * vendor module's conn printer as read by the os-xgs-npu BSD driver. This driver used to send 1,
+ * conn printer as documented by the os-xgs-npu BSD driver. This driver used to send 1,
  * which that source names DROP; the BSD driver makes plain connections with 2. Runtime-tunable.
  */
 static unsigned int octep_ft_verdict = 2;

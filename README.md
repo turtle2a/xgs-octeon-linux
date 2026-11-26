@@ -280,3 +280,12 @@ clean-install test.
 This project is licensed under the GNU General Public License, version 2 or
 (at your option) any later version. See [LICENSE](LICENSE). Source files use
 the SPDX identifier `GPL-2.0-or-later`.
+
+### Third-party code
+
+Portions of `octep/octep.c` (the receive-ring credit logic, the network agent
+window names and values, the RPC descriptor offset, the bring-up messages and
+the connection verdict and bridge-control values) are derived from
+[os-xgs-npu](https://github.com/AbdelmonemAwad/os-xgs-npu),
+Copyright (c) 2026 Abdelmonem Awad, BSD-2-Clause. The licence text is in
+[LICENSES/BSD-2-Clause-os-xgs-npu.txt](LICENSES/BSD-2-Clause-os-xgs-npu.txt).
