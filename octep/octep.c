@@ -41,77 +41,77 @@
 #define OCTEP_VENDOR_ID			0x177d
 #define OCTEP_CN83XX_PF_ID		0xa300
 
-#define OCTEP_SDP_SCRATCH		0x20180
-#define OCTEP_SDP_EPF_RINFO		0x20190
-#define OCTEP_SLI_EPF_SCRATCH		0x28100
-#define OCTEP_SDP_RING_STRIDE		0x20000
-#define OCTEP_SDP_RING_SPAN		0x10198
-#define OCTEP_SDP_EPF_R_VF_NUM		0x10500
+#define XGSD_SDP_SCRATCH		0x20180
+#define XGSD_SDP_EPF_RINFO		0x20190
+#define XGSD_SLI_EPF_SCRATCH		0x28100
+#define XGSD_SDP_RING_STRIDE		0x20000
+#define XGSD_SDP_RING_SPAN		0x10198
+#define XGSD_SDP_EPF_R_VF_NUM		0x10500
 #define OCTEP_SDP_EPF_MBOX_RINT		0x20000
 #define OCTEP_SDP_R_MBOX_VF_PF_DATA	0x10230
 #define OCTEP_SDP_RINFO_RPVF_MASK	(0x1fULL << 32)
 #define OCTEP_SDP_RINFO_NVFS_MASK	(0x7fULL << 48)
 #define OCTEP_SDP_VF_NUM_MASK		0x7fULL
-#define OCTEP_READY_MAGIC		0xabcdabcdU
+#define XGSD_READY_MAGIC		0xabcdabcdU
 
-#define OCTEP_SDP_R_IN_CONTROL		0x10000
-#define OCTEP_SDP_R_IN_ENABLE		0x10010
-#define OCTEP_SDP_R_IN_INSTR_BADDR	0x10020
-#define OCTEP_SDP_R_IN_INSTR_RSIZE	0x10030
-#define OCTEP_SDP_R_IN_INSTR_DBELL	0x10040
-#define OCTEP_SDP_R_IN_INT_LEVELS	0x10060
-#define OCTEP_SDP_R_OUT_INT_LEVELS	0x10110
-#define OCTEP_SDP_R_OUT_CNTS		0x10100
-#define OCTEP_SDP_R_OUT_SLIST_BADDR	0x10120
-#define OCTEP_SDP_R_OUT_SLIST_RSIZE	0x10130
-#define OCTEP_SDP_R_OUT_SLIST_DBELL	0x10140
-#define OCTEP_SDP_R_OUT_CONTROL		0x10150
-#define OCTEP_SDP_R_OUT_ENABLE		0x10160
+#define XGSD_SDP_R_IN_CONTROL		0x10000
+#define XGSD_SDP_R_IN_ENABLE		0x10010
+#define XGSD_SDP_R_IN_INSTR_BADDR	0x10020
+#define XGSD_SDP_R_IN_INSTR_RSIZE	0x10030
+#define XGSD_SDP_R_IN_INSTR_DBELL	0x10040
+#define XGSD_SDP_R_IN_INT_LEVELS	0x10060
+#define XGSD_SDP_R_OUT_INT_LEVELS	0x10110
+#define XGSD_SDP_R_OUT_CNTS		0x10100
+#define XGSD_SDP_R_OUT_SLIST_BADDR	0x10120
+#define XGSD_SDP_R_OUT_SLIST_RSIZE	0x10130
+#define XGSD_SDP_R_OUT_SLIST_DBELL	0x10140
+#define XGSD_SDP_R_OUT_CONTROL		0x10150
+#define XGSD_SDP_R_OUT_ENABLE		0x10160
 
-#define OCTEP_R_IN_CTL_IDLE		BIT_ULL(28)
-#define OCTEP_R_IN_CTL_RDSIZE		(3ULL << 25)
-#define OCTEP_R_IN_CTL_IS_64B		BIT_ULL(24)
-#define OCTEP_R_IN_CTL_ESR		BIT_ULL(1)
-#define OCTEP_R_OUT_CTL_IDLE		BIT_ULL(36)
-#define OCTEP_R_OUT_CTL_IMODE		BIT_ULL(23)
-#define OCTEP_R_OUT_CTL_ES_I		BIT_ULL(34)
-#define OCTEP_R_OUT_CTL_NSR_I		BIT_ULL(33)
-#define OCTEP_R_OUT_CTL_ROR_I		BIT_ULL(32)
-#define OCTEP_R_OUT_CTL_ES_D		BIT_ULL(30)
-#define OCTEP_R_OUT_CTL_NSR_D		BIT_ULL(29)
-#define OCTEP_R_OUT_CTL_ROR_D		BIT_ULL(28)
-#define OCTEP_R_OUT_CTL_ES_P		BIT_ULL(26)
-#define OCTEP_R_OUT_CTL_NSR_P		BIT_ULL(25)
-#define OCTEP_R_OUT_CTL_ROR_P		BIT_ULL(24)
-#define OCTEP_R_OUT_CTL_SIZE_MASK	0x7fffffULL
-#define OCTEP_R_OUT_CTL_ATTR_MASK	(OCTEP_R_OUT_CTL_IMODE | \
-					 OCTEP_R_OUT_CTL_ES_I | \
-					 OCTEP_R_OUT_CTL_NSR_I | \
-					 OCTEP_R_OUT_CTL_ROR_I | \
-					 OCTEP_R_OUT_CTL_ES_D | \
-					 OCTEP_R_OUT_CTL_NSR_D | \
-					 OCTEP_R_OUT_CTL_ROR_D | \
-					 OCTEP_R_OUT_CTL_ES_P | \
-					 OCTEP_R_OUT_CTL_NSR_P | \
-					 OCTEP_R_OUT_CTL_ROR_P)
+#define XGSD_R_IN_CTL_IDLE		BIT_ULL(28)
+#define XGSD_R_IN_CTL_RDSIZE		(3ULL << 25)
+#define XGSD_R_IN_CTL_IS_64B		BIT_ULL(24)
+#define XGSD_R_IN_CTL_ESR		BIT_ULL(1)
+#define XGSD_R_OUT_CTL_IDLE		BIT_ULL(36)
+#define XGSD_R_OUT_CTL_IMODE		BIT_ULL(23)
+#define XGSD_R_OUT_CTL_ES_I		BIT_ULL(34)
+#define XGSD_R_OUT_CTL_NSR_I		BIT_ULL(33)
+#define XGSD_R_OUT_CTL_ROR_I		BIT_ULL(32)
+#define XGSD_R_OUT_CTL_ES_D		BIT_ULL(30)
+#define XGSD_R_OUT_CTL_NSR_D		BIT_ULL(29)
+#define XGSD_R_OUT_CTL_ROR_D		BIT_ULL(28)
+#define XGSD_R_OUT_CTL_ES_P		BIT_ULL(26)
+#define XGSD_R_OUT_CTL_NSR_P		BIT_ULL(25)
+#define XGSD_R_OUT_CTL_ROR_P		BIT_ULL(24)
+#define XGSD_R_OUT_CTL_SIZE_MASK	0x7fffffULL
+#define XGSD_R_OUT_CTL_ATTR_MASK	(XGSD_R_OUT_CTL_IMODE | \
+					 XGSD_R_OUT_CTL_ES_I | \
+					 XGSD_R_OUT_CTL_NSR_I | \
+					 XGSD_R_OUT_CTL_ROR_I | \
+					 XGSD_R_OUT_CTL_ES_D | \
+					 XGSD_R_OUT_CTL_NSR_D | \
+					 XGSD_R_OUT_CTL_ROR_D | \
+					 XGSD_R_OUT_CTL_ES_P | \
+					 XGSD_R_OUT_CTL_NSR_P | \
+					 XGSD_R_OUT_CTL_ROR_P)
 
 #define OCTEP_DP_RING_COUNT		8
 #define OCTEP_SRIOV_VF_COUNT		4
 #define OCTEP_SRIOV_RINGS_PER_VF	1
-#define OCTEP_DP_IQ_DESCS		256
-#define OCTEP_DP_OQ_DESCS		1024
-#define OCTEP_DP_INSTR_SIZE		64
-#define OCTEP_DP_SLIST_ENTRY		16
-#define OCTEP_DP_BUF_SIZE		1602
-#define OCTEP_DP_BUF_ALIGN		64
-#define OCTEP_DP_BUF_STRIDE		ALIGN(OCTEP_DP_BUF_SIZE, \
-					      OCTEP_DP_BUF_ALIGN)
-#define OCTEP_DP_OQ_INFO_SIZE		16
-#define OCTEP_DP_OQ_INTR_PKT		32
-#define OCTEP_DP_OQ_INTR_TIME		50
-#define OCTEP_DP_OQ_FETCH		16
-#define OCTEP_DP_OQ_WMARK		1024
-#define OCTEP_DP_IDLE_TRIES		1000
+#define XGSD_DP_IQ_DESCS		256
+#define XGSD_DP_OQ_DESCS		1024
+#define XGSD_DP_INSTR_SIZE		64
+#define XGSD_DP_SLIST_ENTRY		16
+#define XGSD_DP_BUF_SIZE		1602
+#define XGSD_DP_BUF_ALIGN		64
+#define XGSD_DP_BUF_STRIDE		ALIGN(XGSD_DP_BUF_SIZE, \
+					      XGSD_DP_BUF_ALIGN)
+#define XGSD_DP_OQ_INFO_SIZE		16
+#define XGSD_DP_OQ_INTR_PKT		32
+#define XGSD_DP_OQ_INTR_TIME		50
+#define XGSD_DP_OQ_FETCH		16
+#define XGSD_DP_OQ_WMARK		1024
+#define XGSD_DP_IDLE_TRIES		1000
 #define OCTEP_DP_POLL_MS		2
 #define OCTEP_DP_RX_BUDGET		128
 #define OCTEP_DP_TAG_LEN		66
@@ -131,11 +131,11 @@
 #define OCTEP_DP_RX_FLOW_VALID		BIT(31)
 #define OCTEP_DP_IPV4_FRAGMENT_MASK	0x3fffU
 #define OCTEP_DP_MIN_FRAME		60
-#define OCTEP_DP_PKT_MAX		65535
+#define XGSD_DP_PKT_MAX		65535
 #define OCTEP_DP_CMSG_TAG		254
-#define OCTEP_CMSG_ETHERTYPE		0xefef
-#define OCTEP_CMSG_VERSION		1
-#define OCTEP_CMSG_TYPE_CONN_STATS	1
+#define XGSD_CMSG_ETHERTYPE		0xefef
+#define XGSD_CMSG_VERSION		1
+#define XGSD_CMSG_TYPE_CONN_STATS	1
 #define OCTEP_CMSG_HDR_LEN		8
 #define OCTEP_CMSG_CONN_ENTRY_LEN	18
 #define OCTEP_CMSG_CONN_INDEX_MASK	0x03ffffffU
@@ -146,9 +146,9 @@
 #define OCTEP_FLOW_STATS_SHOW_MAX	24
 #define OCTEP_FLOW_STATS_LIVE_JIFFIES	(10 * HZ)
 #define OCTEP_RX_FLOW_TRACK_MAX		24
-#define OCTEP_DP_OQ_GRANT		(OCTEP_DP_OQ_DESCS + \
-					 OCTEP_DP_OQ_WMARK - \
-					 OCTEP_DP_OQ_FETCH)
+#define OCTEP_DP_OQ_GRANT		(XGSD_DP_OQ_DESCS + \
+					 XGSD_DP_OQ_WMARK - \
+					 XGSD_DP_OQ_FETCH)
 /* Test-only: raise the front-port MTU ceiling above 1500 (TX slots are sized from it). */
 static unsigned int octep_dp_max_mtu = 1500;
 module_param_named(dp_max_mtu, octep_dp_max_mtu, uint, 0444);
@@ -176,10 +176,10 @@ MODULE_PARM_DESC(dp_dbg, "debug bitmask: 1=ring state on open, 2=drain on stop, 
 MODULE_PARM_DESC(dp_debug,
 		 "Log each host-side front-port drop with its reason and log every NPU counter that moved (default N)");
 
-#define OCTEP_DP_TXBUF_SIZE		(octep_dp_max_mtu + ETH_HLEN + VLAN_HLEN + \
+#define XGSD_DP_TXBUF_SIZE		(octep_dp_max_mtu + ETH_HLEN + VLAN_HLEN + \
 					 OCTEP_DP_TAG_LEN)
-#define OCTEP_DP_TXBUF_STRIDE		ALIGN(OCTEP_DP_TXBUF_SIZE, \
-					      OCTEP_DP_BUF_ALIGN)
+#define XGSD_DP_TXBUF_STRIDE		ALIGN(XGSD_DP_TXBUF_SIZE, \
+					      XGSD_DP_BUF_ALIGN)
 
 static bool octep_flow_offload;
 module_param_named(flow_offload, octep_flow_offload, bool, 0644);
@@ -560,49 +560,49 @@ union octep_vf_mbox_word {
 #define OCTEP_MGMT_DESC_MK(len)		\
 	((((u64)(len) & 0xffff) << 48) | (((u64)(len) & 0xffff) << 30))
 
-#define OCTEP_SDP_HOST_LOADED		0xdeadbeefULL
-#define OCTEP_SDP_GET_HOST_INFO		0xbeefdeedULL
-#define OCTEP_SDP_HOST_INFO_RECEIVED	0x00deaddeULL
-#define OCTEP_SDP_HANDSHAKE_COMPLETED	0xdeeddeedULL
-#define OCTEP_SDP_APP_MODE_NIC		2
+#define XGSD_SDP_HOST_LOADED		0xdeadbeefULL
+#define XGSD_SDP_GET_HOST_INFO		0xbeefdeedULL
+#define XGSD_SDP_HOST_INFO_RECEIVED	0x00deaddeULL
+#define XGSD_SDP_HANDSHAKE_COMPLETED	0xdeeddeedULL
+#define XGSD_SDP_APP_MODE_NIC		2
 
-#define OCTEP_RPC_STATE_CFG_MAGIC	0xd7d3ab00U
-#define OCTEP_RPC_STATE_SIZE		232
-#define OCTEP_RPC_STATE_CFG		0
-#define OCTEP_RPC_STATE_RING_LO		72
-#define OCTEP_RPC_STATE_RINGS		104
-#define OCTEP_RPC_RING_SIZE		32
-#define OCTEP_RPC_RING_POSTED		0
-#define OCTEP_RPC_RING_DONE		8
-#define OCTEP_RPC_RING_OFFSET		16
-#define OCTEP_RPC_RING_DESC_OFF		20
-#define OCTEP_RPC_RING_DESC_CNT		24
-#define OCTEP_RPC_RING_CFG		28
-#define OCTEP_RPC_RCFG(num, fidx, dbell, shared)	\
+#define XGSD_RPC_STATE_CFG_MAGIC	0xd7d3ab00U
+#define XGSD_RPC_STATE_SIZE		232
+#define XGSD_RPC_STATE_CFG		0
+#define XGSD_RPC_STATE_RING_LO		72
+#define XGSD_RPC_STATE_RINGS		104
+#define XGSD_RPC_RING_SIZE		32
+#define XGSD_RPC_RING_POSTED		0
+#define XGSD_RPC_RING_DONE		8
+#define XGSD_RPC_RING_OFFSET		16
+#define XGSD_RPC_RING_DESC_OFF		20
+#define XGSD_RPC_RING_DESC_CNT		24
+#define XGSD_RPC_RING_CFG		28
+#define XGSD_RPC_RCFG(num, fidx, dbell, shared)	\
 	(((num) & 0xff) | (((fidx) & 0xff) << 8) |	\
 	 (((dbell) & 0xff) << 16) | (((shared) & 0xff) << 24))
-#define OCTEP_RPC_BAR_DESC_SIZE		16
-#define OCTEP_RPC_DESC_NO_AGG_DMA	2
-#define OCTEP_RPC_BUF_DESC_SIZE		8
-#define OCTEP_RPC_DATA_MAX_SIZE		4096
+#define XGSD_RPC_BAR_DESC_SIZE		16
+#define XGSD_RPC_DESC_NO_AGG_DMA	2
+#define XGSD_RPC_BUF_DESC_SIZE		8
+#define XGSD_RPC_DATA_MAX_SIZE		4096
 #define OCTEP_RPC_DESC_COUNT		256
 #define OCTEP_RPC_DESC_OFFSET		4328
-#define OCTEP_RPC_CFG_WAIT_MS		3000
-#define OCTEP_RPC_CMD_WAIT_MS		2000
-#define OCTEP_RPC_CMD_FW_STATE_REV_SET	0
+#define XGSD_RPC_CFG_WAIT_MS		3000
+#define XGSD_RPC_CMD_WAIT_MS		2000
+#define XGSD_RPC_CMD_FW_STATE_REV_SET	0
 #define OCTEP_RPC_CMD_L3_FWD_REV_SET	1
-#define OCTEP_RPC_CMD_FW_CFG_PARAMS_SET	2
-#define OCTEP_RPC_CMD_LIF_ADD_UPDATE	3
-#define OCTEP_RPC_CMD_PPORT_UPDATE	5
-#define OCTEP_RPC_CMD_NHOP_PROGRAM	6
-#define OCTEP_RPC_CMD_MFLOW_PROGRAM	8
-#define OCTEP_RPC_CMD_FLOW_CREATE_FP	10
-#define OCTEP_RPC_CMD_CONN_RECLAIM_FP	16
-#define OCTEP_RPC_CMD_PLATFORM_READ	36
-#define OCTEP_RPC_CMD_LO_LIF_READ	37
-#define OCTEP_RPC_CMD_LO_CONN_READ	38
-#define OCTEP_RPC_CMD_LO_MFLOW_READ	40
-#define OCTEP_RPC_CMD_LO_WORKER_SYS_CNT_READ	44
+#define XGSD_RPC_CMD_FW_CFG_PARAMS_SET	2
+#define XGSD_RPC_CMD_LIF_ADD_UPDATE	3
+#define XGSD_RPC_CMD_PPORT_UPDATE	5
+#define XGSD_RPC_CMD_NHOP_PROGRAM	6
+#define XGSD_RPC_CMD_MFLOW_PROGRAM	8
+#define XGSD_RPC_CMD_FLOW_CREATE_FP	10
+#define XGSD_RPC_CMD_CONN_RECLAIM_FP	16
+#define XGSD_RPC_CMD_PLATFORM_READ	36
+#define XGSD_RPC_CMD_LO_LIF_READ	37
+#define XGSD_RPC_CMD_LO_CONN_READ	38
+#define XGSD_RPC_CMD_LO_MFLOW_READ	40
+#define XGSD_RPC_CMD_LO_WORKER_SYS_CNT_READ	44
 #define OCTEP_RPC_CMD_SHIFT_MAX		4
 #define OCTEP_RPC_PLATFORM_CONN_OFF	204
 #define OCTEP_RPC_PLATFORM_NHOP_OFF	208
@@ -629,41 +629,41 @@ union octep_vf_mbox_word {
 #define OCTEP_RPC_MFLOW_STATE_ACTIVE	2
 #define OCTEP_RPC_MFLOW_ACTION_FWD	1
 #define OCTEP_RPC_MFLOW_ACTION_IPS	2
-#define OCTEP_FW_CFG_OFFLOAD		0x0001
-#define OCTEP_FW_CFG_TCP_SEQ_CHK	0x0002
+#define XGSD_FW_CFG_OFFLOAD		0x0001
+#define XGSD_FW_CFG_TCP_SEQ_CHK	0x0002
 #define OCTEP_RPC_LIF_M_ALL		0x00ff
 #define OCTEP_RPC_LIF_M_MANAGED		0x001f
 #define OCTEP_RPC_LIF_FP_PRIV_MASK_DF	0x01
 #define OCTEP_RPC_LIF_MTU		1500
 #define OCTEP_RPC_LIF_FWD_L3		2
 
-#define OCTEP_NWA_COOKIE		0x00
-#define OCTEP_NWA_COOKIE_VALUE		0xcafebabeU
-#define OCTEP_NWA_BODY_OFF		0x04
-#define OCTEP_NWA_BODY_EXPECTED		0x34
-#define OCTEP_NWA_MAX_REQ		0x08
-#define OCTEP_NWA_TURN			0x18
-#define OCTEP_NWA_TURN_REQUEST		1
-#define OCTEP_NWA_TURN_ACK		2
-#define OCTEP_NWA_REQ_LEN		0x1c
-#define OCTEP_NWA_STATUS		0x20
-#define OCTEP_NWA_STATUS_IDLE		0
-#define OCTEP_NWA_STATUS_REPLY		1
-#define OCTEP_NWA_REPLY_LEN		0x24
-#define OCTEP_NWA_REQ_SIZE		0x20
-#define OCTEP_NWA_MAX_WORDS		512
-#define OCTEP_NWA_OP_DISCOVER		1
+#define XGSD_NWA_COOKIE		0x00
+#define XGSD_NWA_COOKIE_VALUE		0xcafebabeU
+#define XGSD_NWA_BODY_OFF		0x04
+#define XGSD_NWA_BODY_EXPECTED		0x34
+#define XGSD_NWA_MAX_REQ		0x08
+#define XGSD_NWA_TURN			0x18
+#define XGSD_NWA_TURN_REQUEST		1
+#define XGSD_NWA_TURN_ACK		2
+#define XGSD_NWA_REQ_LEN		0x1c
+#define XGSD_NWA_STATUS		0x20
+#define XGSD_NWA_STATUS_IDLE		0
+#define XGSD_NWA_STATUS_REPLY		1
+#define XGSD_NWA_REPLY_LEN		0x24
+#define XGSD_NWA_REQ_SIZE		0x20
+#define XGSD_NWA_MAX_WORDS		512
+#define XGSD_NWA_OP_DISCOVER		1
 #define OCTEP_NWA_REPLY_MARKER		0x14
 #define OCTEP_NWA_REPLY_HEADER_SIZE	8
-#define OCTEP_NWA_IDLE_TRIES		100
-#define OCTEP_NWA_REPLY_TRIES		300
-#define OCTEP_NWA_OP_SET		3
-#define OCTEP_NWA_OP_GET		4
-#define OCTEP_NWA_SUB_STATE		0
-#define OCTEP_NWA_SUB_MAC		3
-#define OCTEP_NWA_SUB_ALLMULTI		0x46
-#define OCTEP_NWA_ALLMULTI_OFF		0
-#define OCTEP_NWA_ALLMULTI_ON		1
+#define XGSD_NWA_IDLE_TRIES		100
+#define XGSD_NWA_REPLY_TRIES		300
+#define XGSD_NWA_OP_SET		3
+#define XGSD_NWA_OP_GET		4
+#define XGSD_NWA_SUB_STATE		0
+#define XGSD_NWA_SUB_MAC		3
+#define XGSD_NWA_SUB_ALLMULTI		0x46
+#define XGSD_NWA_ALLMULTI_OFF		0
+#define XGSD_NWA_ALLMULTI_ON		1
 #define OCTEP_NWA_SUB_STATS		14
 #define OCTEP_NWA_STATS_COUNT		32
 #define OCTEP_NWA_STATS_WORDS		(OCTEP_NWA_STATS_COUNT * 2)
@@ -703,16 +703,16 @@ static const char * const octep_nwa_stat_names[OCTEP_NWA_STATS_COUNT] = {
 	"good_octets_sent",
 };
 
-#define OCTEP_FACILITY_COUNT		5
-#define OCTEP_BARMAP_VERSION		0x00000002U
-#define OCTEP_BARMAP_VERSION_OFF	0
+#define XGSD_FACILITY_COUNT		5
+#define XGSD_BARMAP_VERSION		0x00000002U
+#define XGSD_BARMAP_VERSION_OFF	0
 #define OCTEP_BARMAP_FACILITY_OFF	4
 #define OCTEP_FACILITY_ENTRY_SIZE	16
-#define OCTEP_BARMAP_GICD_OFF		(OCTEP_BARMAP_FACILITY_OFF + \
-					 OCTEP_FACILITY_COUNT * \
+#define XGSD_BARMAP_GICD_OFF		(OCTEP_BARMAP_FACILITY_OFF + \
+					 XGSD_FACILITY_COUNT * \
 					 OCTEP_FACILITY_ENTRY_SIZE)
-#define OCTEP_BARMAP_PEM_OFF		(OCTEP_BARMAP_GICD_OFF + 4)
-#define OCTEP_BARMAP_SIZE		(OCTEP_BARMAP_PEM_OFF + 4)
+#define XGSD_BARMAP_PEM_OFF		(XGSD_BARMAP_GICD_OFF + 4)
+#define OCTEP_BARMAP_SIZE		(XGSD_BARMAP_PEM_OFF + 4)
 
 enum octep_facility_id {
 	OCTEP_FCLT_CONTROL,
@@ -722,7 +722,7 @@ enum octep_facility_id {
 	OCTEP_FCLT_GIU,
 };
 
-static const char * const octep_facility_names[OCTEP_FACILITY_COUNT] = {
+static const char * const octep_facility_names[XGSD_FACILITY_COUNT] = {
 	[OCTEP_FCLT_CONTROL] = "control",
 	[OCTEP_FCLT_MGMT] = "mgmt_netdev",
 	[OCTEP_FCLT_NW_AGENT] = "nw_agent",
@@ -1089,7 +1089,7 @@ struct octep {
 	u32 gicd_offset;
 	u32 pem_num;
 	bool ready;
-	struct octep_facility facility[OCTEP_FACILITY_COUNT];
+	struct octep_facility facility[XGSD_FACILITY_COUNT];
 	struct net_device *mgmt_netdev;
 	struct octep_dma_mem mgmt_shadow;
 	struct octep_dma_mem mgmt_rxbuf;
@@ -1115,7 +1115,7 @@ struct octep {
 	u32 nwa_marker;
 	u32 nwa_status;
 	u32 nwa_reply_len;
-	u32 nwa_reply[OCTEP_NWA_MAX_WORDS];
+	u32 nwa_reply[XGSD_NWA_MAX_WORDS];
 	u32 nwa_last_op;
 	u32 nwa_last_sub;
 	u32 nwa_last_port;
@@ -1126,7 +1126,7 @@ struct octep {
 	u32 nwa_last_status;
 	u32 nwa_last_reply_len;
 	int nwa_last_error;
-	u32 nwa_last_reply[OCTEP_NWA_MAX_WORDS];
+	u32 nwa_last_reply[XGSD_NWA_MAX_WORDS];
 	bool dp_up;
 	bool dp_poll_enabled;
 	bool dp_io_enabled;
@@ -1245,7 +1245,7 @@ static int octep_nwa_wait_locked(struct octep *octep, u32 want, unsigned int tri
 	lockdep_assert_held(&octep->lock);
 	for (i = 0; i < tries; i++) {
 		status = readl(octep->bar2 + octep->facility[OCTEP_FCLT_NW_AGENT].offset +
-			       OCTEP_NWA_STATUS);
+			       XGSD_NWA_STATUS);
 		if (status == want)
 			return 0;
 		if (status == U32_MAX)
@@ -1268,7 +1268,7 @@ static int octep_ring_dbell_locked(struct octep *octep, u32 spi)
 		return -ENXIO;
 	}
 
-	for (i = 0; i < OCTEP_FACILITY_COUNT; i++) {
+	for (i = 0; i < XGSD_FACILITY_COUNT; i++) {
 		const struct octep_facility *facility = &octep->facility[i];
 		u64 end = (u64)facility->dbell_start + facility->dbell_count;
 
@@ -1317,16 +1317,16 @@ static int octep_nwa_discover_locked(struct octep *octep)
 	if (!octep->ready || !facility->size || !facility->offset)
 		return -ENXIO;
 	if (!octep_nwa_range_valid(octep, 0, 0x10) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_STATUS, sizeof(u32)) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_REQ_SIZE, sizeof(u32)))
+	    !octep_nwa_range_valid(octep, XGSD_NWA_STATUS, sizeof(u32)) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_REQ_SIZE, sizeof(u32)))
 		return -EINVAL;
 
-	body = readl(octep->bar2 + facility->offset + OCTEP_NWA_COOKIE);
-	if (body != OCTEP_NWA_COOKIE_VALUE) {
+	body = readl(octep->bar2 + facility->offset + XGSD_NWA_COOKIE);
+	if (body != XGSD_NWA_COOKIE_VALUE) {
 		if (!octep->nwa_cookie_not_ready_logged) {
 			dev_info(&octep->pdev->dev,
 				 "NWA mailbox not ready: cookie %#x, expected %#x; no request sent\n",
-				 body, OCTEP_NWA_COOKIE_VALUE);
+				 body, XGSD_NWA_COOKIE_VALUE);
 			octep->nwa_cookie_not_ready_logged = true;
 		}
 		return -EAGAIN;
@@ -1334,21 +1334,21 @@ static int octep_nwa_discover_locked(struct octep *octep)
 	if (octep->nwa_cookie_not_ready_logged) {
 		dev_info(&octep->pdev->dev,
 			 "NWA mailbox ready: expected cookie %#x is published\n",
-			 OCTEP_NWA_COOKIE_VALUE);
+			 XGSD_NWA_COOKIE_VALUE);
 		octep->nwa_cookie_not_ready_logged = false;
 	}
-	body = readl(octep->bar2 + facility->offset + OCTEP_NWA_BODY_OFF);
-	max_req = readl(octep->bar2 + facility->offset + OCTEP_NWA_MAX_REQ);
-	if (body != OCTEP_NWA_BODY_EXPECTED || max_req < OCTEP_NWA_REQ_SIZE)
+	body = readl(octep->bar2 + facility->offset + XGSD_NWA_BODY_OFF);
+	max_req = readl(octep->bar2 + facility->offset + XGSD_NWA_MAX_REQ);
+	if (body != XGSD_NWA_BODY_EXPECTED || max_req < XGSD_NWA_REQ_SIZE)
 		return -EPROTO;
-	if (!octep_nwa_range_valid(octep, body, OCTEP_NWA_REQ_SIZE) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_REQ_LEN, sizeof(u32)) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_TURN, sizeof(u32)) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_REPLY_LEN, sizeof(u32)))
+	if (!octep_nwa_range_valid(octep, body, XGSD_NWA_REQ_SIZE) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_REQ_LEN, sizeof(u32)) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_TURN, sizeof(u32)) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_REPLY_LEN, sizeof(u32)))
 		return -EINVAL;
 
-	err = octep_nwa_wait_locked(octep, OCTEP_NWA_STATUS_IDLE,
-				    OCTEP_NWA_IDLE_TRIES);
+	err = octep_nwa_wait_locked(octep, XGSD_NWA_STATUS_IDLE,
+				    XGSD_NWA_IDLE_TRIES);
 	if (err) {
 		dev_warn(&octep->pdev->dev,
 			 "NWA discovery not sent: mailbox did not become idle: %d\n",
@@ -1358,16 +1358,16 @@ static int octep_nwa_discover_locked(struct octep *octep)
 
 	dev_info(&octep->pdev->dev,
 		 "NWA discovery request: opcode %#x, %u bytes, facility BAR2+%#x\n",
-		 OCTEP_NWA_OP_DISCOVER, OCTEP_NWA_REQ_SIZE, facility->offset);
-	writel(OCTEP_NWA_OP_DISCOVER, octep->bar2 + facility->offset + body);
-	for (i = 1; i < OCTEP_NWA_REQ_SIZE / sizeof(u32); i++)
+		 XGSD_NWA_OP_DISCOVER, XGSD_NWA_REQ_SIZE, facility->offset);
+	writel(XGSD_NWA_OP_DISCOVER, octep->bar2 + facility->offset + body);
+	for (i = 1; i < XGSD_NWA_REQ_SIZE / sizeof(u32); i++)
 		writel(0, octep->bar2 + facility->offset + body +
 		       i * sizeof(u32));
-	writel(OCTEP_NWA_REQ_SIZE,
-	       octep->bar2 + facility->offset + OCTEP_NWA_REQ_LEN);
+	writel(XGSD_NWA_REQ_SIZE,
+	       octep->bar2 + facility->offset + XGSD_NWA_REQ_LEN);
 	wmb();
-	writel(OCTEP_NWA_TURN_REQUEST,
-	       octep->bar2 + facility->offset + OCTEP_NWA_TURN);
+	writel(XGSD_NWA_TURN_REQUEST,
+	       octep->bar2 + facility->offset + XGSD_NWA_TURN);
 	wmb();
 	err = octep_ring_dbell_locked(octep, facility->dbell_start);
 	if (err)
@@ -1375,8 +1375,8 @@ static int octep_nwa_discover_locked(struct octep *octep)
 
 	dev_info(&octep->pdev->dev,
 		 "NWA doorbell issued; polling mailbox status for the NPU reply\n");
-	err = octep_nwa_wait_locked(octep, OCTEP_NWA_STATUS_REPLY,
-				    OCTEP_NWA_REPLY_TRIES);
+	err = octep_nwa_wait_locked(octep, XGSD_NWA_STATUS_REPLY,
+				    XGSD_NWA_REPLY_TRIES);
 	if (err) {
 		dev_warn(&octep->pdev->dev,
 			 "NWA discovery got no reply before timeout/error: %d\n",
@@ -1385,10 +1385,10 @@ static int octep_nwa_discover_locked(struct octep *octep)
 	}
 	rmb();
 
-	reply_len = readl(octep->bar2 + facility->offset + OCTEP_NWA_REPLY_LEN);
-	reply_off = body + OCTEP_NWA_REQ_SIZE;
+	reply_len = readl(octep->bar2 + facility->offset + XGSD_NWA_REPLY_LEN);
+	reply_off = body + XGSD_NWA_REQ_SIZE;
 	if (reply_len < OCTEP_NWA_REPLY_HEADER_SIZE ||
-	    reply_len > OCTEP_NWA_REPLY_HEADER_SIZE + OCTEP_NWA_MAX_WORDS * sizeof(u32) ||
+	    reply_len > OCTEP_NWA_REPLY_HEADER_SIZE + XGSD_NWA_MAX_WORDS * sizeof(u32) ||
 	    !octep_nwa_range_valid(octep, reply_off, reply_len)) {
 		err = -EPROTO;
 		goto ack;
@@ -1434,15 +1434,15 @@ static int octep_nwa_discover_locked(struct octep *octep)
 	}
 
 ack:
-	writel(OCTEP_NWA_TURN_ACK,
-	       octep->bar2 + facility->offset + OCTEP_NWA_TURN);
+	writel(XGSD_NWA_TURN_ACK,
+	       octep->bar2 + facility->offset + XGSD_NWA_TURN);
 	wmb();
 	ack_err = octep_ring_dbell_locked(octep, facility->dbell_start);
 	if (!err && ack_err)
 		err = ack_err;
 	if (!ack_err)
-		ack_err = octep_nwa_wait_locked(octep, OCTEP_NWA_STATUS_IDLE,
-						OCTEP_NWA_IDLE_TRIES);
+		ack_err = octep_nwa_wait_locked(octep, XGSD_NWA_STATUS_IDLE,
+						XGSD_NWA_IDLE_TRIES);
 	if (ack_err)
 		dev_warn(&octep->pdev->dev,
 			 "NWA reply acknowledged, but mailbox did not return idle: %d\n",
@@ -1456,21 +1456,21 @@ static int octep_nwa_request_locked(struct octep *octep, u32 op, u32 sub,
 	const struct octep_facility *facility =
 		&octep->facility[OCTEP_FCLT_NW_AGENT];
 	u32 body, max_req, reply_len, payload_len, words, reply_off;
-	u32 marker, status, request[OCTEP_NWA_REQ_SIZE / sizeof(u32)] = {};
+	u32 marker, status, request[XGSD_NWA_REQ_SIZE / sizeof(u32)] = {};
 	unsigned int i;
 	int err, ack_err;
 
 	lockdep_assert_held(&octep->lock);
 	if (!octep->ready || !facility->size || !facility->offset)
 		return -ENXIO;
-	if (op == OCTEP_NWA_OP_SET) {
-		if (sub == OCTEP_NWA_SUB_STATE) {
+	if (op == XGSD_NWA_OP_SET) {
+		if (sub == XGSD_NWA_SUB_STATE) {
 			if (param > 1 || param2)
 				return -EINVAL;
-		} else if (sub == OCTEP_NWA_SUB_ALLMULTI) {
-			if (param > OCTEP_NWA_ALLMULTI_ON || param2)
+		} else if (sub == XGSD_NWA_SUB_ALLMULTI) {
+			if (param > XGSD_NWA_ALLMULTI_ON || param2)
 				return -EINVAL;
-		} else if (sub == OCTEP_NWA_SUB_MAC) {
+		} else if (sub == XGSD_NWA_SUB_MAC) {
 			u8 mac[ETH_ALEN] = {
 				param, param >> 8, param >> 16, param >> 24,
 				param2, param2 >> 8,
@@ -1482,7 +1482,7 @@ static int octep_nwa_request_locked(struct octep *octep, u32 op, u32 sub,
 		} else {
 			return -EPERM;
 		}
-	} else if (op == OCTEP_NWA_OP_GET) {
+	} else if (op == XGSD_NWA_OP_GET) {
 		if (param || param2)
 			return -EINVAL;
 		if (sub == OCTEP_NWA_SUB_STATS) {
@@ -1501,8 +1501,8 @@ static int octep_nwa_request_locked(struct octep *octep, u32 op, u32 sub,
 			}
 			if (!port_found)
 				return -ENODEV;
-		} else if (sub != OCTEP_NWA_SUB_STATE &&
-			   sub != OCTEP_NWA_SUB_MAC) {
+		} else if (sub != XGSD_NWA_SUB_STATE &&
+			   sub != XGSD_NWA_SUB_MAC) {
 			return -EPERM;
 		}
 	} else {
@@ -1510,25 +1510,25 @@ static int octep_nwa_request_locked(struct octep *octep, u32 op, u32 sub,
 	}
 
 	if (!octep_nwa_range_valid(octep, 0, 0x10) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_STATUS, sizeof(u32)) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_REQ_SIZE, sizeof(u32)) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_REQ_LEN, sizeof(u32)) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_TURN, sizeof(u32)) ||
-	    !octep_nwa_range_valid(octep, OCTEP_NWA_REPLY_LEN, sizeof(u32)))
+	    !octep_nwa_range_valid(octep, XGSD_NWA_STATUS, sizeof(u32)) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_REQ_SIZE, sizeof(u32)) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_REQ_LEN, sizeof(u32)) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_TURN, sizeof(u32)) ||
+	    !octep_nwa_range_valid(octep, XGSD_NWA_REPLY_LEN, sizeof(u32)))
 		return -EINVAL;
 
-	if (readl(octep->bar2 + facility->offset + OCTEP_NWA_COOKIE) !=
-	    OCTEP_NWA_COOKIE_VALUE)
+	if (readl(octep->bar2 + facility->offset + XGSD_NWA_COOKIE) !=
+	    XGSD_NWA_COOKIE_VALUE)
 		return -EAGAIN;
-	body = readl(octep->bar2 + facility->offset + OCTEP_NWA_BODY_OFF);
-	max_req = readl(octep->bar2 + facility->offset + OCTEP_NWA_MAX_REQ);
-	if (body != OCTEP_NWA_BODY_EXPECTED || max_req < OCTEP_NWA_REQ_SIZE)
+	body = readl(octep->bar2 + facility->offset + XGSD_NWA_BODY_OFF);
+	max_req = readl(octep->bar2 + facility->offset + XGSD_NWA_MAX_REQ);
+	if (body != XGSD_NWA_BODY_EXPECTED || max_req < XGSD_NWA_REQ_SIZE)
 		return -EPROTO;
-	if (!octep_nwa_range_valid(octep, body, OCTEP_NWA_REQ_SIZE))
+	if (!octep_nwa_range_valid(octep, body, XGSD_NWA_REQ_SIZE))
 		return -EINVAL;
 
-	err = octep_nwa_wait_locked(octep, OCTEP_NWA_STATUS_IDLE,
-				    OCTEP_NWA_IDLE_TRIES);
+	err = octep_nwa_wait_locked(octep, XGSD_NWA_STATUS_IDLE,
+				    XGSD_NWA_IDLE_TRIES);
 	if (err)
 		return err;
 
@@ -1540,27 +1540,27 @@ static int octep_nwa_request_locked(struct octep *octep, u32 op, u32 sub,
 	for (i = 0; i < ARRAY_SIZE(request); i++)
 		writel(request[i], octep->bar2 + facility->offset + body +
 		       i * sizeof(u32));
-	writel(OCTEP_NWA_REQ_SIZE,
-	       octep->bar2 + facility->offset + OCTEP_NWA_REQ_LEN);
+	writel(XGSD_NWA_REQ_SIZE,
+	       octep->bar2 + facility->offset + XGSD_NWA_REQ_LEN);
 	wmb();
-	writel(OCTEP_NWA_TURN_REQUEST,
-	       octep->bar2 + facility->offset + OCTEP_NWA_TURN);
+	writel(XGSD_NWA_TURN_REQUEST,
+	       octep->bar2 + facility->offset + XGSD_NWA_TURN);
 	wmb();
 	err = octep_ring_dbell_locked(octep, facility->dbell_start);
 	if (err)
 		return err;
 
-	err = octep_nwa_wait_locked(octep, OCTEP_NWA_STATUS_REPLY,
-				    OCTEP_NWA_REPLY_TRIES);
+	err = octep_nwa_wait_locked(octep, XGSD_NWA_STATUS_REPLY,
+				    XGSD_NWA_REPLY_TRIES);
 	if (err)
 		return err;
 	rmb();
 
-	reply_len = readl(octep->bar2 + facility->offset + OCTEP_NWA_REPLY_LEN);
-	reply_off = body + OCTEP_NWA_REQ_SIZE;
+	reply_len = readl(octep->bar2 + facility->offset + XGSD_NWA_REPLY_LEN);
+	reply_off = body + XGSD_NWA_REQ_SIZE;
 	if (reply_len < OCTEP_NWA_REPLY_HEADER_SIZE ||
 	    reply_len > OCTEP_NWA_REPLY_HEADER_SIZE +
-			OCTEP_NWA_MAX_WORDS * sizeof(u32) ||
+			XGSD_NWA_MAX_WORDS * sizeof(u32) ||
 	    !octep_nwa_range_valid(octep, reply_off, reply_len)) {
 		err = -EPROTO;
 		goto ack;
@@ -1584,7 +1584,7 @@ static int octep_nwa_request_locked(struct octep *octep, u32 op, u32 sub,
 	octep->nwa_last_reply_len = reply_len;
 	if (marker != OCTEP_NWA_REPLY_MARKER || status)
 		err = -EREMOTEIO;
-	else if (op == OCTEP_NWA_OP_GET &&
+	else if (op == XGSD_NWA_OP_GET &&
 		 sub == OCTEP_NWA_SUB_STATS &&
 		 payload_len != OCTEP_NWA_STATS_COUNT * sizeof(u64))
 		err = -EPROTO;
@@ -1592,15 +1592,15 @@ static int octep_nwa_request_locked(struct octep *octep, u32 op, u32 sub,
 		err = 0;
 
 ack:
-	writel(OCTEP_NWA_TURN_ACK,
-	       octep->bar2 + facility->offset + OCTEP_NWA_TURN);
+	writel(XGSD_NWA_TURN_ACK,
+	       octep->bar2 + facility->offset + XGSD_NWA_TURN);
 	wmb();
 	ack_err = octep_ring_dbell_locked(octep, facility->dbell_start);
 	if (!err && ack_err)
 		err = ack_err;
 	if (!ack_err)
-		(void)octep_nwa_wait_locked(octep, OCTEP_NWA_STATUS_IDLE,
-					    OCTEP_NWA_IDLE_TRIES);
+		(void)octep_nwa_wait_locked(octep, XGSD_NWA_STATUS_IDLE,
+					    XGSD_NWA_IDLE_TRIES);
 	return err;
 }
 
@@ -1610,7 +1610,7 @@ static int octep_read_barmap_locked(struct octep *octep)
 	u32 magic;
 	unsigned int i;
 
-	octep->scratch = readq(octep->bar0 + OCTEP_SDP_SCRATCH);
+	octep->scratch = readq(octep->bar0 + XGSD_SDP_SCRATCH);
 	magic = lower_32_bits(octep->scratch);
 	octep->barmap_offset = upper_32_bits(octep->scratch);
 	octep->ready = false;
@@ -1624,7 +1624,7 @@ static int octep_read_barmap_locked(struct octep *octep)
 			"BAR0 reads all ones; the endpoint is not decoding\n");
 		return -ENXIO;
 	}
-	if (magic != OCTEP_READY_MAGIC) {
+	if (magic != XGSD_READY_MAGIC) {
 		dev_info(&octep->pdev->dev,
 			 "NPU not ready yet (scratch %#018llx, magic %#010x)\n",
 			 (unsigned long long)octep->scratch, magic);
@@ -1632,7 +1632,7 @@ static int octep_read_barmap_locked(struct octep *octep)
 	}
 	dev_info(&octep->pdev->dev,
 		 "SDP scratch BAR0+%#x=%#018llx (magic=%#x, barmap offset=%#x)\n",
-		 OCTEP_SDP_SCRATCH, (unsigned long long)octep->scratch,
+		 XGSD_SDP_SCRATCH, (unsigned long long)octep->scratch,
 		 magic, octep->barmap_offset);
 
 	offset = octep->barmap_offset;
@@ -1646,17 +1646,17 @@ static int octep_read_barmap_locked(struct octep *octep)
 	}
 
 	octep->barmap_version = readl(octep->bar2 + offset +
-				       OCTEP_BARMAP_VERSION_OFF);
+				       XGSD_BARMAP_VERSION_OFF);
 	if (octep->barmap_version == U32_MAX)
 		return -EAGAIN;
-	if (octep->barmap_version != OCTEP_BARMAP_VERSION) {
+	if (octep->barmap_version != XGSD_BARMAP_VERSION) {
 		dev_err(&octep->pdev->dev,
 			"barmap version %#x, expected %#x\n",
-			octep->barmap_version, OCTEP_BARMAP_VERSION);
+			octep->barmap_version, XGSD_BARMAP_VERSION);
 		return -EINVAL;
 	}
 
-	for (i = 0; i < OCTEP_FACILITY_COUNT; i++) {
+	for (i = 0; i < XGSD_FACILITY_COUNT; i++) {
 		resource_size_t entry = offset + OCTEP_BARMAP_FACILITY_OFF +
 					i * OCTEP_FACILITY_ENTRY_SIZE;
 
@@ -1667,14 +1667,14 @@ static int octep_read_barmap_locked(struct octep *octep)
 	}
 
 	octep->gicd_offset = readl(octep->bar2 + offset +
-				    OCTEP_BARMAP_GICD_OFF);
-	octep->pem_num = readl(octep->bar2 + offset + OCTEP_BARMAP_PEM_OFF) & 0xff;
+				    XGSD_BARMAP_GICD_OFF);
+	octep->pem_num = readl(octep->bar2 + offset + XGSD_BARMAP_PEM_OFF) & 0xff;
 
 	/*
 	 * Do not read the GIC distributor window: on this device those reads can
 	 * stall the host. Validate facility windows without touching their contents.
 	 */
-	for (i = 0; i < OCTEP_FACILITY_COUNT; i++) {
+	for (i = 0; i < XGSD_FACILITY_COUNT; i++) {
 		struct octep_facility *facility = &octep->facility[i];
 
 		if (!facility->size)
@@ -1718,13 +1718,13 @@ static struct octep_sdp_rinfo octep_read_sdp_rinfo(struct octep *octep)
 {
 	struct octep_sdp_rinfo info = {};
 
-	info.value = readq(octep->bar0 + OCTEP_SDP_EPF_RINFO);
+	info.value = readq(octep->bar0 + XGSD_SDP_EPF_RINFO);
 	info.start_ring = info.value & 0x7f;
 	info.pf_rings = (info.value >> 16) & 0xff;
 	info.rings_per_vf = (info.value >> 32) & 0x1f;
 	info.num_vfs = (info.value >> 48) & 0x7f;
-	while ((u64)info.bar0_rings * OCTEP_SDP_RING_STRIDE +
-	       OCTEP_SDP_RING_SPAN <= octep->bar0_len)
+	while ((u64)info.bar0_rings * XGSD_SDP_RING_STRIDE +
+	       XGSD_SDP_RING_SPAN <= octep->bar0_len)
 		info.bar0_rings++;
 	return info;
 }
@@ -1803,8 +1803,8 @@ static int octep_sdp_prepare_vfs_locked(struct octep *octep,
 		((u64)OCTEP_SRIOV_RINGS_PER_VF << 32) |
 		((u64)num_vfs << 48);
 	if (value != rinfo->value) {
-		writeq(value, octep->bar0 + OCTEP_SDP_EPF_RINFO);
-		readback = readq(octep->bar0 + OCTEP_SDP_EPF_RINFO);
+		writeq(value, octep->bar0 + XGSD_SDP_EPF_RINFO);
+		readback = readq(octep->bar0 + XGSD_SDP_EPF_RINFO);
 		if ((readback & (OCTEP_SDP_RINFO_RPVF_MASK |
 				 OCTEP_SDP_RINFO_NVFS_MASK)) !=
 		    (value & (OCTEP_SDP_RINFO_RPVF_MASK |
@@ -1819,9 +1819,9 @@ static int octep_sdp_prepare_vfs_locked(struct octep *octep,
 
 	for (i = 0; i < reserved_rings; i++) {
 		u32 ring = rinfo->start_ring + i;
-		resource_size_t offset = OCTEP_SDP_EPF_R_VF_NUM +
+		resource_size_t offset = XGSD_SDP_EPF_R_VF_NUM +
 					 (resource_size_t)ring *
-					 OCTEP_SDP_RING_STRIDE;
+					 XGSD_SDP_RING_STRIDE;
 		void __iomem *reg;
 
 		if (ring >= rinfo->bar0_rings || ring >= 64 ||
@@ -1873,9 +1873,9 @@ static int octep_sdp_clear_vf_split_locked(struct octep *octep)
 	reserved_rings = rinfo.num_vfs * rinfo.rings_per_vf;
 	for (i = 0; i < reserved_rings; i++) {
 		u32 ring = rinfo.start_ring + i;
-		resource_size_t offset = OCTEP_SDP_EPF_R_VF_NUM +
+		resource_size_t offset = XGSD_SDP_EPF_R_VF_NUM +
 					 (resource_size_t)ring *
-					 OCTEP_SDP_RING_STRIDE;
+					 XGSD_SDP_RING_STRIDE;
 		void __iomem *reg;
 
 		if (ring >= rinfo.bar0_rings || ring >= 64 ||
@@ -1890,8 +1890,8 @@ static int octep_sdp_clear_vf_split_locked(struct octep *octep)
 
 	value = rinfo.value & ~(OCTEP_SDP_RINFO_RPVF_MASK |
 				OCTEP_SDP_RINFO_NVFS_MASK);
-	writeq(value, octep->bar0 + OCTEP_SDP_EPF_RINFO);
-	readback = readq(octep->bar0 + OCTEP_SDP_EPF_RINFO);
+	writeq(value, octep->bar0 + XGSD_SDP_EPF_RINFO);
+	readback = readq(octep->bar0 + XGSD_SDP_EPF_RINFO);
 	if (readback & (OCTEP_SDP_RINFO_RPVF_MASK |
 			OCTEP_SDP_RINFO_NVFS_MASK))
 		return -EIO;
@@ -1937,7 +1937,7 @@ static DEVICE_ATTR_RO(sdp_rinfo);
 
 static void __iomem *octep_ring_reg(struct octep *octep, u32 ring, u32 offset)
 {
-	return octep->bar0 + (resource_size_t)ring * OCTEP_SDP_RING_STRIDE +
+	return octep->bar0 + (resource_size_t)ring * XGSD_SDP_RING_STRIDE +
 	       offset;
 }
 
@@ -2003,7 +2003,7 @@ static void octep_dp_build_instr(struct octep_dp_ring *ring, u32 slot,
 				 dma_addr_t dptr, u32 len, u8 iface)
 {
 	u8 *entry = (u8 *)ring->instr.vaddr +
-		    (size_t)slot * OCTEP_DP_INSTR_SIZE;
+		    (size_t)slot * XGSD_DP_INSTR_SIZE;
 	u64 ih3, pki_ih3, irh, word;
 
 	ih3 = (len + OCTEP_DP_INSTR_FSZ) |
@@ -2016,7 +2016,7 @@ static void octep_dp_build_instr(struct octep_dp_ring *ring, u32 slot,
 	      ((u64)iface << 40) |
 	      ((u64)OCTEP_DP_OP_PACKET << 48);
 
-	memset(entry, 0, OCTEP_DP_INSTR_SIZE);
+	memset(entry, 0, XGSD_DP_INSTR_SIZE);
 	word = cpu_to_le64(dptr);
 	memcpy(entry, &word, sizeof(word));
 	word = cpu_to_le64(ih3);
@@ -2033,13 +2033,13 @@ static u32 octep_dp_rx_span(u64 len)
 {
 	u64 extra;
 
-	if (len <= OCTEP_DP_BUF_SIZE - 8)
+	if (len <= XGSD_DP_BUF_SIZE - 8)
 		return 1;
-	if (len > OCTEP_DP_PKT_MAX)
+	if (len > XGSD_DP_PKT_MAX)
 		return 0;
 
-	extra = len + 8 - OCTEP_DP_BUF_SIZE;
-	return 1 + DIV_ROUND_UP_ULL(extra, OCTEP_DP_BUF_SIZE);
+	extra = len + 8 - XGSD_DP_BUF_SIZE;
+	return 1 + DIV_ROUND_UP_ULL(extra, XGSD_DP_BUF_SIZE);
 }
 
 static void octep_dp_count_rx(struct octep *octep,
@@ -2340,10 +2340,10 @@ static bool octep_dp_copy_frame(struct octep_dp_ring *ring, u32 idx,
 	for (j = 0; j < span && copied < frame_len; j++) {
 		u32 offset = j ? 0 : OCTEP_DP_RX_PREFIX_LEN;
 		u8 *buf = (u8 *)ring->bufs.vaddr +
-			  (size_t)((idx + j) % OCTEP_DP_OQ_DESCS) *
-			  OCTEP_DP_BUF_STRIDE;
+			  (size_t)((idx + j) % XGSD_DP_OQ_DESCS) *
+			  XGSD_DP_BUF_STRIDE;
 		u32 chunk = min_t(u32, frame_len - copied,
-				  OCTEP_DP_BUF_SIZE - offset);
+				  XGSD_DP_BUF_SIZE - offset);
 
 		memcpy(dst + copied, buf + offset, chunk);
 		copied += chunk;
@@ -2430,7 +2430,7 @@ static void octep_dp_cmsg_rx(struct octep *octep, const u8 *frame,
 	spin_lock_irqsave(&octep->flow_stats_lock, flags);
 	octep->cmsg_tag_frames++;
 	if (frame_len < ETH_HLEN + OCTEP_CMSG_HDR_LEN ||
-	    get_unaligned_be16(frame + 12) != OCTEP_CMSG_ETHERTYPE) {
+	    get_unaligned_be16(frame + 12) != XGSD_CMSG_ETHERTYPE) {
 		octep->cmsg_malformed++;
 		spin_unlock_irqrestore(&octep->flow_stats_lock, flags);
 		return;
@@ -2442,9 +2442,9 @@ static void octep_dp_cmsg_rx(struct octep *octep, const u8 *frame,
 	octep->cmsg_last_jiffies = jiffies;
 	spin_unlock_irqrestore(&octep->flow_stats_lock, flags);
 
-	if (type != OCTEP_CMSG_TYPE_CONN_STATS)
+	if (type != XGSD_CMSG_TYPE_CONN_STATS)
 		return;
-	if (p[3] != OCTEP_CMSG_VERSION)
+	if (p[3] != XGSD_CMSG_VERSION)
 		goto malformed;
 
 	entries = get_unaligned_le16(p + 4);
@@ -2500,7 +2500,7 @@ static void octep_dp_credit_ring(struct octep *octep,
 				struct octep_dp_ring *ring, u32 buffers)
 {
 	s32 have = (s32)lower_32_bits(octep_ring_readq(
-		octep, ring->ring, OCTEP_SDP_R_OUT_SLIST_DBELL));
+		octep, ring->ring, XGSD_SDP_R_OUT_SLIST_DBELL));
 	s64 room;
 	u64 owed = (u64)ring->oq_credit_carry + buffers;
 	u32 give;
@@ -2516,7 +2516,7 @@ static void octep_dp_credit_ring(struct octep *octep,
 	ring->oq_credit_carry = owed - give;
 	if (give)
 		octep_ring_writeq(octep, ring->ring,
-				  OCTEP_SDP_R_OUT_SLIST_DBELL, give);
+				  XGSD_SDP_R_OUT_SLIST_DBELL, give);
 }
 
 static void octep_dp_poll_ring(struct octep *octep,
@@ -2525,7 +2525,7 @@ static void octep_dp_poll_ring(struct octep *octep,
 	u32 pending, packets = 0, buffers = 0;
 
 	pending = lower_32_bits(octep_ring_readq(octep, ring->ring,
-						 OCTEP_SDP_R_OUT_CNTS));
+						 XGSD_SDP_R_OUT_CNTS));
 	if (!pending) {
 		if (ring->oq_credit_carry) {
 			dma_wmb();
@@ -2546,14 +2546,14 @@ static void octep_dp_poll_ring(struct octep *octep,
 
 		idx = ring->oq_rd;
 		buf = (u8 *)ring->bufs.vaddr +
-		      (size_t)idx * OCTEP_DP_BUF_STRIDE;
+		      (size_t)idx * XGSD_DP_BUF_STRIDE;
 		wire_len = be64_to_cpu(READ_ONCE(*(__be64 *)buf));
 		if (!wire_len || wire_len == 0xa5a5a5a5a5a5a5a5ULL ||
 		    wire_len <= OCTEP_DP_RX_PREFIX_LEN - sizeof(u64))
 			break;
 
 		span = octep_dp_rx_span(wire_len);
-		if (!span || span >= OCTEP_DP_OQ_DESCS)
+		if (!span || span >= XGSD_DP_OQ_DESCS)
 			span = 1;
 		frame_len = wire_len - (OCTEP_DP_RX_PREFIX_LEN - sizeof(u64));
 		tag = get_unaligned_be16(buf + OCTEP_DP_RX_TAG_OFF);
@@ -2562,7 +2562,7 @@ static void octep_dp_poll_ring(struct octep *octep,
 		if (tag == OCTEP_DP_CMSG_TAG) {
 			u8 *frame;
 
-			if (wire_len > OCTEP_DP_PKT_MAX +
+			if (wire_len > XGSD_DP_PKT_MAX +
 				       OCTEP_DP_RX_PREFIX_LEN - sizeof(u64) ||
 			    frame_len < ETH_HLEN) {
 				octep_dp_cmsg_drop(octep);
@@ -2621,12 +2621,12 @@ static void octep_dp_poll_ring(struct octep *octep,
 
 		for (j = 0; j < span; j++) {
 			u8 *consumed = (u8 *)ring->bufs.vaddr +
-				       (size_t)((idx + j) % OCTEP_DP_OQ_DESCS) *
-				       OCTEP_DP_BUF_STRIDE;
+				       (size_t)((idx + j) % XGSD_DP_OQ_DESCS) *
+				       XGSD_DP_BUF_STRIDE;
 
-			memset(consumed, 0xa5, OCTEP_DP_BUF_SIZE);
+			memset(consumed, 0xa5, XGSD_DP_BUF_SIZE);
 		}
-		ring->oq_rd = (idx + span) % OCTEP_DP_OQ_DESCS;
+		ring->oq_rd = (idx + span) % XGSD_DP_OQ_DESCS;
 		packets++;
 		buffers += span;
 	}
@@ -2641,7 +2641,7 @@ static void octep_dp_poll_ring(struct octep *octep,
 
 	dma_wmb();
 	octep_dp_credit_ring(octep, ring, buffers);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_CNTS, packets);
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_CNTS, packets);
 }
 
 static void octep_dp_poll_all(struct octep *octep)
@@ -2657,8 +2657,8 @@ static void octep_dp_poll_all(struct octep *octep)
 		spin_lock_irqsave(&octep->dp_tx_lock, flags);
 		pending = lower_32_bits(octep_ring_readq(
 			octep, octep->dp_ring[0].ring,
-			OCTEP_SDP_R_IN_INSTR_DBELL));
-		if (pending < OCTEP_DP_IQ_DESCS - 1) {
+			XGSD_SDP_R_IN_INSTR_DBELL));
+		if (pending < XGSD_DP_IQ_DESCS - 1) {
 			u32 count = smp_load_acquire(&octep->dp_port_count);
 
 			for (i = 0; i < count; i++)
@@ -2775,10 +2775,10 @@ static void octep_dp_dbg_rings(struct octep *octep, const char *why)
 		dev_info(&octep->pdev->dev,
 			 "dp-dbg: %s ring %u in_ctl=%#llx out_ctl=%#llx in_en=%#llx out_cnt=%#llx oq_rd=%u\n",
 			 why, r->ring,
-			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_IN_CONTROL),
-			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_OUT_CONTROL),
-			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_IN_ENABLE),
-			 (unsigned long long)octep_ring_readq(octep, r->ring, OCTEP_SDP_R_OUT_CNTS),
+			 (unsigned long long)octep_ring_readq(octep, r->ring, XGSD_SDP_R_IN_CONTROL),
+			 (unsigned long long)octep_ring_readq(octep, r->ring, XGSD_SDP_R_OUT_CONTROL),
+			 (unsigned long long)octep_ring_readq(octep, r->ring, XGSD_SDP_R_IN_ENABLE),
+			 (unsigned long long)octep_ring_readq(octep, r->ring, XGSD_SDP_R_OUT_CNTS),
 			 r->oq_rd);
 	}
 }
@@ -2821,8 +2821,8 @@ static int octep_dp_stop(struct net_device *netdev)
 				struct octep_dp_ring *ring = &octep->dp_ring[r];
 
 				if (ring->in_configured &&
-				    !(octep_ring_readq(octep, ring->ring, OCTEP_SDP_R_IN_CONTROL) &
-				      OCTEP_R_IN_CTL_IDLE))
+				    !(octep_ring_readq(octep, ring->ring, XGSD_SDP_R_IN_CONTROL) &
+				      XGSD_R_IN_CTL_IDLE))
 					busy = true;
 			}
 			if (busy)
@@ -2862,12 +2862,12 @@ static netdev_tx_t octep_dp_xmit(struct sk_buff *skb,
 					 !!skb_has_frag_list(skb), skb_shinfo(skb)->gso_size);
 	if (len < ETH_HLEN ||
 	    len > netdev->mtu + ETH_HLEN + VLAN_HLEN ||
-	    len + OCTEP_DP_TAG_LEN > OCTEP_DP_TXBUF_SIZE) {
+	    len + OCTEP_DP_TAG_LEN > XGSD_DP_TXBUF_SIZE) {
 		if (octep_dp_debug)
 			dev_info_ratelimited(&octep->pdev->dev,
 					     "dp-debug: %s tx drop: bad length %u (mtu %u, slot room %zu)\n",
 					     netdev->name, len, netdev->mtu,
-					     (size_t)OCTEP_DP_TXBUF_SIZE - OCTEP_DP_TAG_LEN);
+					     (size_t)XGSD_DP_TXBUF_SIZE - OCTEP_DP_TAG_LEN);
 		spin_lock_irqsave(&octep->dp_stats_lock, stats_flags);
 		port->stats.tx_dropped++;
 		spin_unlock_irqrestore(&octep->dp_stats_lock, stats_flags);
@@ -2882,8 +2882,8 @@ static netdev_tx_t octep_dp_xmit(struct sk_buff *skb,
 	}
 	ring = &octep->dp_ring[0];
 	pending = lower_32_bits(octep_ring_readq(
-		octep, ring->ring, OCTEP_SDP_R_IN_INSTR_DBELL));
-	if (pending >= OCTEP_DP_IQ_DESCS - 1) {
+		octep, ring->ring, XGSD_SDP_R_IN_INSTR_DBELL));
+	if (pending >= XGSD_DP_IQ_DESCS - 1) {
 		netif_stop_queue(netdev);
 		spin_unlock_irqrestore(&octep->dp_tx_lock, flags);
 		return NETDEV_TX_BUSY;
@@ -2891,7 +2891,7 @@ static netdev_tx_t octep_dp_xmit(struct sk_buff *skb,
 
 	slot = octep->dp_tx_prod;
 	buf = (u8 *)ring->txbuf.vaddr +
-	      (size_t)slot * OCTEP_DP_TXBUF_STRIDE;
+	      (size_t)slot * XGSD_DP_TXBUF_STRIDE;
 	memset(buf, 0, OCTEP_DP_TAG_LEN);
 	put_unaligned_be16(port->tag, buf);
 	buf[OCTEP_DP_PPORT_HLEN] = 1;
@@ -2909,14 +2909,14 @@ static netdev_tx_t octep_dp_xmit(struct sk_buff *skb,
 
 	octep_dp_build_instr(ring, slot,
 			     ring->txbuf.dma_addr +
-			     (dma_addr_t)slot * OCTEP_DP_TXBUF_STRIDE,
+			     (dma_addr_t)slot * XGSD_DP_TXBUF_STRIDE,
 			     OCTEP_DP_TAG_LEN + wire_len, port->iface);
 	dma_wmb();
-	octep->dp_tx_prod = (slot + 1) % OCTEP_DP_IQ_DESCS;
+	octep->dp_tx_prod = (slot + 1) % XGSD_DP_IQ_DESCS;
 	octep_ring_writeq(octep, ring->ring,
-			  OCTEP_SDP_R_IN_INSTR_DBELL, 1);
+			  XGSD_SDP_R_IN_INSTR_DBELL, 1);
 	pending++;
-	if (pending >= OCTEP_DP_IQ_DESCS - 1)
+	if (pending >= XGSD_DP_IQ_DESCS - 1)
 		netif_stop_queue(netdev);
 	spin_unlock_irqrestore(&octep->dp_tx_lock, flags);
 
@@ -3006,39 +3006,39 @@ static int octep_dp_alloc_ring(struct octep *octep,
 	ring->ring = ring_id;
 	if (with_instr) {
 		err = octep_dma_alloc(octep, &ring->instr,
-				      OCTEP_DP_IQ_DESCS * OCTEP_DP_INSTR_SIZE);
+				      XGSD_DP_IQ_DESCS * XGSD_DP_INSTR_SIZE);
 		if (err)
 			return err;
 		err = octep_dma_alloc(octep, &ring->txbuf,
-				      OCTEP_DP_IQ_DESCS * OCTEP_DP_TXBUF_STRIDE);
+				      XGSD_DP_IQ_DESCS * XGSD_DP_TXBUF_STRIDE);
 		if (err)
 			return err;
 		memset(ring->txbuf.vaddr, 0, ring->txbuf.size);
 	}
 
 	err = octep_dma_alloc(octep, &ring->slist,
-			      OCTEP_DP_OQ_DESCS * OCTEP_DP_SLIST_ENTRY);
+			      XGSD_DP_OQ_DESCS * XGSD_DP_SLIST_ENTRY);
 	if (err)
 		return err;
 	err = octep_dma_alloc(octep, &ring->bufs,
-			      OCTEP_DP_OQ_DESCS * OCTEP_DP_BUF_STRIDE);
+			      XGSD_DP_OQ_DESCS * XGSD_DP_BUF_STRIDE);
 	if (err)
 		return err;
 	err = octep_dma_alloc(octep, &ring->info,
-			      OCTEP_DP_OQ_DESCS * OCTEP_DP_OQ_INFO_SIZE);
+			      XGSD_DP_OQ_DESCS * XGSD_DP_OQ_INFO_SIZE);
 	if (err)
 		return err;
 
 	memset(ring->bufs.vaddr, 0xa5, ring->bufs.size);
 	memset(ring->info.vaddr, 0, ring->info.size);
 	entries = ring->slist.vaddr;
-	for (i = 0; i < OCTEP_DP_OQ_DESCS; i++) {
+	for (i = 0; i < XGSD_DP_OQ_DESCS; i++) {
 		entries[i * 2] = cpu_to_le64(ring->bufs.dma_addr +
 					     (dma_addr_t)i *
-					     OCTEP_DP_BUF_STRIDE);
+					     XGSD_DP_BUF_STRIDE);
 		entries[i * 2 + 1] = cpu_to_le64(ring->info.dma_addr +
 						 (dma_addr_t)i *
-						 OCTEP_DP_OQ_INFO_SIZE);
+						 XGSD_DP_OQ_INFO_SIZE);
 	}
 	dma_wmb();
 	return 0;
@@ -3046,12 +3046,12 @@ static int octep_dp_alloc_ring(struct octep *octep,
 
 static int octep_wait_ring_idle(struct octep *octep, u32 ring, bool output)
 {
-	u32 control = output ? OCTEP_SDP_R_OUT_CONTROL :
-			       OCTEP_SDP_R_IN_CONTROL;
-	u64 idle = output ? OCTEP_R_OUT_CTL_IDLE : OCTEP_R_IN_CTL_IDLE;
+	u32 control = output ? XGSD_SDP_R_OUT_CONTROL :
+			       XGSD_SDP_R_IN_CONTROL;
+	u64 idle = output ? XGSD_R_OUT_CTL_IDLE : XGSD_R_IN_CTL_IDLE;
 	unsigned int i;
 
-	for (i = 0; i < OCTEP_DP_IDLE_TRIES; i++) {
+	for (i = 0; i < XGSD_DP_IDLE_TRIES; i++) {
 		if (octep_ring_readq(octep, ring, control) & idle)
 			return 0;
 		usleep_range(1000, 1500);
@@ -3069,13 +3069,13 @@ static int octep_dp_ring_available(struct octep *octep, u32 ring,
 {
 	u64 value;
 
-	if (octep_ring_readq(octep, ring, OCTEP_SDP_R_OUT_CONTROL) ==
+	if (octep_ring_readq(octep, ring, XGSD_SDP_R_OUT_CONTROL) ==
 	    U64_MAX)
 		return -ENXIO;
-	if (!(octep_ring_readq(octep, ring, OCTEP_SDP_R_OUT_CONTROL) &
-	      OCTEP_R_OUT_CTL_IDLE) ||
-	    (octep_ring_readq(octep, ring, OCTEP_SDP_R_OUT_ENABLE) & 1) ||
-	    octep_ring_readq(octep, ring, OCTEP_SDP_R_OUT_SLIST_BADDR)) {
+	if (!(octep_ring_readq(octep, ring, XGSD_SDP_R_OUT_CONTROL) &
+	      XGSD_R_OUT_CTL_IDLE) ||
+	    (octep_ring_readq(octep, ring, XGSD_SDP_R_OUT_ENABLE) & 1) ||
+	    octep_ring_readq(octep, ring, XGSD_SDP_R_OUT_SLIST_BADDR)) {
 		dev_err(&octep->pdev->dev,
 			"dp: output ring %u is busy or already configured; refusing to overwrite it\n",
 			ring);
@@ -3084,12 +3084,12 @@ static int octep_dp_ring_available(struct octep *octep, u32 ring,
 
 	if (!check_input)
 		return 0;
-	value = octep_ring_readq(octep, ring, OCTEP_SDP_R_IN_CONTROL);
+	value = octep_ring_readq(octep, ring, XGSD_SDP_R_IN_CONTROL);
 	if (value == U64_MAX)
 		return -ENXIO;
-	if (!(value & OCTEP_R_IN_CTL_IDLE) ||
-	    (octep_ring_readq(octep, ring, OCTEP_SDP_R_IN_ENABLE) & 1) ||
-	    octep_ring_readq(octep, ring, OCTEP_SDP_R_IN_INSTR_BADDR)) {
+	if (!(value & XGSD_R_IN_CTL_IDLE) ||
+	    (octep_ring_readq(octep, ring, XGSD_SDP_R_IN_ENABLE) & 1) ||
+	    octep_ring_readq(octep, ring, XGSD_SDP_R_IN_INSTR_BADDR)) {
 		dev_err(&octep->pdev->dev,
 			"dp: input ring %u is busy or already configured; refusing to overwrite it\n",
 			ring);
@@ -3109,17 +3109,17 @@ static int octep_dp_configure_output(struct octep *octep,
 		return err;
 
 	ring->out_configured = true;
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_SLIST_BADDR,
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_SLIST_BADDR,
 			  ring->slist.dma_addr);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_SLIST_RSIZE,
-			  OCTEP_DP_OQ_DESCS);
-	value = octep_ring_readq(octep, ring->ring, OCTEP_SDP_R_OUT_CONTROL);
-	value &= ~(OCTEP_R_OUT_CTL_SIZE_MASK | OCTEP_R_OUT_CTL_ATTR_MASK);
-	value |= OCTEP_R_OUT_CTL_ES_P | OCTEP_DP_BUF_SIZE;
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_CONTROL, value);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_INT_LEVELS,
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_SLIST_RSIZE,
+			  XGSD_DP_OQ_DESCS);
+	value = octep_ring_readq(octep, ring->ring, XGSD_SDP_R_OUT_CONTROL);
+	value &= ~(XGSD_R_OUT_CTL_SIZE_MASK | XGSD_R_OUT_CTL_ATTR_MASK);
+	value |= XGSD_R_OUT_CTL_ES_P | XGSD_DP_BUF_SIZE;
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_CONTROL, value);
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_INT_LEVELS,
 			  ((u64)octep->dp_time_threshold << 32) |
-			  OCTEP_DP_OQ_INTR_PKT);
+			  XGSD_DP_OQ_INTR_PKT);
 	return 0;
 }
 
@@ -3128,37 +3128,37 @@ static void octep_dp_enable_output(struct octep *octep,
 				  bool sibling)
 {
 	u64 enable;
-	u32 grant = OCTEP_DP_OQ_DESCS + OCTEP_DP_OQ_WMARK -
-		    OCTEP_DP_OQ_FETCH;
+	u32 grant = XGSD_DP_OQ_DESCS + XGSD_DP_OQ_WMARK -
+		    XGSD_DP_OQ_FETCH;
 
 	dma_wmb();
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_SLIST_DBELL,
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_SLIST_DBELL,
 			  U32_MAX);
-	enable = octep_ring_readq(octep, ring->ring, OCTEP_SDP_R_OUT_ENABLE);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_ENABLE,
+	enable = octep_ring_readq(octep, ring->ring, XGSD_SDP_R_OUT_ENABLE);
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_ENABLE,
 			  enable | 1);
 	wmb();
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_OUT_SLIST_DBELL,
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_OUT_SLIST_DBELL,
 			  grant);
 
 	if (sibling)
 		dev_info(&octep->pdev->dev,
 			 "dp: sibling ring %u armed - oq %u x %u B every %u B at %pad, "
 			 "slist at %pad, out_control %#018llx\n",
-			 ring->ring, OCTEP_DP_OQ_DESCS, OCTEP_DP_BUF_SIZE,
-			 OCTEP_DP_BUF_STRIDE, &ring->bufs.dma_addr,
+			 ring->ring, XGSD_DP_OQ_DESCS, XGSD_DP_BUF_SIZE,
+			 XGSD_DP_BUF_STRIDE, &ring->bufs.dma_addr,
 			 &ring->slist.dma_addr,
 			 (unsigned long long)octep_ring_readq(octep, ring->ring,
-							      OCTEP_SDP_R_OUT_CONTROL));
+							      XGSD_SDP_R_OUT_CONTROL));
 	else
 		dev_info(&octep->pdev->dev,
 			 "dp: output ring %u armed - oq %u x %u B every %u B at %pad, "
 			 "slist at %pad, out_control %#018llx\n",
-			 ring->ring, OCTEP_DP_OQ_DESCS, OCTEP_DP_BUF_SIZE,
-			 OCTEP_DP_BUF_STRIDE, &ring->bufs.dma_addr,
+			 ring->ring, XGSD_DP_OQ_DESCS, XGSD_DP_BUF_SIZE,
+			 XGSD_DP_BUF_STRIDE, &ring->bufs.dma_addr,
 			 &ring->slist.dma_addr,
 			 (unsigned long long)octep_ring_readq(octep, ring->ring,
-							      OCTEP_SDP_R_OUT_CONTROL));
+							      XGSD_SDP_R_OUT_CONTROL));
 }
 
 static int octep_dp_stop_locked(struct octep *octep, bool force);
@@ -3177,7 +3177,7 @@ static int octep_dp_start_locked(struct octep *octep)
 	if (!octep->ready)
 		return -EAGAIN;
 
-	scratch = readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+	scratch = readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 	if (scratch) {
 		dev_err(&octep->pdev->dev,
 			"dp: SLI_EPF_SCRATCH is %#018llx; the target may own the rings, refusing to arm\n",
@@ -3228,7 +3228,7 @@ static int octep_dp_start_locked(struct octep *octep)
 	octep->dp_up = true;
 	octep->dp_time_threshold =
 		(u32)(((u64)octep->sdp_coproc_ticks_per_us *
-		       OCTEP_DP_OQ_INTR_TIME) / 1024);
+		       XGSD_DP_OQ_INTR_TIME) / 1024);
 	dev_info(&octep->pdev->dev,
 		 "dp: this instance has not seen the EP-mode handshake and the target reports no started port - normal before the fast path runs, and unknowable after a reload, so carrying on\n");
 
@@ -3236,15 +3236,15 @@ static int octep_dp_start_locked(struct octep *octep)
 	err = octep_wait_ring_idle(octep, ring->ring, false);
 	if (err)
 		goto stop_on_error;
-	value = octep_ring_readq(octep, ring->ring, OCTEP_SDP_R_IN_CONTROL);
-	value |= OCTEP_R_IN_CTL_RDSIZE | OCTEP_R_IN_CTL_IS_64B |
-		 OCTEP_R_IN_CTL_ESR;
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_IN_CONTROL, value);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_IN_INSTR_BADDR,
+	value = octep_ring_readq(octep, ring->ring, XGSD_SDP_R_IN_CONTROL);
+	value |= XGSD_R_IN_CTL_RDSIZE | XGSD_R_IN_CTL_IS_64B |
+		 XGSD_R_IN_CTL_ESR;
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_IN_CONTROL, value);
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_IN_INSTR_BADDR,
 			  ring->instr.dma_addr);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_IN_INSTR_RSIZE,
-			  OCTEP_DP_IQ_DESCS);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_IN_INT_LEVELS,
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_IN_INSTR_RSIZE,
+			  XGSD_DP_IQ_DESCS);
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_IN_INT_LEVELS,
 			  U32_MAX);
 	ring->in_configured = true;
 
@@ -3254,22 +3254,22 @@ static int octep_dp_start_locked(struct octep *octep)
 			goto stop_on_error;
 	}
 
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_IN_INSTR_DBELL,
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_IN_INSTR_DBELL,
 			  U32_MAX);
-	for (i = 0; i < OCTEP_DP_IDLE_TRIES; i++) {
+	for (i = 0; i < XGSD_DP_IDLE_TRIES; i++) {
 		if (!(octep_ring_readq(octep, ring->ring,
-				       OCTEP_SDP_R_IN_INSTR_DBELL) & U32_MAX))
+				       XGSD_SDP_R_IN_INSTR_DBELL) & U32_MAX))
 			break;
 		udelay(10);
 	}
-	if (i == OCTEP_DP_IDLE_TRIES) {
+	if (i == XGSD_DP_IDLE_TRIES) {
 		dev_err(&octep->pdev->dev,
 			"dp: input ring %u doorbell did not drain\n", ring->ring);
 		err = -ETIMEDOUT;
 		goto stop_on_error;
 	}
-	value = octep_ring_readq(octep, ring->ring, OCTEP_SDP_R_IN_ENABLE);
-	octep_ring_writeq(octep, ring->ring, OCTEP_SDP_R_IN_ENABLE, value | 1);
+	value = octep_ring_readq(octep, ring->ring, XGSD_SDP_R_IN_ENABLE);
+	octep_ring_writeq(octep, ring->ring, XGSD_SDP_R_IN_ENABLE, value | 1);
 
 	for (i = 0; i < OCTEP_DP_RING_COUNT; i++)
 		octep_dp_enable_output(octep, &octep->dp_ring[i], i != 0);
@@ -3277,9 +3277,9 @@ static int octep_dp_start_locked(struct octep *octep)
 	dev_info(&octep->pdev->dev,
 		 "dp: ring %u up - iq %u x %u B at %pad, oq %u x %u B every %u B at %pad, "
 		 "slist at %pad, oq time threshold %u\n",
-		 ring->ring, OCTEP_DP_IQ_DESCS, OCTEP_DP_INSTR_SIZE,
-		 &ring->instr.dma_addr, OCTEP_DP_OQ_DESCS, OCTEP_DP_BUF_SIZE,
-		 OCTEP_DP_BUF_STRIDE, &ring->bufs.dma_addr,
+		 ring->ring, XGSD_DP_IQ_DESCS, XGSD_DP_INSTR_SIZE,
+		 &ring->instr.dma_addr, XGSD_DP_OQ_DESCS, XGSD_DP_BUF_SIZE,
+		 XGSD_DP_BUF_STRIDE, &ring->bufs.dma_addr,
 		 &ring->slist.dma_addr, octep->dp_time_threshold);
 	if (!octep->sdp_coproc_ticks_per_us)
 		dev_info(&octep->pdev->dev,
@@ -3314,7 +3314,7 @@ static int octep_dp_stop_locked(struct octep *octep, bool force)
 	if (!octep->dp_up)
 		return 0;
 	if (!force && (octep->hs_done ||
-		       readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH))) {
+		       readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH))) {
 		dev_err(&octep->pdev->dev,
 			"dp: refusing to free DMA rings after the handshake; reboot the coprocessor before stopping them\n");
 		return -EBUSY;
@@ -3338,10 +3338,10 @@ static int octep_dp_stop_locked(struct octep *octep, bool force)
 
 		if (ring->out_configured)
 			octep_ring_writeq(octep, ring->ring,
-					  OCTEP_SDP_R_OUT_ENABLE, 0);
+					  XGSD_SDP_R_OUT_ENABLE, 0);
 		if (ring->in_configured)
 			octep_ring_writeq(octep, ring->ring,
-					  OCTEP_SDP_R_IN_ENABLE, 0);
+					  XGSD_SDP_R_IN_ENABLE, 0);
 	}
 	wmb();
 
@@ -3353,9 +3353,9 @@ static int octep_dp_stop_locked(struct octep *octep, bool force)
 				err = -EBUSY;
 			} else {
 				octep_ring_writeq(octep, ring->ring,
-						  OCTEP_SDP_R_OUT_SLIST_BADDR, 0);
+						  XGSD_SDP_R_OUT_SLIST_BADDR, 0);
 				octep_ring_writeq(octep, ring->ring,
-						  OCTEP_SDP_R_OUT_SLIST_RSIZE, 0);
+						  XGSD_SDP_R_OUT_SLIST_RSIZE, 0);
 				ring->out_configured = false;
 			}
 		}
@@ -3364,9 +3364,9 @@ static int octep_dp_stop_locked(struct octep *octep, bool force)
 				err = -EBUSY;
 			} else {
 				octep_ring_writeq(octep, ring->ring,
-						  OCTEP_SDP_R_IN_INSTR_BADDR, 0);
+						  XGSD_SDP_R_IN_INSTR_BADDR, 0);
 				octep_ring_writeq(octep, ring->ring,
-						  OCTEP_SDP_R_IN_INSTR_RSIZE, 0);
+						  XGSD_SDP_R_IN_INSTR_RSIZE, 0);
 				ring->in_configured = false;
 			}
 		}
@@ -3913,7 +3913,7 @@ static ssize_t sdp_stop_store(struct device *dev,
 	err = octep_dp_stop_locked(octep, false);
 	if (err && octep->dp_up &&
 	    (octep->hs_done ||
-	     readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH)))
+	     readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH)))
 		WRITE_ONCE(octep->dp_poll_enabled, true);
 	mutex_unlock(&octep->lock);
 	if (err && READ_ONCE(octep->dp_poll_enabled))
@@ -3947,7 +3947,7 @@ static ssize_t sdp_handshake_store(struct device *dev,
 		err = -EALREADY;
 		goto out;
 	}
-	value = readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+	value = readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 	if (value) {
 		dev_err(&octep->pdev->dev,
 			"sdp: handshake scratch is already owned (value %#018llx); refusing to overwrite it\n",
@@ -3969,7 +3969,7 @@ static ssize_t sdp_handshake_store(struct device *dev,
 		err = -ENXIO;
 		goto out;
 	}
-	info_word = ((u64)OCTEP_SDP_APP_MODE_NIC << 40) |
+	info_word = ((u64)XGSD_SDP_APP_MODE_NIC << 40) |
 		    ((u64)pf_start_ring << 32) |
 		    ((u64)OCTEP_DP_RING_COUNT << 24) |
 		    ((u64)num_vfs << 16) |
@@ -3978,10 +3978,10 @@ static ssize_t sdp_handshake_store(struct device *dev,
 
 	dev_info(&octep->pdev->dev,
 		 "sdp: SLI_EPF_SCRATCH was 0; writing HOST_LOADED\n");
-	writeq(OCTEP_SDP_HOST_LOADED,
-	       octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
-	if (readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH) !=
-	    OCTEP_SDP_HOST_LOADED) {
+	writeq(XGSD_SDP_HOST_LOADED,
+	       octep->bar0 + XGSD_SLI_EPF_SCRATCH);
+	if (readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH) !=
+	    XGSD_SDP_HOST_LOADED) {
 		dev_err(&octep->pdev->dev,
 			"sdp: HOST_LOADED did not read back; not continuing\n");
 		err = -EIO;
@@ -3989,35 +3989,35 @@ static ssize_t sdp_handshake_store(struct device *dev,
 	}
 
 	for (i = 0; i < 5 * 50; i++) {
-		value = readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
-		if (value == OCTEP_SDP_GET_HOST_INFO)
+		value = readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH);
+		if (value == XGSD_SDP_GET_HOST_INFO)
 			break;
 		msleep(20);
 	}
 	if (i == 5 * 50) {
-		writeq(0, octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+		writeq(0, octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 		dev_err(&octep->pdev->dev,
 			"sdp: target did not request host info; scratch reset to zero\n");
 		err = -ETIMEDOUT;
 		goto out;
 	}
 
-	writeq(info_word, octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+	writeq(info_word, octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 	dev_info(&octep->pdev->dev,
 		 "sdp: target asked; published %#018llx (app %u, pf_srn %u, rppf %u, vf_srn %u, %u VFs x %u rings)\n",
-		 (unsigned long long)info_word, OCTEP_SDP_APP_MODE_NIC,
+		 (unsigned long long)info_word, XGSD_SDP_APP_MODE_NIC,
 		 pf_start_ring, OCTEP_DP_RING_COUNT,
 		 num_vfs ? rinfo.start_ring : 0, num_vfs,
 		 num_vfs ? OCTEP_SRIOV_RINGS_PER_VF : 0);
 	for (i = 0; i < 2 * 50; i++) {
-		value = readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
-		if ((value >> 16) == OCTEP_SDP_HOST_INFO_RECEIVED)
+		value = readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH);
+		if ((value >> 16) == XGSD_SDP_HOST_INFO_RECEIVED)
 			break;
 		msleep(20);
 	}
 	if (i == 2 * 50) {
-		writeq(OCTEP_SDP_HANDSHAKE_COMPLETED,
-		       octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+		writeq(XGSD_SDP_HANDSHAKE_COMPLETED,
+		       octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 		octep->hs_done = true;
 		dev_err(&octep->pdev->dev,
 			"sdp: no reply to the info word; wrote HANDSHAKE_COMPLETED to release the target's wait\n");
@@ -4029,17 +4029,17 @@ static ssize_t sdp_handshake_store(struct device *dev,
 	octep->hs_reply_received = true;
 	octep->dp_time_threshold =
 		(u32)(((u64)octep->sdp_coproc_ticks_per_us *
-		       OCTEP_DP_OQ_INTR_TIME) / 1024);
+		       XGSD_DP_OQ_INTR_TIME) / 1024);
 	for (i = 0; i < octep->dp_ring_count; i++) {
 		struct octep_dp_ring *ring = &octep->dp_ring[i];
 
 		octep_ring_writeq(octep, ring->ring,
-				  OCTEP_SDP_R_OUT_INT_LEVELS,
+				  XGSD_SDP_R_OUT_INT_LEVELS,
 				  ((u64)octep->dp_time_threshold << 32) |
-				  OCTEP_DP_OQ_INTR_PKT);
+				  XGSD_DP_OQ_INTR_PKT);
 	}
-	writeq(OCTEP_SDP_HANDSHAKE_COMPLETED,
-	       octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+	writeq(XGSD_SDP_HANDSHAKE_COMPLETED,
+	       octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 	octep->hs_done = true;
 	dev_info(&octep->pdev->dev,
 		 "sdp: target took the info and reports %u ticks/us; announced HANDSHAKE_COMPLETED\n",
@@ -4060,7 +4060,7 @@ static ssize_t sdp_state_show(struct device *dev,
 	ssize_t len;
 
 	mutex_lock(&octep->lock);
-	scratch = readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+	scratch = readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 	port_count = smp_load_acquire(&octep->dp_port_count);
 	len = sysfs_emit(buf,
 			 "rings=%s ring_count=%u handshake=%s scratch=%#018llx "
@@ -4214,16 +4214,16 @@ static ssize_t sdp_coproc_ticks_per_us_store(struct device *dev,
 		return err;
 	mutex_lock(&octep->lock);
 	octep->sdp_coproc_ticks_per_us = value;
-	threshold = (u32)(((u64)value * OCTEP_DP_OQ_INTR_TIME) / 1024);
+	threshold = (u32)(((u64)value * XGSD_DP_OQ_INTR_TIME) / 1024);
 	octep->dp_time_threshold = threshold;
 	if (octep->dp_up) {
 		for (i = 0; i < octep->dp_ring_count; i++) {
 			struct octep_dp_ring *ring = &octep->dp_ring[i];
 
 			octep_ring_writeq(octep, ring->ring,
-					  OCTEP_SDP_R_OUT_INT_LEVELS,
+					  XGSD_SDP_R_OUT_INT_LEVELS,
 					  ((u64)threshold << 32) |
-					  OCTEP_DP_OQ_INTR_PKT);
+					  XGSD_DP_OQ_INTR_PKT);
 		}
 	}
 	mutex_unlock(&octep->lock);
@@ -4278,9 +4278,9 @@ static int octep_rpc_configure_locked(struct octep *octep)
 		return -ENXIO;
 
 	desc_end = (u64)OCTEP_RPC_DESC_OFFSET +
-		   (u64)OCTEP_RPC_DESC_COUNT * OCTEP_RPC_BAR_DESC_SIZE *
+		   (u64)OCTEP_RPC_DESC_COUNT * XGSD_RPC_BAR_DESC_SIZE *
 		   (hi_ring ? 2 : 1);
-	if (OCTEP_RPC_DESC_OFFSET < OCTEP_RPC_STATE_SIZE ||
+	if (OCTEP_RPC_DESC_OFFSET < XGSD_RPC_STATE_SIZE ||
 	    desc_end > facility->size ||
 	    facility->dbell_start > U32_MAX - facility->dbell_count) {
 		dev_err(&octep->pdev->dev,
@@ -4290,49 +4290,49 @@ static int octep_rpc_configure_locked(struct octep *octep)
 
 	if (!octep->rpc_cmd.vaddr) {
 		err = octep_dma_alloc(octep, &octep->rpc_cmd,
-				      OCTEP_RPC_DATA_MAX_SIZE);
+				      XGSD_RPC_DATA_MAX_SIZE);
 		if (err)
 			return err;
 	}
-	cfg = octep_rpc_readq(octep, OCTEP_RPC_STATE_CFG);
+	cfg = octep_rpc_readq(octep, XGSD_RPC_STATE_CFG);
 	if (cfg == U64_MAX)
 		return -ENXIO;
 	revision = (((cfg >> 32) & 0xffff) + 1) & 0xffff;
 
-	ring = OCTEP_RPC_STATE_RING_LO;
-	octep_rpc_writeq(octep, ring + OCTEP_RPC_RING_POSTED, 0);
-	octep_rpc_writeq(octep, ring + OCTEP_RPC_RING_DONE, 0);
-	octep_rpc_writel(octep, ring + OCTEP_RPC_RING_OFFSET, 0);
-	octep_rpc_writel(octep, ring + OCTEP_RPC_RING_DESC_OFF,
+	ring = XGSD_RPC_STATE_RING_LO;
+	octep_rpc_writeq(octep, ring + XGSD_RPC_RING_POSTED, 0);
+	octep_rpc_writeq(octep, ring + XGSD_RPC_RING_DONE, 0);
+	octep_rpc_writel(octep, ring + XGSD_RPC_RING_OFFSET, 0);
+	octep_rpc_writel(octep, ring + XGSD_RPC_RING_DESC_OFF,
 			  OCTEP_RPC_DESC_OFFSET);
-	octep_rpc_writel(octep, ring + OCTEP_RPC_RING_DESC_CNT,
+	octep_rpc_writel(octep, ring + XGSD_RPC_RING_DESC_CNT,
 			  OCTEP_RPC_DESC_COUNT);
-	octep_rpc_writel(octep, ring + OCTEP_RPC_RING_CFG,
-			  OCTEP_RPC_RCFG(0, 0, 0, 0));
+	octep_rpc_writel(octep, ring + XGSD_RPC_RING_CFG,
+			  XGSD_RPC_RCFG(0, 0, 0, 0));
 
 	for (i = 0; i < 4; i++) {
-		u32 hi = OCTEP_RPC_STATE_RINGS + i * OCTEP_RPC_RING_SIZE;
+		u32 hi = XGSD_RPC_STATE_RINGS + i * XGSD_RPC_RING_SIZE;
 		bool live_ring = hi_ring && !i;
 
-		octep_rpc_writeq(octep, hi + OCTEP_RPC_RING_POSTED, 0);
-		octep_rpc_writeq(octep, hi + OCTEP_RPC_RING_DONE, 0);
-		octep_rpc_writel(octep, hi + OCTEP_RPC_RING_OFFSET,
+		octep_rpc_writeq(octep, hi + XGSD_RPC_RING_POSTED, 0);
+		octep_rpc_writeq(octep, hi + XGSD_RPC_RING_DONE, 0);
+		octep_rpc_writel(octep, hi + XGSD_RPC_RING_OFFSET,
 				 live_ring ? hi : 0);
-		octep_rpc_writel(octep, hi + OCTEP_RPC_RING_DESC_OFF,
+		octep_rpc_writel(octep, hi + XGSD_RPC_RING_DESC_OFF,
 				 live_ring ? OCTEP_RPC_DESC_OFFSET +
 				 OCTEP_RPC_DESC_COUNT *
-				 OCTEP_RPC_BAR_DESC_SIZE : 0);
-		octep_rpc_writel(octep, hi + OCTEP_RPC_RING_DESC_CNT,
+				 XGSD_RPC_BAR_DESC_SIZE : 0);
+		octep_rpc_writel(octep, hi + XGSD_RPC_RING_DESC_CNT,
 				 live_ring ? OCTEP_RPC_DESC_COUNT : 0);
 		/* Ring 1 on the first doorbell after the config one; not shared. */
-		octep_rpc_writel(octep, hi + OCTEP_RPC_RING_CFG,
-				 live_ring ? OCTEP_RPC_RCFG(1, 0, 1, 0) : 0);
+		octep_rpc_writel(octep, hi + XGSD_RPC_RING_CFG,
+				 live_ring ? XGSD_RPC_RCFG(1, 0, 1, 0) : 0);
 	}
 	wmb();
 
-	cfg = OCTEP_RPC_STATE_CFG_MAGIC | ((u64)revision << 32) |
+	cfg = XGSD_RPC_STATE_CFG_MAGIC | ((u64)revision << 32) |
 	      ((u64)hi_ring << 48);
-	octep_rpc_writeq(octep, OCTEP_RPC_STATE_CFG, cfg);
+	octep_rpc_writeq(octep, XGSD_RPC_STATE_CFG, cfg);
 	wmb();
 	dev_info(&octep->pdev->dev,
 		 "rpc: published %s config revision %u, %u descriptors at BAR2+%#x, doorbell 0\n",
@@ -4343,18 +4343,18 @@ static int octep_rpc_configure_locked(struct octep *octep)
 	if (err)
 		return err;
 
-	for (i = 0; i < OCTEP_RPC_CFG_WAIT_MS; i++) {
-		u64 live = octep_rpc_readq(octep, OCTEP_RPC_STATE_CFG);
+	for (i = 0; i < XGSD_RPC_CFG_WAIT_MS; i++) {
+		u64 live = octep_rpc_readq(octep, XGSD_RPC_STATE_CFG);
 
 		if ((live >> 56) & 0xff) {
 			u64 posted, done;
 
 			posted = octep_rpc_readq(octep,
-						 OCTEP_RPC_STATE_RING_LO +
-						 OCTEP_RPC_RING_POSTED);
+						 XGSD_RPC_STATE_RING_LO +
+						 XGSD_RPC_RING_POSTED);
 			done = octep_rpc_readq(octep,
-					       OCTEP_RPC_STATE_RING_LO +
-					       OCTEP_RPC_RING_DONE);
+					       XGSD_RPC_STATE_RING_LO +
+					       XGSD_RPC_RING_DONE);
 			if (posted != done) {
 				dev_err(&octep->pdev->dev,
 					"rpc: target acknowledged with outstanding commands (posted=%llu done=%llu)\n",
@@ -4367,11 +4367,11 @@ static int octep_rpc_configure_locked(struct octep *octep)
 			octep->rpc_posted = posted;
 			if (hi_ring) {
 				u64 hp = octep_rpc_readq(octep,
-					OCTEP_RPC_STATE_RINGS +
-					OCTEP_RPC_RING_POSTED);
+					XGSD_RPC_STATE_RINGS +
+					XGSD_RPC_RING_POSTED);
 				u64 hd = octep_rpc_readq(octep,
-					OCTEP_RPC_STATE_RINGS +
-					OCTEP_RPC_RING_DONE);
+					XGSD_RPC_STATE_RINGS +
+					XGSD_RPC_RING_DONE);
 
 				if (hp != hd) {
 					dev_err(&octep->pdev->dev,
@@ -4395,9 +4395,9 @@ static int octep_rpc_configure_locked(struct octep *octep)
 
 	dev_err(&octep->pdev->dev,
 		"rpc: no acknowledgement after %u ms (cfg=%#018llx)\n",
-		OCTEP_RPC_CFG_WAIT_MS,
+		XGSD_RPC_CFG_WAIT_MS,
 		(unsigned long long)octep_rpc_readq(octep,
-						    OCTEP_RPC_STATE_CFG));
+						    XGSD_RPC_STATE_CFG));
 	return -ETIMEDOUT;
 }
 
@@ -4423,39 +4423,39 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 	if (!octep->rpc_ready)
 		return -ENXIO;
 	if (!octep->rpc_allow_write &&
-	    command != OCTEP_RPC_CMD_LO_LIF_READ &&
-	    command != OCTEP_RPC_CMD_LO_CONN_READ &&
-	    command != OCTEP_RPC_CMD_LO_MFLOW_READ &&
-	    command != OCTEP_RPC_CMD_LO_WORKER_SYS_CNT_READ &&
+	    command != XGSD_RPC_CMD_LO_LIF_READ &&
+	    command != XGSD_RPC_CMD_LO_CONN_READ &&
+	    command != XGSD_RPC_CMD_LO_MFLOW_READ &&
+	    command != XGSD_RPC_CMD_LO_WORKER_SYS_CNT_READ &&
 	    !octep->rpc_platform_probe)
 		return -EPERM;
 	if (octep->rpc_platform_probe) {
-		if (command < OCTEP_RPC_CMD_PLATFORM_READ ||
-		    command > OCTEP_RPC_CMD_PLATFORM_READ + OCTEP_RPC_CMD_SHIFT_MAX)
+		if (command < XGSD_RPC_CMD_PLATFORM_READ ||
+		    command > XGSD_RPC_CMD_PLATFORM_READ + OCTEP_RPC_CMD_SHIFT_MAX)
 			return -EPERM;
 	} else {
-		if (command != OCTEP_RPC_CMD_LIF_ADD_UPDATE &&
-		    command != OCTEP_RPC_CMD_PPORT_UPDATE &&
-		    command != OCTEP_RPC_CMD_FW_CFG_PARAMS_SET &&
-		    command != OCTEP_RPC_CMD_FW_STATE_REV_SET &&
+		if (command != XGSD_RPC_CMD_LIF_ADD_UPDATE &&
+		    command != XGSD_RPC_CMD_PPORT_UPDATE &&
+		    command != XGSD_RPC_CMD_FW_CFG_PARAMS_SET &&
+		    command != XGSD_RPC_CMD_FW_STATE_REV_SET &&
 		    command != OCTEP_RPC_CMD_L3_FWD_REV_SET &&
-		    command != OCTEP_RPC_CMD_NHOP_PROGRAM &&
-		    command != OCTEP_RPC_CMD_MFLOW_PROGRAM &&
-		    command != OCTEP_RPC_CMD_FLOW_CREATE_FP &&
-		    command != OCTEP_RPC_CMD_CONN_RECLAIM_FP &&
-		    command != OCTEP_RPC_CMD_LO_LIF_READ &&
-		    command != OCTEP_RPC_CMD_LO_CONN_READ &&
-		    command != OCTEP_RPC_CMD_LO_MFLOW_READ &&
-		    command != OCTEP_RPC_CMD_LO_WORKER_SYS_CNT_READ &&
+		    command != XGSD_RPC_CMD_NHOP_PROGRAM &&
+		    command != XGSD_RPC_CMD_MFLOW_PROGRAM &&
+		    command != XGSD_RPC_CMD_FLOW_CREATE_FP &&
+		    command != XGSD_RPC_CMD_CONN_RECLAIM_FP &&
+		    command != XGSD_RPC_CMD_LO_LIF_READ &&
+		    command != XGSD_RPC_CMD_LO_CONN_READ &&
+		    command != XGSD_RPC_CMD_LO_MFLOW_READ &&
+		    command != XGSD_RPC_CMD_LO_WORKER_SYS_CNT_READ &&
 		    (octep_rpc_raw_cmd < 0 || command != octep_rpc_raw_cmd))
 			return -EPERM;
-		if (command >= OCTEP_RPC_CMD_PLATFORM_READ) {
+		if (command >= XGSD_RPC_CMD_PLATFORM_READ) {
 			if (!octep->rpc_platform_known)
 				return -EOPNOTSUPP;
 			wire_command += octep->rpc_cmd_shift;
 		}
 	}
-	if (OCTEP_RPC_BUF_DESC_SIZE + payload_len > OCTEP_RPC_DATA_MAX_SIZE)
+	if (XGSD_RPC_BUF_DESC_SIZE + payload_len > XGSD_RPC_DATA_MAX_SIZE)
 		return -EMSGSIZE;
 	err = octep_rpc_validate_flow_command(octep, command, payload,
 					     payload_len);
@@ -4464,18 +4464,18 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 
 	/* Flow-programming commands go on hi ring 1; reads and setup stay on the low ring. */
 	use_hi = octep->rpc_hi_active &&
-		 (command == OCTEP_RPC_CMD_NHOP_PROGRAM ||
-		  command == OCTEP_RPC_CMD_MFLOW_PROGRAM ||
-		  command == OCTEP_RPC_CMD_FLOW_CREATE_FP ||
-		  command == OCTEP_RPC_CMD_CONN_RECLAIM_FP);
-	ring_base = use_hi ? OCTEP_RPC_STATE_RINGS : OCTEP_RPC_STATE_RING_LO;
+		 (command == XGSD_RPC_CMD_NHOP_PROGRAM ||
+		  command == XGSD_RPC_CMD_MFLOW_PROGRAM ||
+		  command == XGSD_RPC_CMD_FLOW_CREATE_FP ||
+		  command == XGSD_RPC_CMD_CONN_RECLAIM_FP);
+	ring_base = use_hi ? XGSD_RPC_STATE_RINGS : XGSD_RPC_STATE_RING_LO;
 	desc_base = octep->rpc_desc_off +
-		    (use_hi ? OCTEP_RPC_DESC_COUNT * OCTEP_RPC_BAR_DESC_SIZE : 0);
+		    (use_hi ? OCTEP_RPC_DESC_COUNT * XGSD_RPC_BAR_DESC_SIZE : 0);
 	host_posted = use_hi ? &octep->rpc_hi_posted : &octep->rpc_posted;
 	dbell = facility->dbell_start + (use_hi ? 1 : 0);
 
-	posted = octep_rpc_readq(octep, ring_base + OCTEP_RPC_RING_POSTED);
-	done = octep_rpc_readq(octep, ring_base + OCTEP_RPC_RING_DONE);
+	posted = octep_rpc_readq(octep, ring_base + XGSD_RPC_RING_POSTED);
+	done = octep_rpc_readq(octep, ring_base + XGSD_RPC_RING_DONE);
 	if (posted != *host_posted || done != posted) {
 		dev_err(&octep->pdev->dev,
 			"rpc: %s ring is not idle (host=%llu posted=%llu done=%llu)\n",
@@ -4485,31 +4485,31 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 		return -EBUSY;
 	}
 
-	memset(buffer, 0x5a, OCTEP_RPC_DATA_MAX_SIZE);
-	buffer[0] = (OCTEP_RPC_DATA_MAX_SIZE - OCTEP_RPC_BUF_DESC_SIZE) & 0xff;
-	buffer[1] = (OCTEP_RPC_DATA_MAX_SIZE - OCTEP_RPC_BUF_DESC_SIZE) >> 8;
+	memset(buffer, 0x5a, XGSD_RPC_DATA_MAX_SIZE);
+	buffer[0] = (XGSD_RPC_DATA_MAX_SIZE - XGSD_RPC_BUF_DESC_SIZE) & 0xff;
+	buffer[1] = (XGSD_RPC_DATA_MAX_SIZE - XGSD_RPC_BUF_DESC_SIZE) >> 8;
 	buffer[2] = 0;
 	buffer[3] = wire_command;
 	memset(buffer + 4, 0, 4);
 	if (payload_len)
-		memcpy(buffer + OCTEP_RPC_BUF_DESC_SIZE, payload, payload_len);
+		memcpy(buffer + XGSD_RPC_BUF_DESC_SIZE, payload, payload_len);
 	dma_wmb();
 
 	index = (u32)(posted & (octep->rpc_desc_count - 1));
-	offset = desc_base + index * OCTEP_RPC_BAR_DESC_SIZE;
+	offset = desc_base + index * XGSD_RPC_BAR_DESC_SIZE;
 	desc = (u64)facility->offset + offset;
-	if (desc + OCTEP_RPC_BAR_DESC_SIZE > octep->bar2_len ||
-	    (octep->gicd_offset && desc + OCTEP_RPC_BAR_DESC_SIZE >
+	if (desc + XGSD_RPC_BAR_DESC_SIZE > octep->bar2_len ||
+	    (octep->gicd_offset && desc + XGSD_RPC_BAR_DESC_SIZE >
 				       octep->gicd_offset))
 		return -EINVAL;
 
 	octep_rpc_writeq(octep, offset, octep->rpc_cmd.dma_addr);
 	octep_rpc_writel(octep, offset + 8,
 			  payload_len |
-			  ((u32)OCTEP_RPC_DESC_NO_AGG_DMA << 16));
+			  ((u32)XGSD_RPC_DESC_NO_AGG_DMA << 16));
 	octep_rpc_writel(octep, offset + 12, 0);
 	wmb();
-	octep_rpc_writeq(octep, ring_base + OCTEP_RPC_RING_POSTED, posted + 1);
+	octep_rpc_writeq(octep, ring_base + XGSD_RPC_RING_POSTED, posted + 1);
 	wmb();
 	*host_posted = posted + 1;
 	octep->rpc_last_cmd = wire_command;
@@ -4520,19 +4520,19 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 	if (err)
 		return err;
 
-	rpc_deadline = jiffies + msecs_to_jiffies(OCTEP_RPC_CMD_WAIT_MS);
+	rpc_deadline = jiffies + msecs_to_jiffies(XGSD_RPC_CMD_WAIT_MS);
 	for (i = 0; ; i++) {
-		done = octep_rpc_readq(octep, ring_base + OCTEP_RPC_RING_DONE);
+		done = octep_rpc_readq(octep, ring_base + XGSD_RPC_RING_DONE);
 		if (done > posted)
 			break;
 		if (time_after(jiffies, rpc_deadline)) {
-			i = OCTEP_RPC_CMD_WAIT_MS;
+			i = XGSD_RPC_CMD_WAIT_MS;
 			break;
 		}
 		/* A ring round trip is well under a millisecond; msleep(1) made every RPC cost 1-2 ms. */
 		usleep_range(i < 2 ? 20 : 50, i < 2 ? 40 : 100);
 	}
-	if (i == OCTEP_RPC_CMD_WAIT_MS) {
+	if (i == XGSD_RPC_CMD_WAIT_MS) {
 		octep->rpc_last_error = -ETIMEDOUT;
 		octep->rpc_timeouts++;
 		octep->rpc_ready = false;
@@ -4550,7 +4550,7 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 	octep->rpc_last_rc = rc;
 	octep->rpc_last_len = reply_len;
 	octep->rpc_commands++;
-	if (reply_len > OCTEP_RPC_DATA_MAX_SIZE - OCTEP_RPC_BUF_DESC_SIZE) {
+	if (reply_len > XGSD_RPC_DATA_MAX_SIZE - XGSD_RPC_BUF_DESC_SIZE) {
 		octep->rpc_last_error = -EPROTO;
 		octep->rpc_ready = false;
 		octep->rpc_fw_cfg_known = false;
@@ -4564,7 +4564,7 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 				wire_command, rc);
 		return -EREMOTEIO;
 	}
-	if (command == OCTEP_RPC_CMD_LO_LIF_READ) {
+	if (command == XGSD_RPC_CMD_LO_LIF_READ) {
 		octep->rpc_lif_read_valid = false;
 		if (reply_len != OCTEP_RPC_LIF_READ_REPLY_MIN &&
 		    reply_len != OCTEP_RPC_LIF_READ_REPLY_MAX) {
@@ -4572,7 +4572,7 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 			return -EPROTO;
 		}
 		memcpy(octep->rpc_lif_read_reply,
-		       buffer + OCTEP_RPC_BUF_DESC_SIZE,
+		       buffer + XGSD_RPC_BUF_DESC_SIZE,
 		       reply_len);
 		octep->rpc_lif_read_len = reply_len;
 		octep->rpc_lif_read_valid = true;
@@ -4586,7 +4586,7 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 static int octep_rpc_platform_learn_locked(struct octep *octep)
 {
 	u8 empty_payload = 0;
-	u8 *reply = octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+	u8 *reply = octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE;
 	char name[65] = {};
 	unsigned int shift;
 	int err;
@@ -4601,7 +4601,7 @@ static int octep_rpc_platform_learn_locked(struct octep *octep)
 
 	for (shift = 0; shift <= OCTEP_RPC_CMD_SHIFT_MAX; shift++) {
 		err = octep_rpc_post_command_locked(
-			octep, OCTEP_RPC_CMD_PLATFORM_READ + shift,
+			octep, XGSD_RPC_CMD_PLATFORM_READ + shift,
 			&empty_payload, 0);
 		if (err ||
 		    (octep->rpc_last_len != 228 &&
@@ -4673,14 +4673,14 @@ static int octep_rpc_validate_flow_command(struct octep *octep, u8 command,
 	u32 conn_idx, conn_flags, conn_rev, valid;
 	int err;
 
-	if (command != OCTEP_RPC_CMD_NHOP_PROGRAM &&
-	    command != OCTEP_RPC_CMD_MFLOW_PROGRAM &&
-	    command != OCTEP_RPC_CMD_FLOW_CREATE_FP)
+	if (command != XGSD_RPC_CMD_NHOP_PROGRAM &&
+	    command != XGSD_RPC_CMD_MFLOW_PROGRAM &&
+	    command != XGSD_RPC_CMD_FLOW_CREATE_FP)
 		return 0;
 	if (!octep->rpc_platform_known)
 		return -EOPNOTSUPP;
 
-	if (command == OCTEP_RPC_CMD_NHOP_PROGRAM) {
+	if (command == XGSD_RPC_CMD_NHOP_PROGRAM) {
 		if (payload_len != OCTEP_RPC_NHOP_REQ_LEN)
 			return -EMSGSIZE;
 		conn_idx = get_unaligned_le32(payload);
@@ -4688,7 +4688,7 @@ static int octep_rpc_validate_flow_command(struct octep *octep, u8 command,
 			0 : -ERANGE;
 	}
 
-	if (command == OCTEP_RPC_CMD_MFLOW_PROGRAM) {
+	if (command == XGSD_RPC_CMD_MFLOW_PROGRAM) {
 		if (payload_len != OCTEP_RPC_MFLOW_REQ_LEN)
 			return -EMSGSIZE;
 		conn_idx = get_unaligned_le32(payload + 12);
@@ -4803,7 +4803,7 @@ static ssize_t offload_show(struct device *dev,
 	} else {
 		len = sysfs_emit(buf,
 				 "requested=%s fw_cfg=0x%04x acknowledged=yes firmware_readback=no\n",
-				 octep->rpc_fw_cfg & OCTEP_FW_CFG_OFFLOAD ?
+				 octep->rpc_fw_cfg & XGSD_FW_CFG_OFFLOAD ?
 					"on" : "off",
 				 octep->rpc_fw_cfg);
 	}
@@ -4837,11 +4837,11 @@ static ssize_t offload_store(struct device *dev,
 	}
 
 	fw_cfg = octep->rpc_fw_cfg_known ?
-		 octep->rpc_fw_cfg : OCTEP_FW_CFG_TCP_SEQ_CHK;
+		 octep->rpc_fw_cfg : XGSD_FW_CFG_TCP_SEQ_CHK;
 	if (enable)
-		fw_cfg |= OCTEP_FW_CFG_OFFLOAD | READ_ONCE(octep_ft_fw_cfg_extra);
+		fw_cfg |= XGSD_FW_CFG_OFFLOAD | READ_ONCE(octep_ft_fw_cfg_extra);
 	else
-		fw_cfg &= ~OCTEP_FW_CFG_OFFLOAD;
+		fw_cfg &= ~XGSD_FW_CFG_OFFLOAD;
 	payload[0] = fw_cfg & 0xff;
 	payload[1] = fw_cfg >> 8;
 
@@ -4850,7 +4850,7 @@ static ssize_t offload_store(struct device *dev,
 	if (!enable && OCTEP_FT_FEAT(octep_ft_bulk_reclaim))
 		octep_ft_reclaim_all_locked(octep);
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_FW_CFG_PARAMS_SET,
+					    XGSD_RPC_CMD_FW_CFG_PARAMS_SET,
 					    payload, sizeof(payload));
 	octep->rpc_allow_write = previous_allow_write;
 	if (!err) {
@@ -4879,7 +4879,7 @@ static int octep_rpc_lif_read_locked(struct octep *octep, u32 index)
 	octep->rpc_lif_read_valid = false;
 	octep->rpc_lif_read_index = index;
 	return octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_LO_LIF_READ,
+					    XGSD_RPC_CMD_LO_LIF_READ,
 					    payload, sizeof(payload));
 }
 
@@ -4932,7 +4932,7 @@ static ssize_t rpc_lif_add_store(struct device *dev,
 	if (get_unaligned_le16(octep->rpc_lif_read_reply + 8) & 0x0003)
 		put_unaligned_le16(OCTEP_RPC_LIF_M_MANAGED, payload + 16);
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_LIF_ADD_UPDATE,
+					    XGSD_RPC_CMD_LIF_ADD_UPDATE,
 					    payload, sizeof(payload));
 	if (err) {
 		int write_error = err;
@@ -5025,7 +5025,7 @@ static ssize_t rpc_sys_counters_show(struct device *dev,
 
 	mutex_lock(&octep->lock);
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_LO_WORKER_SYS_CNT_READ,
+					    XGSD_RPC_CMD_LO_WORKER_SYS_CNT_READ,
 					    payload, sizeof(payload));
 	if (err) {
 		len = err;
@@ -5036,7 +5036,7 @@ static ssize_t rpc_sys_counters_show(struct device *dev,
 		len = -EPROTO;
 		goto out;
 	}
-	reply = (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+	reply = (u8 *)octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE;
 	len = sysfs_emit(buf, "count=%u command_shift=%u\n",
 			 OCTEP_RPC_SYS_COUNTER_COUNT, octep->rpc_cmd_shift);
 	for (i = 0; i < OCTEP_RPC_SYS_COUNTER_COUNT; i++)
@@ -5129,7 +5129,7 @@ static ssize_t rpc_mflow_read_store(struct device *dev,
 	put_unaligned_le32(index, payload + 8);
 
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_LO_MFLOW_READ,
+					    XGSD_RPC_CMD_LO_MFLOW_READ,
 					    payload, sizeof(payload));
 	if (err)
 		goto out;
@@ -5138,7 +5138,7 @@ static ssize_t rpc_mflow_read_store(struct device *dev,
 		err = -EPROTO;
 		goto out;
 	}
-	reply = (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+	reply = (u8 *)octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE;
 	if (get_unaligned_le32(reply) != index) {
 		octep->rpc_last_error = -EPROTO;
 		err = -EPROTO;
@@ -5206,11 +5206,11 @@ static ssize_t rpc_conn_read_store(struct device *dev,
 	put_unaligned_le16(1, request + 4);
 	put_unaligned_le16(OCTEP_RPC_TABLE_FLAG_READ_ALL, request + 6);
 	put_unaligned_le32(index, request + 8);
-	err = octep_rpc_post_command_locked(octep, OCTEP_RPC_CMD_LO_CONN_READ,
+	err = octep_rpc_post_command_locked(octep, XGSD_RPC_CMD_LO_CONN_READ,
 					    request, sizeof(request));
 	if (err)
 		goto out;
-	reply = (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+	reply = (u8 *)octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE;
 	if (octep->rpc_last_len < 12 ||
 	    octep->rpc_last_len > sizeof(octep->rpc_conn_read_reply) ||
 	    get_unaligned_le32(reply) != index) {
@@ -5248,7 +5248,7 @@ static ssize_t rpc_pport_update_store(struct device *dev,
 
 	mutex_lock(&octep->lock);
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_PPORT_UPDATE,
+					    XGSD_RPC_CMD_PPORT_UPDATE,
 					    payload, sizeof(payload));
 	mutex_unlock(&octep->lock);
 	return err ? err : count;
@@ -5276,7 +5276,7 @@ static ssize_t rpc_fw_rev_bump_store(struct device *dev,
 	payload[0] = revision & 0xff;
 	payload[1] = revision >> 8;
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_FW_STATE_REV_SET,
+					    XGSD_RPC_CMD_FW_STATE_REV_SET,
 					    payload, sizeof(payload));
 	if (!err) {
 		octep->rpc_fw_rev = revision;
@@ -5298,7 +5298,7 @@ static int octep_rpc_read_connection_locked(struct octep *octep, u32 index,
 	put_unaligned_le16(1, request + 4);
 	put_unaligned_le16(OCTEP_RPC_TABLE_FLAG_READ_ALL, request + 6);
 	put_unaligned_le32(index, request + 8);
-	err = octep_rpc_post_command_locked(octep, OCTEP_RPC_CMD_LO_CONN_READ,
+	err = octep_rpc_post_command_locked(octep, XGSD_RPC_CMD_LO_CONN_READ,
 					    request, sizeof(request));
 	if (err)
 		return err;
@@ -5307,7 +5307,7 @@ static int octep_rpc_read_connection_locked(struct octep *octep, u32 index,
 		octep->rpc_last_error = -EPROTO;
 		return -EPROTO;
 	}
-	reply = (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+	reply = (u8 *)octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE;
 	if (get_unaligned_le32(reply) != index) {
 		octep->rpc_last_error = -EPROTO;
 		return -EPROTO;
@@ -5327,7 +5327,7 @@ static int octep_rpc_mflow_read_locked(struct octep *octep, u32 index,
 	put_unaligned_le16(OCTEP_RPC_TABLE_FLAG_READ_ALL, request + 6);
 	put_unaligned_le32(index, request + 8);
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_LO_MFLOW_READ,
+					    XGSD_RPC_CMD_LO_MFLOW_READ,
 					    request, sizeof(request));
 	if (err)
 		return err;
@@ -5335,7 +5335,7 @@ static int octep_rpc_mflow_read_locked(struct octep *octep, u32 index,
 		octep->rpc_last_error = -EPROTO;
 		return -EPROTO;
 	}
-	*reply = (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+	*reply = (u8 *)octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE;
 	if (get_unaligned_le32(*reply) != index) {
 		octep->rpc_last_error = -EPROTO;
 		return -EPROTO;
@@ -5433,11 +5433,11 @@ static int octep_rpc_flow_write_locked(struct octep *octep, u32 command,
 		err = -EPERM;
 	else
 		err = octep_rpc_validate_flow_command(octep, command, payload, payload_len);
-	clear = command == OCTEP_RPC_CMD_MFLOW_PROGRAM &&
+	clear = command == XGSD_RPC_CMD_MFLOW_PROGRAM &&
 		!(get_unaligned_le32(payload + 4) >> 28);
-	if (!err && command == OCTEP_RPC_CMD_MFLOW_PROGRAM && !clear)
+	if (!err && command == XGSD_RPC_CMD_MFLOW_PROGRAM && !clear)
 		err = octep_rpc_check_mflow_candidate_locked(octep, payload, false);
-	if (!err && command == OCTEP_RPC_CMD_FLOW_CREATE_FP) {
+	if (!err && command == XGSD_RPC_CMD_FLOW_CREATE_FP) {
 		err = octep_rpc_check_mflow_candidate_locked(
 			octep, payload + OCTEP_RPC_FLOW_OFF_MFLOW_O, false);
 		if (!err && get_unaligned_le32(payload + OCTEP_RPC_FLOW_OFF_VALID) &
@@ -5446,14 +5446,14 @@ static int octep_rpc_flow_write_locked(struct octep *octep, u32 command,
 				octep, payload + OCTEP_RPC_FLOW_OFF_MFLOW_R, false);
 	}
 	if (!err) {
-		submitted = command == OCTEP_RPC_CMD_MFLOW_PROGRAM ||
-			    command == OCTEP_RPC_CMD_FLOW_CREATE_FP;
+		submitted = command == XGSD_RPC_CMD_MFLOW_PROGRAM ||
+			    command == XGSD_RPC_CMD_FLOW_CREATE_FP;
 		err = octep_rpc_post_command_locked(octep, command, payload,
 						    payload_len);
 	}
-	if (!err && command == OCTEP_RPC_CMD_MFLOW_PROGRAM && !clear)
+	if (!err && command == XGSD_RPC_CMD_MFLOW_PROGRAM && !clear)
 		err = octep_rpc_check_mflow_candidate_locked(octep, payload, true);
-	else if (!err && command == OCTEP_RPC_CMD_FLOW_CREATE_FP) {
+	else if (!err && command == XGSD_RPC_CMD_FLOW_CREATE_FP) {
 		unsigned int attempt;
 
 		/* The firmware may need a moment to publish the programmed entries; retry the read-back. */
@@ -5501,7 +5501,7 @@ static int octep_ft_reclaim_conn_locked(struct octep *octep, u32 conn)
 		return 0;
 	put_unaligned_le32(conn, request);
 	put_unaligned_le16(flags & 0xffff, request + 4);
-	return octep_rpc_post_command_locked(octep, OCTEP_RPC_CMD_CONN_RECLAIM_FP,
+	return octep_rpc_post_command_locked(octep, XGSD_RPC_CMD_CONN_RECLAIM_FP,
 					     request, sizeof(request));
 }
 
@@ -5519,7 +5519,7 @@ static void octep_ft_teardown_locked(struct octep *octep, unsigned int slot,
 					  OCTEP_FT_CONN_BASE + slot, 1,
 					  octep->rpc_fw_rev, 0,
 					  OCTEP_FT_NHOP_BASE + 2 * slot + i);
-		octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_MFLOW_PROGRAM,
+		octep_rpc_flow_write_locked(octep, XGSD_RPC_CMD_MFLOW_PROGRAM,
 					    (const u8 *)&m, sizeof(m));
 	}
 }
@@ -5561,20 +5561,20 @@ static void octep_ft_reclaim_all_locked(struct octep *octep)
  * between conntrack's snapshot and the frames in flight when the flow goes hot), and the two
  * window scales in the top two bytes (reply at bits 16-23, orig at bits 24-31).
  */
-#define OCTEP_TCP_SEEN(d)		((d) * 16)
-#define OCTEP_TCP_OFF_FLAGS		56
-#define OCTEP_TCP_SEQ_CHK_ON		0x00000001u
+#define XGSD_TCP_SEEN(d)		((d) * 16)
+#define XGSD_TCP_OFF_FLAGS		56
+#define XGSD_TCP_SEQ_CHK_ON		0x00000001u
 #define OCTEP_TCP_SP_IF_FAIL		0x00000008u
 #define OCTEP_TCP_OFF_LAST_SEQ		32
 #define OCTEP_TCP_OFF_LAST_ACK		36
 #define OCTEP_TCP_OFF_LAST_END		40
-#define OCTEP_TCP_OFF_RETRANS		44
+#define XGSD_TCP_OFF_RETRANS		44
 #define OCTEP_TCP_OFF_LAST_DIR		45
 #define OCTEP_TCP_OFF_LAST_WIN		46
-#define OCTEP_TCP_LIBERAL_ORIG		0x00000002u
-#define OCTEP_TCP_LIBERAL_REPLY	0x00000004u
-#define OCTEP_TCP_SCALE_REPLY_SHIFT	16
-#define OCTEP_TCP_SCALE_ORIG_SHIFT	24
+#define XGSD_TCP_LIBERAL_ORIG		0x00000002u
+#define XGSD_TCP_LIBERAL_REPLY	0x00000004u
+#define XGSD_TCP_SCALE_REPLY_SHIFT	16
+#define XGSD_TCP_SCALE_ORIG_SHIFT	24
 
 /* Fresh conntrack TCP window/state for the original-direction tuple; false when there is no TCP conntrack entry. */
 static bool octep_ft_copy_tcp_state(const struct octep_ft_ent *e, u8 *out)
@@ -5604,10 +5604,10 @@ static bool octep_ft_copy_tcp_state(const struct octep_ft_ent *e, u8 *out)
 	for (d = 0; d < 2; d++) {
 		if (!octep_ft_tcp_room) {
 			/* Raw conntrack snapshot, as in the 11-18 14:57 build (8 s of NPU forwarding) */
-			put_unaligned_le32(seen[d].td_end, out + OCTEP_TCP_SEEN(d) + 0);
-			put_unaligned_le32(seen[d].td_maxend, out + OCTEP_TCP_SEEN(d) + 4);
-			put_unaligned_le32(seen[d].td_maxwin, out + OCTEP_TCP_SEEN(d) + 8);
-			put_unaligned_le32(seen[d ^ 1].td_end, out + OCTEP_TCP_SEEN(d) + 12);
+			put_unaligned_le32(seen[d].td_end, out + XGSD_TCP_SEEN(d) + 0);
+			put_unaligned_le32(seen[d].td_maxend, out + XGSD_TCP_SEEN(d) + 4);
+			put_unaligned_le32(seen[d].td_maxwin, out + XGSD_TCP_SEEN(d) + 8);
+			put_unaligned_le32(seen[d ^ 1].td_end, out + XGSD_TCP_SEEN(d) + 12);
 			continue;
 		}
 		/*
@@ -5628,24 +5628,24 @@ static bool octep_ft_copy_tcp_state(const struct octep_ft_ent *e, u8 *out)
 		if ((s32)(reach - maxend) > 0)
 			maxend = reach;
 		/* Headroom: the snapshot window is exhausted within one cwnd */
-		put_unaligned_le32(seen[d].td_end, out + OCTEP_TCP_SEEN(d) + 0);
-		put_unaligned_le32(maxend + room_o, out + OCTEP_TCP_SEEN(d) + 4);
-		put_unaligned_le32(w + room, out + OCTEP_TCP_SEEN(d) + 8);
-		put_unaligned_le32(seen[d ^ 1].td_end, out + OCTEP_TCP_SEEN(d) + 12);
+		put_unaligned_le32(seen[d].td_end, out + XGSD_TCP_SEEN(d) + 0);
+		put_unaligned_le32(maxend + room_o, out + XGSD_TCP_SEEN(d) + 4);
+		put_unaligned_le32(w + room, out + XGSD_TCP_SEEN(d) + 8);
+		put_unaligned_le32(seen[d ^ 1].td_end, out + XGSD_TCP_SEEN(d) + 12);
 	}
 	/* Last-packet block: packets failing the sequence check are sent to the host */
 	put_unaligned_le32(ct->proto.tcp.last_seq, out + OCTEP_TCP_OFF_LAST_SEQ);
 	put_unaligned_le32(ct->proto.tcp.last_ack, out + OCTEP_TCP_OFF_LAST_ACK);
 	put_unaligned_le32(ct->proto.tcp.last_end, out + OCTEP_TCP_OFF_LAST_END);
-	out[OCTEP_TCP_OFF_RETRANS] = ct->proto.tcp.retrans;
+	out[XGSD_TCP_OFF_RETRANS] = ct->proto.tcp.retrans;
 	out[OCTEP_TCP_OFF_LAST_DIR] = ct->proto.tcp.last_dir == IP_CT_DIR_REPLY;
 	put_unaligned_le16(ct->proto.tcp.last_win, out + OCTEP_TCP_OFF_LAST_WIN);
-	flags = OCTEP_TCP_SEQ_CHK_ON | OCTEP_TCP_SP_IF_FAIL | OCTEP_TCP_LIBERAL_ORIG | OCTEP_TCP_LIBERAL_REPLY |
-		((u32)seen[1].td_scale << OCTEP_TCP_SCALE_REPLY_SHIFT) |
-		((u32)seen[0].td_scale << OCTEP_TCP_SCALE_ORIG_SHIFT);
+	flags = XGSD_TCP_SEQ_CHK_ON | OCTEP_TCP_SP_IF_FAIL | XGSD_TCP_LIBERAL_ORIG | XGSD_TCP_LIBERAL_REPLY |
+		((u32)seen[1].td_scale << XGSD_TCP_SCALE_REPLY_SHIFT) |
+		((u32)seen[0].td_scale << XGSD_TCP_SCALE_ORIG_SHIFT);
 	spin_unlock_bh(&ct->lock);
 	nf_ct_put(ct);
-	put_unaligned_le32(flags, out + OCTEP_TCP_OFF_FLAGS);
+	put_unaligned_le32(flags, out + XGSD_TCP_OFF_FLAGS);
 	return true;
 }
 
@@ -5705,7 +5705,7 @@ static void octep_ft_rev_sync_locked(struct octep *octep)
 	if (!READ_ONCE(octep_ft_rev_sync) || octep->rpc_fw_rev)
 		return;
 	err = octep_rpc_post_command_locked(octep,
-					    OCTEP_RPC_CMD_FW_STATE_REV_SET,
+					    XGSD_RPC_CMD_FW_STATE_REV_SET,
 					    payload, sizeof(payload));
 	if (!err)
 		err = octep_rpc_post_command_locked(octep,
@@ -5823,16 +5823,16 @@ static void octep_ft_program_locked(struct octep *octep,
 		print_hex_dump(KERN_INFO, "ft: dbg tcp-state: ", DUMP_PREFIX_OFFSET,
 			       16, 1, fc.tcp_state, sizeof(fc.tcp_state), false);
 	step = "nhop0";
-	err = octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_NHOP_PROGRAM,
+	err = octep_rpc_flow_write_locked(octep, XGSD_RPC_CMD_NHOP_PROGRAM,
 					  (const u8 *)&nh[0], sizeof(nh[0]));
 	if (!err) {
 		step = "nhop1";
-		err = octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_NHOP_PROGRAM,
+		err = octep_rpc_flow_write_locked(octep, XGSD_RPC_CMD_NHOP_PROGRAM,
 						  (const u8 *)&nh[1], sizeof(nh[1]));
 	}
 	if (!err) {
 		step = "flow-create";
-		err = octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_FLOW_CREATE_FP,
+		err = octep_rpc_flow_write_locked(octep, XGSD_RPC_CMD_FLOW_CREATE_FP,
 						  (const u8 *)&fc, sizeof(fc));
 	}
 	octep->ft_spare_set = false;
@@ -5967,7 +5967,7 @@ static void octep_ft_rearm_locked(struct octep *octep)
 					    OCTEP_FT_NHOP_BASE + 2 * slot + i, 0,
 					    octep_ft_eff_timeout(),
 					    octep_ft_eff_brctl(c->tup.bridged));
-			octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_MFLOW_PROGRAM,
+			octep_rpc_flow_write_locked(octep, XGSD_RPC_CMD_MFLOW_PROGRAM,
 						    (const u8 *)&m, sizeof(m));
 		}
 		dev_info_ratelimited(&octep->pdev->dev,
@@ -6066,7 +6066,7 @@ static void octep_ft_cutin_locked(struct octep *octep)
 					    OCTEP_FT_NHOP_BASE + 2 * slot + i, 0,
 					    octep_ft_eff_timeout(),
 					    octep_ft_eff_brctl(c->tup.bridged));
-			err[i] = octep_rpc_flow_write_locked(octep, OCTEP_RPC_CMD_MFLOW_PROGRAM,
+			err[i] = octep_rpc_flow_write_locked(octep, XGSD_RPC_CMD_MFLOW_PROGRAM,
 							     (const u8 *)&m, sizeof(m));
 		}
 		dev_info(&octep->pdev->dev,
@@ -6575,10 +6575,10 @@ static void octep_ft_alloc_report_locked(struct octep *octep)
 			put_unaligned_le16(OCTEP_RPC_SYS_COUNTER_COUNT, payload + 4);
 			put_unaligned_le32(OCTEP_RPC_SYS_COUNTER_COUNT - 1, payload + 8);
 			if (!octep_rpc_post_command_locked(octep,
-							   OCTEP_RPC_CMD_LO_WORKER_SYS_CNT_READ,
+							   XGSD_RPC_CMD_LO_WORKER_SYS_CNT_READ,
 							   payload, sizeof(payload)) &&
 			    octep->rpc_last_len == OCTEP_RPC_SYS_COUNTER_COUNT * sizeof(u64)) {
-				reply = (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE;
+				reply = (u8 *)octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE;
 				if (octep_dp_debug)
 					octep_ft_cnt_moved_report(octep, reply);
 				for (i = 0; i < ARRAY_SIZE(cnt); i++) {
@@ -7234,13 +7234,13 @@ static ssize_t rpc_flow_write_store(struct device *dev,
 	if (err)
 		goto out_free;
 	switch (command) {
-	case OCTEP_RPC_CMD_NHOP_PROGRAM:
+	case XGSD_RPC_CMD_NHOP_PROGRAM:
 		payload_len = OCTEP_RPC_NHOP_REQ_LEN;
 		break;
-	case OCTEP_RPC_CMD_MFLOW_PROGRAM:
+	case XGSD_RPC_CMD_MFLOW_PROGRAM:
 		payload_len = OCTEP_RPC_MFLOW_REQ_LEN;
 		break;
-	case OCTEP_RPC_CMD_FLOW_CREATE_FP:
+	case XGSD_RPC_CMD_FLOW_CREATE_FP:
 		payload_len = OCTEP_RPC_FLOW_REQ_LEN;
 		break;
 	default:
@@ -7294,7 +7294,7 @@ static ssize_t rpc_raw_write_store(struct device *dev,
 	if (err)
 		goto out_free;
 	if (octep_rpc_raw_cmd < 0 || command != (u32)octep_rpc_raw_cmd ||
-	    command >= OCTEP_RPC_CMD_PLATFORM_READ) {
+	    command >= XGSD_RPC_CMD_PLATFORM_READ) {
 		err = -EPERM;
 		goto out_free;
 	}
@@ -7392,7 +7392,7 @@ static ssize_t rpc_conn_reclaim_store(struct device *dev,
 	put_unaligned_le32(index, request);
 	put_unaligned_le16(revision, request + 4);
 	submitted = true;
-	err = octep_rpc_post_command_locked(octep, OCTEP_RPC_CMD_CONN_RECLAIM_FP,
+	err = octep_rpc_post_command_locked(octep, XGSD_RPC_CMD_CONN_RECLAIM_FP,
 					    request, sizeof(request));
 	if (err)
 		goto out;
@@ -7404,7 +7404,7 @@ static ssize_t rpc_conn_reclaim_store(struct device *dev,
 	octep->rpc_conn_reclaim_index = index;
 	octep->rpc_conn_reclaim_revision = revision;
 	memcpy(octep->rpc_conn_reclaim_reply,
-	       (u8 *)octep->rpc_cmd.vaddr + OCTEP_RPC_BUF_DESC_SIZE,
+	       (u8 *)octep->rpc_cmd.vaddr + XGSD_RPC_BUF_DESC_SIZE,
 	       sizeof(octep->rpc_conn_reclaim_reply));
 	octep->rpc_conn_reclaim_valid = true;
 	err = octep_rpc_read_connection_locked(octep, index, &entry);
@@ -7436,12 +7436,12 @@ static ssize_t rpc_state_show(struct device *dev,
 	ssize_t len;
 
 	mutex_lock(&octep->lock);
-	if (facility->size >= OCTEP_RPC_STATE_SIZE) {
-		cfg = octep_rpc_readq(octep, OCTEP_RPC_STATE_CFG);
-		posted = octep_rpc_readq(octep, OCTEP_RPC_STATE_RING_LO +
-					 OCTEP_RPC_RING_POSTED);
-		done = octep_rpc_readq(octep, OCTEP_RPC_STATE_RING_LO +
-				       OCTEP_RPC_RING_DONE);
+	if (facility->size >= XGSD_RPC_STATE_SIZE) {
+		cfg = octep_rpc_readq(octep, XGSD_RPC_STATE_CFG);
+		posted = octep_rpc_readq(octep, XGSD_RPC_STATE_RING_LO +
+					 XGSD_RPC_RING_POSTED);
+		done = octep_rpc_readq(octep, XGSD_RPC_STATE_RING_LO +
+				       XGSD_RPC_RING_DONE);
 	}
 	len = sysfs_emit(buf,
 			 "ready=%u configured=%u cfg=%#018llx reconfig_done=%u "
@@ -7739,7 +7739,7 @@ static ssize_t facilities_show(struct device *dev,
 		goto out;
 	}
 
-	for (i = 0; i < OCTEP_FACILITY_COUNT && len < PAGE_SIZE; i++) {
+	for (i = 0; i < XGSD_FACILITY_COUNT && len < PAGE_SIZE; i++) {
 		const struct octep_facility *facility = &octep->facility[i];
 
 		if (!facility->size)
@@ -7839,7 +7839,7 @@ static ssize_t nwa_last_show(struct device *dev,
 			 octep->nwa_last_param2, octep->nwa_last_marker,
 			 octep->nwa_last_status, octep->nwa_last_reply_len,
 			 octep->nwa_last_words, octep->nwa_last_error);
-	if (octep->nwa_last_op == OCTEP_NWA_OP_GET &&
+	if (octep->nwa_last_op == XGSD_NWA_OP_GET &&
 	    octep->nwa_last_sub == OCTEP_NWA_SUB_STATS &&
 	    !octep->nwa_last_error &&
 	    octep->nwa_last_words == OCTEP_NWA_STATS_WORDS) {
@@ -7983,7 +7983,7 @@ static void octep_vf_mbox_poll_work(struct work_struct *work)
 		u32 ring = ring_start + vf * OCTEP_SRIOV_RINGS_PER_VF;
 
 		mbox_offset = OCTEP_SDP_R_MBOX_VF_PF_DATA +
-			      (resource_size_t)ring * OCTEP_SDP_RING_STRIDE;
+			      (resource_size_t)ring * XGSD_SDP_RING_STRIDE;
 		if (ring >= 64 || mbox_offset > octep->bar0_len ||
 		    sizeof(u64) > octep->bar0_len - mbox_offset) {
 			dev_err_ratelimited(&octep->pdev->dev,
@@ -8013,7 +8013,7 @@ static void octep_vf_mbox_poll_work(struct work_struct *work)
 			break;
 		case OCTEP_VF_MBOX_CMD_GET_MTU:
 			rsp.s_mtu.type = OCTEP_VF_MBOX_TYPE_RSP_ACK;
-			rsp.s_mtu.mtu = OCTEP_DP_PKT_MAX;
+			rsp.s_mtu.mtu = XGSD_DP_PKT_MAX;
 			break;
 		case OCTEP_VF_MBOX_CMD_DEV_REMOVE:
 			rsp.s.type = OCTEP_VF_MBOX_TYPE_RSP_ACK;
@@ -8084,7 +8084,7 @@ static int octep_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	INIT_DELAYED_WORK(&octep->ft_work, octep_ft_work);
 	INIT_DELAYED_WORK(&octep->ft_guard_work, octep_ft_guard_work);
 
-	if (octep->bar0_len < OCTEP_SDP_SCRATCH + sizeof(u64) ||
+	if (octep->bar0_len < XGSD_SDP_SCRATCH + sizeof(u64) ||
 	    octep->bar2_len < OCTEP_BARMAP_SIZE) {
 		dev_err(&pdev->dev, "BAR0 or BAR2 is too small\n");
 		err = -ENXIO;
@@ -8200,7 +8200,7 @@ static int octep_sriov_configure(struct pci_dev *pdev, int num_vfs)
 		return enabled_vfs;
 
 	mutex_lock(&octep->lock);
-	scratch = readq(octep->bar0 + OCTEP_SLI_EPF_SCRATCH);
+	scratch = readq(octep->bar0 + XGSD_SLI_EPF_SCRATCH);
 	if (octep->dp_up || octep->hs_done || scratch) {
 		dev_err(&pdev->dev,
 			"sriov: refusing VF change while SDP is active or handshake scratch is owned\n");
