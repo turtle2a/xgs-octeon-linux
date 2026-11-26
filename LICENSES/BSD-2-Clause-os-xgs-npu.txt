@@ -1,4 +1,4 @@
-Portions of octep/octep.c are derived from os-xgs-npu
+Portions of this project are derived from os-xgs-npu
 (https://github.com/AbdelmonemAwad/os-xgs-npu) and carry this notice.
 
 BSD 2-Clause License
