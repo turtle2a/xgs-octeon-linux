@@ -330,6 +330,12 @@ module_param_named(ft_l3_rev, octep_ft_l3_rev, uint, 0644);
 MODULE_PARM_DESC(ft_l3_rev,
 		 "L3 revision written into the flow-create microflows (experimental, default 0)");
 
+/* Experiment: send the firmware state and L3 forwarding state revisions (cmd 0 and cmd 1) once before the first flow, and write them into the microflows. */
+static bool octep_ft_rev_sync;
+module_param_named(ft_rev_sync, octep_ft_rev_sync, bool, 0644);
+MODULE_PARM_DESC(ft_rev_sync,
+		 "Send firmware state and L3 revisions (cmd 0/1) before the first flow and use them in the microflows (experimental, default off)");
+
 /* The flow-create record carries 60 bytes at offset 24 that match struct ip_ct_tcp (TCP window and state); they were always zero. */
 static bool octep_ft_tcp_state;
 module_param_named(ft_tcp_state, octep_ft_tcp_state, bool, 0644);
@@ -584,6 +590,7 @@ union octep_vf_mbox_word {
 #define OCTEP_RPC_CFG_WAIT_MS		3000
 #define OCTEP_RPC_CMD_WAIT_MS		2000
 #define OCTEP_RPC_CMD_FW_STATE_REV_SET	0
+#define OCTEP_RPC_CMD_L3_FWD_REV_SET	1
 #define OCTEP_RPC_CMD_FW_CFG_PARAMS_SET	2
 #define OCTEP_RPC_CMD_LIF_ADD_UPDATE	3
 #define OCTEP_RPC_CMD_PPORT_UPDATE	5
@@ -1202,6 +1209,7 @@ struct octep {
 	u16 rpc_fw_cfg;
 	bool rpc_fw_cfg_known;
 	u16 rpc_fw_rev;
+	u16 rpc_l3_rev;
 	u64 rpc_fw_rev_bumps;
 	u64 alloc_cnt[7];
 	u64 alloc_cnt_all[OCTEP_RPC_SYS_COUNTER_COUNT];
@@ -4430,6 +4438,7 @@ static int octep_rpc_post_command_locked(struct octep *octep, u8 command,
 		    command != OCTEP_RPC_CMD_PPORT_UPDATE &&
 		    command != OCTEP_RPC_CMD_FW_CFG_PARAMS_SET &&
 		    command != OCTEP_RPC_CMD_FW_STATE_REV_SET &&
+		    command != OCTEP_RPC_CMD_L3_FWD_REV_SET &&
 		    command != OCTEP_RPC_CMD_NHOP_PROGRAM &&
 		    command != OCTEP_RPC_CMD_MFLOW_PROGRAM &&
 		    command != OCTEP_RPC_CMD_FLOW_CREATE_FP &&
@@ -5667,6 +5676,38 @@ static int octep_ft_tcp_gate(const struct octep_ft_ent *e, u32 *inflight, u8 *re
  * Program one connection: reply = the flow the wire is presenting (hot
  * candidate), orig = its paired entry on a borrowed idle slot.
  */
+static u32 octep_ft_l3_eff(const struct octep *octep)
+{
+	return READ_ONCE(octep_ft_rev_sync) ? octep->rpc_l3_rev :
+					      READ_ONCE(octep_ft_l3_rev);
+}
+
+/* Both revisions start at 0 in firmware; send 1 once so microflow writes can match a non-zero state. */
+static void octep_ft_rev_sync_locked(struct octep *octep)
+{
+	u8 payload[2] = { 1, 0 };
+	int err;
+
+	if (!READ_ONCE(octep_ft_rev_sync) || octep->rpc_fw_rev)
+		return;
+	err = octep_rpc_post_command_locked(octep,
+					    OCTEP_RPC_CMD_FW_STATE_REV_SET,
+					    payload, sizeof(payload));
+	if (!err)
+		err = octep_rpc_post_command_locked(octep,
+						    OCTEP_RPC_CMD_L3_FWD_REV_SET,
+						    payload, sizeof(payload));
+	if (err) {
+		dev_info(&octep->pdev->dev, "ft: rev sync failed %d rc %u\n",
+			 err, octep->rpc_last_rc);
+		return;
+	}
+	octep->rpc_fw_rev = 1;
+	octep->rpc_l3_rev = 1;
+	octep->rpc_fw_rev_bumps++;
+	dev_info(&octep->pdev->dev, "ft: rev sync fw_rev=1 l3_rev=1\n");
+}
+
 static void octep_ft_program_locked(struct octep *octep,
 				    const struct octep_rx_flow_track *partner,
 				    const struct octep_rx_flow_track *hot,
@@ -5685,6 +5726,8 @@ static void octep_ft_program_locked(struct octep *octep,
 	int err = -ENOSPC;
 	const char *step = "none";
 	u32 last_spare = 0;
+
+	octep_ft_rev_sync_locked(octep);
 
 	/*
 	 * The two tuples of a flow sit in one array in struct flow_offload and
@@ -5738,14 +5781,14 @@ static void octep_ft_program_locked(struct octep *octep,
 			    hot_is_orig ? hot->revision : sp->revision, 0,
 			    octep_ft_first_action(),
 			    OCTEP_FT_CONN_BASE + slot, 1,
-			    octep->rpc_fw_rev, octep_ft_l3_rev,
+			    octep->rpc_fw_rev, octep_ft_l3_eff(octep),
 			    OCTEP_FT_NHOP_BASE + 2 * slot, 0,
 			    octep_ft_eff_timeout(), octep_ft_eff_brctl(corig->bridged));
 	octep_ft_fill_mflow(&mr, hot_is_orig ? sp->id : hot->id,
 			    hot_is_orig ? sp->revision : hot->revision, 1,
 			    octep_ft_first_action(),
 			    OCTEP_FT_CONN_BASE + slot, 1,
-			    octep->rpc_fw_rev, octep_ft_l3_rev,
+			    octep->rpc_fw_rev, octep_ft_l3_eff(octep),
 			    OCTEP_FT_NHOP_BASE + 2 * slot + 1, 0,
 			    octep_ft_eff_timeout(), octep_ft_eff_brctl(corig->bridged));
 	if (READ_ONCE(octep_ft_ust)) {
@@ -5906,7 +5949,7 @@ static void octep_ft_rearm_locked(struct octep *octep)
 			octep_ft_fill_mflow(&m, c->id[i], c->rev[i], i,
 					    c->cutin_pending ? octep_ft_first_action() : (u32)octep_ft_mflow_action,
 					    OCTEP_FT_CONN_BASE + slot, 1,
-					    octep->rpc_fw_rev, octep_ft_l3_rev,
+					    octep->rpc_fw_rev, octep_ft_l3_eff(octep),
 					    OCTEP_FT_NHOP_BASE + 2 * slot + i, 0,
 					    octep_ft_eff_timeout(),
 					    octep_ft_eff_brctl(c->tup.bridged));
@@ -6005,7 +6048,7 @@ static void octep_ft_cutin_locked(struct octep *octep)
 			octep_ft_fill_mflow(&m, c->id[i], c->rev[i], i,
 					    (u32)octep_ft_mflow_action,
 					    OCTEP_FT_CONN_BASE + slot, 1,
-					    octep->rpc_fw_rev, octep_ft_l3_rev,
+					    octep->rpc_fw_rev, octep_ft_l3_eff(octep),
 					    OCTEP_FT_NHOP_BASE + 2 * slot + i, 0,
 					    octep_ft_eff_timeout(),
 					    octep_ft_eff_brctl(c->tup.bridged));
