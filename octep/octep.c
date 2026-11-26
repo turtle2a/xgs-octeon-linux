@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Portions derived from os-xgs-npu (https://github.com/AbdelmonemAwad/os-xgs-npu) - 2026 Abdelmonem Awad <eg2@live.com>
+// Portions derived from os-xgs-npu (https://github.com/AbdelmonemAwad/os-xgs-npu), Copyright (c) 2026 Abdelmonem Awad, BSD-2-Clause
 /*
  * Linux PCI core for the OCTEON TX CN83XX endpoint (177d:a300).
  *
