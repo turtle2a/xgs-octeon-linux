@@ -281,6 +281,8 @@ This project is licensed under the GNU General Public License, version 2 or
 (at your option) any later version. See [LICENSE](LICENSE). Source files use
 the SPDX identifier `GPL-2.0-or-later`.
 
+## Third-party code
+
 The following file carries portions derived from
 [os-xgs-npu](https://github.com/AbdelmonemAwad/os-xgs-npu), which is
 BSD-2-Clause licensed. The notice is at the top of the file and the licence
