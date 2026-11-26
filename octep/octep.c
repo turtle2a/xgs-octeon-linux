@@ -240,8 +240,8 @@ MODULE_PARM_DESC(ft_mflow_action,
  * expires a microflow, not ticks/ms/jiffies. OCTEP_FT_TIMEOUT (244141) was ~2.8 days' worth of
  * seconds, wildly out of the platform's honoured range -- live readback (LO_MFLOW_READ) showed
  * firmware silently invalidating (state 2->0, fw_valid 1->0) within ~1-2s of creation, consistent
- * with the out-of-range value being clamped/rejected. 60s matches the reference project's own
- * confirmed-working measurement (flows expired 53-63s after 60 was sent). Runtime-tunable so this
+ * with the out-of-range value being clamped/rejected. 60s was measured to work
+ * (flows expired 53-63s after 60 was sent). Runtime-tunable so this
  * can be re-measured without a rebuild.
  */
 static int octep_ft_mflow_timeout = 60;
@@ -252,10 +252,9 @@ MODULE_PARM_DESC(ft_mflow_timeout,
 /*
  * Workaround: even with a sane ft_mflow_timeout, live-readback (LO_MFLOW_READ) showed a
  * microflow's fw_valid/state silently collapse (2->0) after ~60-90s *despite* continuous
- * active iperf traffic through it -- the reference driver's own keepalive (octep_flow_keepalive)
- * only reads a microflow's timestamp to learn whether packets flowed; it never re-arms the
- * firmware's timer, on the assumption a genuinely busy flow never needs it. That assumption does
- * not hold here, so re-issue MFLOW_PROGRAM for every live connection's both directions well
+ * active iperf traffic through it -- reading a microflow's timestamp only shows whether packets
+ * flowed and never re-arms the firmware's timer, which assumes a busy flow needs no re-arm.
+ * That assumption does not hold here, so re-issue MFLOW_PROGRAM for every live connection's both directions well
  * inside the timeout window, coding around the firmware-side bug rather than relying on an
  * automatic in-firmware refresh that isn't happening for us.
  */
@@ -265,14 +264,14 @@ MODULE_PARM_DESC(ft_mflow_rearm,
 		 "Seconds between proactive MFLOW_PROGRAM re-arms per connection (0 disables, default 45, must stay below ft_mflow_timeout)");
 
 /*
- * Connection verdict (flags bits 22:21): 0 send to IPS, 1 drop, 2 cut-through forward, per the
- * vendor module's conn printer as read by the os-xgs-npu BSD driver. This driver used to send 1,
- * which that source names DROP; the BSD driver makes plain connections with 2. Runtime-tunable.
+ * Connection verdict (flags bits 22:21, a 2-bit field). 0 is the inspection path; 1 was observed
+ * to drop; 2 is the forward value used here. The numbering comes from testing, not from the
+ * NPU headers. Runtime-tunable.
  */
 static unsigned int octep_ft_verdict = 2;
 module_param_named(ft_verdict, octep_ft_verdict, uint, 0644);
 MODULE_PARM_DESC(ft_verdict,
-		 "Connection verdict sent on flow create: 0 IPS, 1 drop, 2 cut-through forward (default 2, as the BSD driver)");
+		 "Connection verdict sent on flow create: 0 inspect, 1 drop, 2 forward (default 2)");
 
 /*
  * Make-before-break cut-in: flow-create programs the microflows with ft_cutin_action while the
@@ -360,21 +359,22 @@ module_param_named(rpc_raw_cmd, octep_rpc_raw_cmd, int, 0644);
 MODULE_PARM_DESC(rpc_raw_cmd,
 		 "Opcode (0-35) that rpc_raw_write may send; -1 disables (experimental, default -1)");
 
-/* BSD os-xgs-npu sends next hops with the L3 flag set (byte 26) and pport_tag 0; the Linux builder never did. */
+/* Next hops carry the L3 flag (byte 26); the pport tag is computed by the NPU, so 0 is sent. */
 static bool octep_ft_nhop_l3 = true;
 module_param_named(ft_nhop_l3, octep_ft_nhop_l3, bool, 0644);
 MODULE_PARM_DESC(ft_nhop_l3,
-		 "Program next hops with the L3 flag and a zero pport tag, as the FreeBSD driver does (default Y)");
+		 "Program next hops with the L3 flag and a zero pport tag (default Y)");
 
 /*
- * Bridge-control nibble (operation bits 24-27): what the fast path rewrites. The FreeBSD driver
- * (os-xgs-npu, npuflow.c) sets 0xe on every routed microflow; 0 means "rewrite nothing, a bridge
- * carries it" and left NAT'd TCP stalling after the first burst.
+ * Bridge-control nibble (operation bits 24-27): what the fast path rewrites. Bit 3 updates the
+ * TTL, bit 2 overwrites the source MAC, bit 1 the destination MAC, bit 0 the VLAN header; a
+ * routed flow sets all four (0xf). 0 means "rewrite nothing, a bridge carries it" and left NAT'd
+ * TCP stalling after the first burst.
  */
-static unsigned int octep_ft_brctl = 0xe;
+static unsigned int octep_ft_brctl = 0xf;
 module_param_named(ft_brctl, octep_ft_brctl, uint, 0644);
 MODULE_PARM_DESC(ft_brctl,
-		 "Microflow bridge-control nibble, 0xe = routed (default), 0 = nothing rewritten");
+		 "Microflow bridge-control nibble, 0xf = routed (default), 0 = nothing rewritten");
 
 /* Experiment: extra bits ORed into each microflow operation word. */
 static unsigned int octep_ft_mflow_extra;
@@ -5550,12 +5550,12 @@ static void octep_ft_reclaim_all_locked(struct octep *octep)
 
 /*
  * Wire layout of the 60-byte TCP block at flow-create offset 24 (struct octep_rpc_flow_create_payload
- * tcp_state[60]), reverse engineered from a sibling FreeBSD driver for the same NPU family
- * (os-xgs-npu, octep.h ~1900-1935): NOT a raw dump of Linux's struct ip_ct_tcp (whose per-direction
+ * tcp_state[60]): per-direction window block, last-packet block, FIN block and a flags word,
+ * matching the NPU's published connection-table structures. NOT a raw dump of Linux's struct ip_ct_tcp (whose per-direction
  * td_scale/flags trailing bytes misalign direction 1 by 4 bytes and scramble the flags word below).
  * Instead, per direction d (0=orig,1=reply), 16 bytes packed tight at d*16: td_end, td_maxend,
  * td_maxwin (already window-scaled by conntrack), and at +12 the OTHER direction's td_end (the
- * reference driver fills this from "the other peer's seqlo" - cross direction, not this
+ * cross direction, not this
  * direction's own td_maxack). Offset 56 is a flags word: bit0
  * SEQ_CHK_ON, bit1/bit2 LIBERAL_ORIG/LIBERAL_REPLY (both set so the hardware tolerates the gap
  * between conntrack's snapshot and the frames in flight when the flow goes hot), and the two
@@ -5627,7 +5627,7 @@ static bool octep_ft_copy_tcp_state(const struct octep_ft_ent *e, u8 *out)
 
 		if ((s32)(reach - maxend) > 0)
 			maxend = reach;
-		/* Headroom as on BSD: the snapshot window is exhausted within one cwnd */
+		/* Headroom: the snapshot window is exhausted within one cwnd */
 		put_unaligned_le32(seen[d].td_end, out + OCTEP_TCP_SEEN(d) + 0);
 		put_unaligned_le32(maxend + room_o, out + OCTEP_TCP_SEEN(d) + 4);
 		put_unaligned_le32(w + room, out + OCTEP_TCP_SEEN(d) + 8);
