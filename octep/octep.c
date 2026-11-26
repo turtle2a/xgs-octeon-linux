@@ -5564,6 +5564,13 @@ static void octep_ft_reclaim_all_locked(struct octep *octep)
 #define OCTEP_TCP_SEEN(d)		((d) * 16)
 #define OCTEP_TCP_OFF_FLAGS		56
 #define OCTEP_TCP_SEQ_CHK_ON		0x00000001u
+#define OCTEP_TCP_SP_IF_FAIL		0x00000008u
+#define OCTEP_TCP_OFF_LAST_SEQ		32
+#define OCTEP_TCP_OFF_LAST_ACK		36
+#define OCTEP_TCP_OFF_LAST_END		40
+#define OCTEP_TCP_OFF_RETRANS		44
+#define OCTEP_TCP_OFF_LAST_DIR		45
+#define OCTEP_TCP_OFF_LAST_WIN		46
 #define OCTEP_TCP_LIBERAL_ORIG		0x00000002u
 #define OCTEP_TCP_LIBERAL_REPLY	0x00000004u
 #define OCTEP_TCP_SCALE_REPLY_SHIFT	16
@@ -5626,7 +5633,14 @@ static bool octep_ft_copy_tcp_state(const struct octep_ft_ent *e, u8 *out)
 		put_unaligned_le32(w + room, out + OCTEP_TCP_SEEN(d) + 8);
 		put_unaligned_le32(seen[d ^ 1].td_end, out + OCTEP_TCP_SEEN(d) + 12);
 	}
-	flags = OCTEP_TCP_SEQ_CHK_ON | OCTEP_TCP_LIBERAL_ORIG | OCTEP_TCP_LIBERAL_REPLY |
+	/* Last-packet block: packets failing the sequence check are sent to the host */
+	put_unaligned_le32(ct->proto.tcp.last_seq, out + OCTEP_TCP_OFF_LAST_SEQ);
+	put_unaligned_le32(ct->proto.tcp.last_ack, out + OCTEP_TCP_OFF_LAST_ACK);
+	put_unaligned_le32(ct->proto.tcp.last_end, out + OCTEP_TCP_OFF_LAST_END);
+	out[OCTEP_TCP_OFF_RETRANS] = ct->proto.tcp.retrans;
+	out[OCTEP_TCP_OFF_LAST_DIR] = ct->proto.tcp.last_dir == IP_CT_DIR_REPLY;
+	put_unaligned_le16(ct->proto.tcp.last_win, out + OCTEP_TCP_OFF_LAST_WIN);
+	flags = OCTEP_TCP_SEQ_CHK_ON | OCTEP_TCP_SP_IF_FAIL | OCTEP_TCP_LIBERAL_ORIG | OCTEP_TCP_LIBERAL_REPLY |
 		((u32)seen[1].td_scale << OCTEP_TCP_SCALE_REPLY_SHIFT) |
 		((u32)seen[0].td_scale << OCTEP_TCP_SCALE_ORIG_SHIFT);
 	spin_unlock_bh(&ct->lock);
