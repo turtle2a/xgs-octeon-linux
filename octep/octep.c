@@ -392,6 +392,11 @@ module_param_named(ft_live_uid, octep_ft_live_uid, uint, 0644);
 MODULE_PARM_DESC(ft_live_uid,
 		 "16-bit live user id written into flow-create records (default 0)");
 
+static bool octep_ft_ust;
+module_param_named(ft_ust, octep_ft_ust, bool, 0644);
+MODULE_PARM_DESC(ft_ust,
+		 "Give each offloaded session its own session revision and live user id instead of the ft_session_rev/ft_live_uid values (default off)");
+
 /*
  * Offload parity features. Every one is off by default; ft_parity switches on the whole group
  * except ft_fw_cfg_extra, which is a value and stays explicit.
@@ -891,7 +896,8 @@ static inline void octep_ft_fill_flow(struct octep_rpc_flow_create_payload *p,
 				      u32 conn, u32 conn_rev,
 				      const struct octep_rpc_mflow_payload *orig,
 				      const struct octep_rpc_mflow_payload *reply,
-				      const struct octep_ft_nat *nat)
+				      const struct octep_ft_nat *nat,
+				      u16 session_rev, u16 live_uid)
 {
 	u32 flags = conn_rev | (octep_ft_verdict & 3) << OCTEP_RPC_FLOW_VERDICT_BIT |
 		    OCTEP_RPC_FLOW_CONN_VALID << 30;
@@ -900,8 +906,8 @@ static inline void octep_ft_fill_flow(struct octep_rpc_flow_create_payload *p,
 	p->connection = cpu_to_le32(conn);
 	if (octep_ft_nhop_l3)
 		p->session = cpu_to_le32(conn);
-	p->session_revision = cpu_to_le16((u16)READ_ONCE(octep_ft_session_rev));
-	p->live_user = cpu_to_le16((u16)READ_ONCE(octep_ft_live_uid));
+	p->session_revision = cpu_to_le16(session_rev);
+	p->live_user = cpu_to_le16(live_uid);
 	if (nat) {
 		u8 *block = p->nat;
 		bool both = octep_ft_nat_both && (nat->snat || nat->dnat);
@@ -1145,6 +1151,7 @@ struct octep {
 	u64 ft_ct_refreshed;
 	struct octep_ft_ent ft_ent[OCTEP_FT_MAX];
 	struct octep_ft_conn ft_conn[OCTEP_FT_CONNS];
+	u16 ft_sess_seq;
 	struct delayed_work ft_work;
 	struct delayed_work ft_guard_work;
 	unsigned long ft_full_at;
@@ -5673,6 +5680,7 @@ static void octep_ft_program_locked(struct octep *octep,
 	const struct octep_ft_ent *corig, *crep;
 	const struct octep_rx_flow_track *sp;
 	unsigned int slot;
+	u16 session_rev, live_uid;
 	bool hot_is_orig;
 	int err = -ENOSPC;
 	const char *step = "none";
@@ -5740,8 +5748,19 @@ static void octep_ft_program_locked(struct octep *octep,
 			    octep->rpc_fw_rev, octep_ft_l3_rev,
 			    OCTEP_FT_NHOP_BASE + 2 * slot + 1, 0,
 			    octep_ft_eff_timeout(), octep_ft_eff_brctl(corig->bridged));
+	if (READ_ONCE(octep_ft_ust)) {
+		/* Revision 0 means "no session", so the counter skips it. */
+		if (!++octep->ft_sess_seq)
+			octep->ft_sess_seq = 1;
+		session_rev = octep->ft_sess_seq;
+		live_uid = slot + 1;
+	} else {
+		session_rev = (u16)READ_ONCE(octep_ft_session_rev);
+		live_uid = (u16)READ_ONCE(octep_ft_live_uid);
+	}
 	octep_ft_fill_flow(&fc, OCTEP_FT_CONN_BASE + slot, 1, &mo, &mr,
-			   nat.snat || nat.dnat ? &nat : NULL);
+			   nat.snat || nat.dnat ? &nat : NULL,
+			   session_rev, live_uid);
 	if (octep_ft_tcp_state &&
 	    octep_ft_copy_tcp_state(corig, fc.tcp_state) && octep_ft_debug)
 		print_hex_dump(KERN_INFO, "ft: dbg tcp-state: ", DUMP_PREFIX_OFFSET,
